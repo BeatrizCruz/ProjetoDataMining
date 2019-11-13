@@ -4,6 +4,7 @@ Created on Sun Oct 13 13:44:55 2019
 
 @author: aSUS
 """
+#OLA
 import pandas as pd
 import sqlite3
 my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
