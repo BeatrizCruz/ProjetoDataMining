@@ -7,6 +7,10 @@ Created on Sun Oct 13 13:44:55 2019
 #OLA
 import pandas as pd
 import sqlite3
+import numpy as np
+from matplotlib import pyplot as plt
+import math
+
 my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
 #dbname = "datamining.db"
 
@@ -42,7 +46,7 @@ print(cursor.fetchall())
 file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA\Data mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
-import pandas as pd
+
 dfOriginal=pd.read_csv(file)
 dfOriginal.head()
 
@@ -63,16 +67,141 @@ dfOriginal=dfOriginal.rename(columns={"Brithday Year": "birthday",
                                         "Premiums in LOB: Health":"lobHealth",
                                         "Premiums in LOB:  Life":"lobLife",
                                         "Premiums in LOB: Work Compensations":"lobWork"})
+
+#--------------------STUDY OF VARIABLES-----------------------
+# 1. BIRTHDAY:
+
+
+dfOriginal['birthday'].value_counts().sort_index().plot() # there is a strange value on the birthday: 1028
+dfOriginal['birthday'].hist(bins = 30) # The plot with the strange value is not perceptive
+
+#Check variable values:
+dfOriginal['birthday'].value_counts().sort_index()
+
+# create a new data frame with strange values on birthday:
+df_strange_birthday=dfOriginal.loc[dfOriginal['birthday']<1900]
+
+# Change the original data frame, taking the strange values away:
+dfOriginal=dfOriginal.loc[~(dfOriginal['birthday']<1900)]
+
+#Plot birthday variable:
+dfOriginal['birthday'].hist(bins = 20)
+dfOriginal['birthday'].value_counts().sort_index().plot(marker='o')
+plt.show()
+
+
+#2. firstPolicy
+
+dfOriginal['firstPolicy'].value_counts().sort_index().plot() # there is a strange value on the birthday: 1028
+dfOriginal['firstPolicy'].hist() # The plot with strange values is not perceptive
+
+#Check strange values
+dfOriginal['firstPolicy'].value_counts().sort_index() #there is a strange value: 53784
+
+# create a new data frame with strange values on birthday:
+df_strange_firstPolicy=dfOriginal.loc[dfOriginal['firstPolicy']>2016]
+
+# Change the original data frame, taking the strange values away:
+dfOriginal=dfOriginal.loc[~(dfOriginal['firstPolicy']>2016)]
+
+#Plot birthday variable:
+dfOriginal['firstPolicy'].hist()
+dfOriginal['firstPolicy'].value_counts().sort_index().plot(marker='o')
+plt.show()
+
+# 3. education
+count=dfOriginal['education'].value_counts().sort_index()
+plt.bar(np.arange(len(count.index)),count)
+plt.xticks(np.arange(len(count.index)),count.index)
+plt.show()
+
+# 4. salary
+dfOriginal['salary'].value_counts().sort_index().plot() # there is a strange value on the birthday: 1028
+dfOriginal['salary'].hist()
+
+# create a new data frame with strange values on birthday:
+df_Outliers_salary=dfOriginal.loc[dfOriginal['salary']>10000]
+
+# Change the original data frame, taking the strange values away:
+dfOriginal=dfOriginal.loc[~(dfOriginal['salary']>10000)]
+
+#Check strange values
+countSalary=dfOriginal['salary'].value_counts().sort_index() #there are 2 out of the box values: 34490, 55215
+countSalaryCum= countSalary.cumsum()
+countSalary.plot()
+countSalaryCum.plot()
+
+# Check with log dist:
+dfOriginal['logSalary'] = np.log(dfOriginal['salary'])
+countLogSalary=dfOriginal['logSalary'].value_counts().sort_index()
+countLogSalaryCum= countLogSalary.cumsum()
+countLogSalary.plot()
+countLogSalaryCum.plot()
+
+
+dfOriginal['cumulativeSalary'] = dfOriginal['salary'].cumsum()
+
+dfOriginal['cumulativeSalary'].describe()
+dfOriginal['cumulativeSalary'].hist()
+dfOriginal['cumulativeSalary'].sort_index().plot(marker='o')
+dfOriginal['salary'].value_counts().sort_index().plot(marker='o')
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#-----------------CHECK INCOHERENCES------------------#
+
+#if birthday is higher than First policy's year: 
+agesList=[18,16,15,10,5,0]
+countList=[]
+for j in agesList:
+    count_inc=0
+    for i, index in dfOriginal.iterrows():
+        if dfOriginal.loc[i,'firstPolicy']-dfOriginal.loc[i,'birthday']<j: count_inc+=1
+    countList.append(count_inc)
+countList
+
+
+#Line chart
+from matplotlib import pyplot as plt
+import seaborn as sb
+d = {'count': countList, 'ages': agesList}
+dfIdades = pd.DataFrame(data=d)
+dfIdades
+g=sb.relplot(x='ages',y='count',data=dfIdades)
+g.fig.autofmt_xdate()
+
+dfOriginal=dfOriginal.drop(['idade'],axis=1)
+dfOriginal['age']=2016-dfOriginal['birthday']
+dfOriginal['age'].value_counts().plot()
+
+dfOriginal['age'].hist(bins=30)
+dfOriginal['age'].describe()
+
+
+
+
 #Check null values
 dfOriginal.isnull().sum()
 
 #Check categories in livingArea variable
-dfOriginal["livingArea"].unique()
+dfOriginal["education"].unique()
 #-----------------DATA TYPES------------------#
-
+dfOriginal.dtypes
 dfOriginal.loc[:,"firstPolicy"]=pd.to_numeric(dfOriginal.loc[:,"firstPolicy"],errors='coerce')
 dfOriginal.loc[3,"firstPolicy"].dtype
-dfOriginal.iloc[]=dfOriginal.iloc[:,2].astype('int64')
+dfOriginal.iloc[] = dfOriginal.iloc[:,2].astype('int64')
 dfOriginal.iloc[:,5]=dfOriginal.iloc[:,5].astype('int64')
 dfOriginal.iloc[:,6]=dfOriginal.iloc[:,6].astype('int64')
 
@@ -107,8 +236,6 @@ g=sb.PairGrid(df1)
 g.map_diag(plt.hist) #diagonal:histogramas
 g.map_offdiag(plt.scatter);#fora da diagonal scatterplots
 plt.show()
-
-
 
 
 
@@ -251,13 +378,14 @@ df_out.shape[0] #1273 outliers in the df_out
 
 
 
-#-----------------CHECK INCOHERENCES------------------#
 
-#if birthday is higher than First policy's year: 
-count_inc=0
-for i, index in dfOriginal.iterrows():
-    if dfOriginal.loc[]<dfOriginal.loc[]: count_inc+=1
-count_inc #there are 2000 rows that do not make sense. Individual's firstPolicy was before he even was born...
+
+
+
+
+
+
+
 
 dfOriginal.shape[0]
 #Create a data frame for the incoherent values
