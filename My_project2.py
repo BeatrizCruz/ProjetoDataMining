@@ -10,6 +10,8 @@ import sqlite3
 import numpy as np
 from matplotlib import pyplot as plt
 import math
+import seaborn as sns
+
 
 my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
 #dbname = "datamining.db"
@@ -69,83 +71,155 @@ dfOriginal=dfOriginal.rename(columns={"Brithday Year": "birthday",
                                         "Premiums in LOB: Work Compensations":"lobWork"})
 
 #--------------------STUDY OF VARIABLES-----------------------
-# 1. BIRTHDAY:
+# 1. birthday:
 
+dfOriginal['birthday'].value_counts().sort_index().plot() # there is a strange value on the birthday that is distorting the plot.
+dfOriginal['birthday'].hist() # The plot with the strange value is not perceptive
 
-dfOriginal['birthday'].value_counts().sort_index().plot() # there is a strange value on the birthday: 1028
-dfOriginal['birthday'].hist(bins = 30) # The plot with the strange value is not perceptive
+# Check variable values:
+dfOriginal['birthday'].value_counts().sort_index() # strange value on the birthday: 1028
 
-#Check variable values:
-dfOriginal['birthday'].value_counts().sort_index()
+# Create a new data frame with strange values on birthday:
 
-# create a new data frame with strange values on birthday:
-df_strange_birthday=dfOriginal.loc[dfOriginal['birthday']<1900]
-
-# Change the original data frame, taking the strange values away:
-dfOriginal=dfOriginal.loc[~(dfOriginal['birthday']<1900)]
+dfOriginal['Strange_birthday']=np.where(dfOriginal['birthday']<1900, '1','0')
+dfOriginal['Strange_birthday'].value_counts()
 
 #Plot birthday variable:
-dfOriginal['birthday'].hist(bins = 20)
-dfOriginal['birthday'].value_counts().sort_index().plot(marker='o')
-plt.show()
 
+dfOriginal['birthday'][dfOriginal['Strange_birthday']=='0'].hist()
+dfBirthday['birthday'][dfOriginal['Strange_birthday']=='0'].value_counts().sort_index().plot(marker='o')
+plt.show()
 
 #2. firstPolicy
 
-dfOriginal['firstPolicy'].value_counts().sort_index().plot() # there is a strange value on the birthday: 1028
+dfOriginal['firstPolicy'].value_counts().sort_index().plot() # there is a strange value on firstPolicy that is distorting the plot.
 dfOriginal['firstPolicy'].hist() # The plot with strange values is not perceptive
 
 #Check strange values
-dfOriginal['firstPolicy'].value_counts().sort_index() #there is a strange value: 53784
+dfOriginal['firstPolicy'].value_counts().sort_index() # there is a strange value: 53784
 
 # create a new data frame with strange values on birthday:
-df_strange_firstPolicy=dfOriginal.loc[dfOriginal['firstPolicy']>2016]
 
-# Change the original data frame, taking the strange values away:
-dfOriginal=dfOriginal.loc[~(dfOriginal['firstPolicy']>2016)]
+dfOriginal['strange_firstPolicy']=np.where(dfOriginal['firstPolicy']>2016, '1','0')
+dfOriginal['strange_firstPolicy'].value_counts()
 
 #Plot birthday variable:
-dfOriginal['firstPolicy'].hist()
-dfOriginal['firstPolicy'].value_counts().sort_index().plot(marker='o')
+dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']=='0'].hist()
+dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']=='0'].value_counts().sort_index().plot(marker='o')
 plt.show()
 
 # 3. education
-count=dfOriginal['education'].value_counts().sort_index()
+
+# Create a variable to count the individuals per category:
+counteducation=dfOriginal['education'].value_counts().sort_index()
 plt.bar(np.arange(len(count.index)),count)
 plt.xticks(np.arange(len(count.index)),count.index)
 plt.show()
+# There is a considerable number of individuals with high education (BSc/MSc and PhD). 
+#The number of individuals having PhD is not that high. We will consider later if it makes sense to join the categories BSc/MSc and PhD in a unique category.
 
 # 4. salary
-dfOriginal['salary'].value_counts().sort_index().plot() # there is a strange value on the birthday: 1028
-dfOriginal['salary'].hist()
+# To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value as done with the previous cases, we decided to make the cumulative to plot.
+dfOriginal['salary'].value_counts().sort_index().plot() # there is a strange value on firstPolicy that is distorting the plot.
+dfOriginal['salary'].hist() # The plot with the strange value is not perceptive
 
-# create a new data frame with strange values on birthday:
-df_Outliers_salary=dfOriginal.loc[dfOriginal['salary']>10000]
+# Create a new data frame with outlier values on salary
+dfOriginal['Outliers_salary']=np.where(dfOriginal['salary']>10000, '1','0')
+dfOriginal['Outliers_salary'].value_counts()
 
-# Change the original data frame, taking the strange values away:
-dfOriginal=dfOriginal.loc[~(dfOriginal['salary']>10000)]
 
-#Check strange values
-countSalary=dfOriginal['salary'].value_counts().sort_index() #there are 2 out of the box values: 34490, 55215
-countSalaryCum= countSalary.cumsum()
-countSalary.plot()
+# Plot the salary values and the cumulative values of salary
+countSalary = dfOriginal['salary'].value_counts().sort_index() #there are 2 out of the box values: 34490, 55215
+countSalaryCum = countSalary.cumsum()
 countSalaryCum.plot()
 
-# Check with log dist:
+
+dfOriginal['salary'][dfOriginal['Outliers_salary']=='0'].hist()
+dfOriginal['salary'][dfOriginal['Outliers_salary']=='0'].value_counts().sort_index().plot(marker='o')
+
+
+
+dfOriginal['salary'][dfOriginal['Outliers_salary']=='0'].value_counts().sort_index().cumsum().plot(marker='o')
+
+
+
+
+
+
+# Check with log dist: as the usual behavior of a salary variable is a distribution with a heavy tail on the left side, usually it is applied a log transformation on the distribution in order to transform it to a normal distribution.
 dfOriginal['logSalary'] = np.log(dfOriginal['salary'])
 countLogSalary=dfOriginal['logSalary'].value_counts().sort_index()
 countLogSalaryCum= countLogSalary.cumsum()
 countLogSalary.plot()
 countLogSalaryCum.plot()
+dfOriginal=dfOriginal.drop(['logSalary'], axis=1)
+# Log distributon: not applicable as original distribution is already normal. It does not follow the usual behavior. 
 
+# 5. livingArea
 
-dfOriginal['cumulativeSalary'] = dfOriginal['salary'].cumsum()
+# Create a variable to count the individuals per category:
+countlivingArea=dfOriginal['livingArea'].value_counts().sort_index()
+countlivingArea
 
-dfOriginal['cumulativeSalary'].describe()
-dfOriginal['cumulativeSalary'].hist()
-dfOriginal['cumulativeSalary'].sort_index().plot(marker='o')
-dfOriginal['salary'].value_counts().sort_index().plot(marker='o')
+#Create a bar chart that shows the number of individuals per living area
+plt.bar(np.arange(len(countlivingArea.index)),countlivingArea)
+plt.xticks(np.arange(len(countlivingArea.index)),countlivingArea.index)
 plt.show()
+
+# 6. children
+
+# Create a variable to count the individuals per category:
+countchildren=dfOriginal['children'].value_counts().sort_index()
+countlivingArea
+#Create a bar chart that shows the number of individuals per living area
+plt.bar(np.arange(len(countchildren.index)),countchildren)
+plt.xticks(np.arange(len(countchildren.index)),countchildren.index)
+plt.show()
+#There are more individuals with children that without.
+
+# 7. cmv 
+
+# To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value, we decided to make the cumulative to plot, as done with the salary variable.
+dfOriginal['cmv'].value_counts().sort_index().plot() # there is a strange value on firstPolicy that is distorting the plot.
+dfOriginal['cmv'].hist() # The plot with the strange value is not perceptive
+
+cmvValues=dfOriginal['cmv'].value_counts().sort_index() #There are values that are too high and values that are too low that might be considered as outliers.
+dfOriginal.dtypes
+sns.boxplot(x=dfOriginal["cmv"]) 
+
+# Take the 6 lower values that are represented on the boxplot (outliers) - clients that give losses
+df_OutliersLow_cmv = dfOriginal.loc[(dfOriginal['cmv']<=cmvValues.index[5])]
+df_Outliers_cmv['cmv']
+
+# Change the original data frame, taking the strange values away
+dfcmv=dfOriginal.loc[~(dfOriginal['cmv']<=cmvValues.index[5])]
+sns.boxplot(x=dfcmv["cmv"]) 
+
+# Take out lower values and higher values
+cmvValues=dfcmv['cmv'].value_counts().sort_index()
+
+df_OutliersLow_cmv = df_OutliersLow_cmv.append(dfcmv.loc[(dfcmv['cmv']<=cmvValues.index[5])])
+df_OutliersHigh_cmv= dfcmv.loc[(dfcmv['cmv']>=cmvValues.index[-3])]
+dfcmv=dfcmv.loc[~(dfcmv['cmv']<=cmvValues.index[5])]
+dfcmv=dfcmv.loc[~(dfcmv['cmv']>=cmvValues.index[-3])]
+sns.boxplot(x=dfcmv["cmv"]) 
+
+df_OutliersLow_cmv = df_OutliersLow_cmv.append(dfcmv.loc[(dfcmv['cmv']<=cmvValues.index[1])])
+dfcmv=dfcmv.loc[~(dfcmv['cmv']<=cmvValues.index[1])]
+sns.boxplot(x=dfcmv["cmv"]) 
+
+
+countCmv=dfOriginal['cmv'].sort_index()
+countCmvCum= countCmv.cumsum()
+countCmv.plot()
+countCmvCum.plot()
+
+# colunas 0 e 1 ( outliers e strange values)
+#
+
+
+
+
 
 
 
