@@ -82,13 +82,13 @@ dfOriginal['birthday'].value_counts().sort_index() # strange value on the birthd
 
 # Create a new column to indicate strange values as 1 and normal values as 0
 # Explain the choice of 1900: (...)
-dfOriginal['Strange_birthday'] = np.where(dfOriginal['birthday']<1900, '1','0')
+dfOriginal['Strange_birthday'] = np.where(dfOriginal['birthday']<1900, 1,0)
 # Verify if the column was created as supposed
 dfOriginal['Strange_birthday'].value_counts()
 
 #Plot birthday variable with no strange values (where the new column equals zero):
-dfOriginal['birthday'][dfOriginal['Strange_birthday']=='0'].hist()
-dfOriginal['birthday'][dfOriginal['Strange_birthday']=='0'].value_counts().sort_index().plot(marker='o')
+dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].hist()
+dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].value_counts().sort_index().plot(marker='o')
 plt.show()
 
 # 2. firstPolicy
@@ -102,13 +102,13 @@ dfOriginal['firstPolicy'].value_counts().sort_index() # there is a strange value
 
 # Create a new column to indicate strange values as 1 and normal values as 0:
 # Explain the choice of 2016: (...)
-dfOriginal['strange_firstPolicy']=np.where(dfOriginal['firstPolicy']>2016, '1','0')
+dfOriginal['strange_firstPolicy']=np.where(dfOriginal['firstPolicy']>2016, 1,0)
 # Verify if the column was created as supposed
 dfOriginal['strange_firstPolicy'].value_counts()
 
 #Plot firstPolicy variable with no strange values (where the created column equals zero):
-dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']=='0'].hist()
-dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']=='0'].value_counts().sort_index().plot(marker='o')
+dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].hist()
+dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].value_counts().sort_index().plot(marker='o')
 plt.show()
 
 # 3. education (categorical variable)
@@ -136,7 +136,7 @@ countSalary = dfOriginal['salary'].value_counts().sort_index() # there are 2 out
 
 # Create a new column to indicate outliers as 1 and normal values as 0:
 # Explain chosen value for outliers (10000) (...)
-dfOriginal['Outliers_salary']=np.where(dfOriginal['salary']>10000, '1','0')
+dfOriginal['Outliers_salary']=np.where(dfOriginal['salary']>10000, 1,0)
 # Verify if the column was created as supposed
 dfOriginal['Outliers_salary'].value_counts()
 
@@ -147,11 +147,11 @@ countSalaryCum
 countSalaryCum.plot()
 
 # Plot salary non outliers values (where the created column equals zero):
-dfOriginal['salary'][dfOriginal['Outliers_salary']=='0'].hist()
-dfOriginal['salary'][dfOriginal['Outliers_salary']=='0'].value_counts().sort_index().plot(marker='o')
+dfOriginal['salary'][dfOriginal['Outliers_salary']==0].hist()
+dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().plot(marker='o')
 
 # Plot the cumulative salary non outliers values (where the created column equals zero):
-dfOriginal['salary'][dfOriginal['Outliers_salary']=='0'].value_counts().sort_index().cumsum().plot(marker='o')
+dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().cumsum().plot(marker='o')
 
 # Check with log dist: as the usual behavior of a salary variable is a distribution with a heavy tail on the left side, usually it is applied a log transformation on the distribution in order to transform it to a normal distribution.
 dfOriginal['logSalary'] = np.log(dfOriginal['salary'])
@@ -204,55 +204,55 @@ sns.boxplot(x=dfOriginal["cmv"])
 
 # Create a new column for negative outliers that indicates outliers as 1 and other values as 0. Clients that give huge losses to the company will have value 1 in this column.
 # When creating the column put the 6 lower values that are represented on the boxplot (outliers) with value 1.
-dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],'1','0')
+dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,0)
 # Verify if the column was created as supposed
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 # Create a box plot without the identified outliers:
-sns.boxplot(x = dfOriginal["cmv"][dfOriginal['df_OutliersLow_cmv'] == '0']) 
+sns.boxplot(x = dfOriginal["cmv"][dfOriginal['df_OutliersLow_cmv'] == 0]) 
 #Check the ploted values in more detail:
-cmvValues = dfOriginal['cmv'][dfOriginal['df_OutliersLow_cmv']=='0'].value_counts().sort_index()
+cmvValues = dfOriginal['cmv'][dfOriginal['df_OutliersLow_cmv']==0].value_counts().sort_index()
 cmvValues
 # There are 6 lower values and 3 higher values that will be considered as outliers.
 
 # Create a new column for positive outliers that indicates outliers as 1 and other values as 0. Clients that give huge profit to the company will have value 1 in this column.
 # When creating this column put the 3 lower values that are represented on the boxplot (outliers) with value 1.
-dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],'1','0')
+dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,0)
 # Verify if the column was created as supposed
 dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
 # Change the values of the new negative outliers to 1 in the df_OutliersLow_cmv column
-dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],'1',dfOriginal['df_OutliersLow_cmv'])
+dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,dfOriginal['df_OutliersLow_cmv'])
 # Verify if values were changed as supposed
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 # Create a box plot without the until now identified outliers:
-sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == '0') & (dfOriginal['df_OutliersHigh_cmv'] == '0')]) 
+sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)]) 
 #Check the ploted values in more detail:
-cmvValues = dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv']=='0') & (dfOriginal['df_OutliersHigh_cmv'] == '0')].value_counts().sort_index()
+cmvValues = dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv']==0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index()
 cmvValues
 # There are 2 lower values that will be considered as outliers.
 
 # Change the values of the new negative outliers to 1 in the df_OutliersLow_cmv column
-dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[1],'1',dfOriginal['df_OutliersLow_cmv'])
+dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[1],1,dfOriginal['df_OutliersLow_cmv'])
 # Verify if values were changed as supposed
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 
 # Create a box plot without the until now identified outliers:
-sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == '0') & (dfOriginal['df_OutliersLow_cmv'] == '0')]) 
+sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersLow_cmv'] == 0)]) 
 #Check the ploted values in more detail:
-cmvValues = dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv']=='0') & (dfOriginal['df_OutliersHigh_cmv'] == '0')].value_counts().sort_index()
+cmvValues = dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv']==0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index()
 cmvValues
 #There are 3 higher values that will be considered as outliers.
 
 # Change the values of the new positive outliers to 1 in the df_OutliersHigh_cmv column
-dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],'1',dfOriginal['df_OutliersHigh_cmv'])
+dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOriginal['df_OutliersHigh_cmv'])
 # Verify if values were changed as supposed
 dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
 # Create a box plot without the until now identified outliers:
-sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == '0') & (dfOriginal['df_OutliersHigh_cmv'] == '0')]) 
+sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)]) 
 
 # 8. claims
 
@@ -295,6 +295,7 @@ dfOriginal['catClaims'].value_counts()
 dfOriginal['lobMotor'].value_counts().sort_index().plot() 
 dfOriginal['lobMotor'].hist() # There might be few high values that are distorting the graphs
 
+# Check variable values:
 valueslobMotor = dfOriginal['lobMotor'].value_counts().sort_index()
 valueslobMotor
 
@@ -327,14 +328,89 @@ valueslobHousehold
 sns.boxplot(x=dfOriginal["lobHousehold"])
 
 #Lets define 3000 from which individuals are considered outliers
+# Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobHousehold']=np.where(dfOriginal['lobHousehold']>3000,1,0)
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobHousehold'].value_counts()
 sns.boxplot(x = dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0]) 
 
+
 dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0].value_counts().sort_index().plot()
+# We can observe that there are much more individuals with low values of household premiums than with high values, which makes sense because there are less houses that are expensive than cheaper ones.
 
-# Logaritmo? 
+# Transformar em Logaritmo? (ver mais tarde)
+
+# 11. lobHealth 
+
+dfOriginal['lobHealth'].value_counts().sort_index().plot() 
+dfOriginal['lobHealth'].hist() # There might be few high values that are distorting the graphs
+
+# Check variable values:
+valueslobHealth  = dfOriginal['lobHealth'].value_counts().sort_index()
+valueslobHealth 
+
+#Box plot
+sns.boxplot(x = dfOriginal['lobHealth']) 
+
+#Lets define 550 from which individuals are considered outliers
+# Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
+dfOriginal['Outliers_lobHealth']=np.where(dfOriginal['lobHealth']>550,1,0)
+# Verify if column was created correctly:
+dfOriginal['Outliers_lobHealth'].value_counts()
+
+#Box plot without outliers
+sns.boxplot(x = dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0]) 
+
+dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0].value_counts().sort_index().plot()
+
+# We can observe that health premiums follows an approximatelly normal distribution, which makes sense. 
+# On one hand, the health premiums are not as expensive as, for example, the house hold premiums, so more people have access to it. 
+# On the other hand, people consider health a primary preocupation and need. 
+# There are more people that invest a medium value on health premiums. Then, there are people who invest less (poorer people) and people who invest more (richer people)
+
+# 12. lobLife 
+
+dfOriginal['lobLife'].value_counts().sort_index().plot() 
+dfOriginal['lobLife'].hist()
+
+# Check variable values:
+valueslobLife  = dfOriginal['lobLife'].value_counts().sort_index()
+valueslobLife 
+
+# Box plot
+sns.boxplot(x = dfOriginal['lobLife']) 
+
+# We decided not to consider outliers on this variable as there are no extreme individuals that influence the distribution (no individuals that highlight over the others).
+
+# We can observe that more people invest less on life premiums.
+
+# Transformar em Logaritmo? (ver mais tarde)
+
+# 13. lobWork  
+dfOriginal['lobWork'].value_counts().sort_index().plot() 
+dfOriginal['lobWork'].hist()# There might be few high values that are distorting the graphs
+
+# Check variable values:
+valueslobWork  = dfOriginal['lobWork'].value_counts().sort_index()
+valueslobWork 
+
+#Box plot
+sns.boxplot(x = dfOriginal['lobWork']) 
+
+#Lets define 400 from which individuals are considered outliers
+# Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
+dfOriginal['Outliers_lobWork']=np.where(dfOriginal['lobWork']>400,1,0)
+# Verify if column was created correctly:
+dfOriginal['Outliers_lobWork'].value_counts()
+
+#Box plot without outliers
+sns.boxplot(x = dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0]) 
+
+dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0].value_counts().sort_index().plot()
+
+# There is a high number of indiviaduals with low work premiums values.
+
+# Transformar em Logaritmo? (ver mais tarde)
 
 
 
@@ -355,8 +431,6 @@ dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0].value_counts(
 
 
 
-# colunas 0 e 1 ( outliers e strange values)
-#
 
 
 
@@ -368,11 +442,7 @@ dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0].value_counts(
 
 
 
-
-
-
-
-
+              
 
 
 #-----------------CHECK INCOHERENCES------------------#
