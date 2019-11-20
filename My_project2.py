@@ -70,92 +70,103 @@ dfOriginal=dfOriginal.rename(columns={"Brithday Year": "birthday",
                                         "Premiums in LOB:  Life":"lobLife",
                                         "Premiums in LOB: Work Compensations":"lobWork"})
 
-#--------------------STUDY OF VARIABLES-----------------------
+#--------------------STUDY OF VARIABLES INDIVIDUALLY-----------------------
 # 1. birthday:
 
-dfOriginal['birthday'].value_counts().sort_index().plot() # there is a strange value on the birthday that is distorting the plot.
+# Plot birthday for a first visual analysis:
+dfOriginal['birthday'].value_counts().sort_index().plot() # there might be strange values on the birthday that are distorting the plot.
 dfOriginal['birthday'].hist() # The plot with the strange value is not perceptive
 
 # Check variable values:
 dfOriginal['birthday'].value_counts().sort_index() # strange value on the birthday: 1028
 
-# Create a new data frame with strange values on birthday:
-
+# Create a new column to indicate strange values as 1 and normal values as 0
+# Explain the choice of 1900: (...)
 dfOriginal['Strange_birthday']=np.where(dfOriginal['birthday']<1900, '1','0')
+# Verify if the column was created as supposed
 dfOriginal['Strange_birthday'].value_counts()
 
-#Plot birthday variable:
-
+#Plot birthday variable with no strange values (where the new column equals zero):
 dfOriginal['birthday'][dfOriginal['Strange_birthday']=='0'].hist()
-dfBirthday['birthday'][dfOriginal['Strange_birthday']=='0'].value_counts().sort_index().plot(marker='o')
+dfOriginal['birthday'][dfOriginal['Strange_birthday']=='0'].value_counts().sort_index().plot(marker='o')
 plt.show()
 
-#2. firstPolicy
+# 2. firstPolicy
 
-dfOriginal['firstPolicy'].value_counts().sort_index().plot() # there is a strange value on firstPolicy that is distorting the plot.
+# Plot firstPolicy for a first visual analysis:
+dfOriginal['firstPolicy'].value_counts().sort_index().plot() # there might be strange values on firstPolicy that are distorting the plot.
 dfOriginal['firstPolicy'].hist() # The plot with strange values is not perceptive
 
-#Check strange values
+#Check variable values:
 dfOriginal['firstPolicy'].value_counts().sort_index() # there is a strange value: 53784
 
-# create a new data frame with strange values on birthday:
-
+# Create a new column to indicate strange values as 1 and normal values as 0:
+# Explain the choice of 2016: (...)
 dfOriginal['strange_firstPolicy']=np.where(dfOriginal['firstPolicy']>2016, '1','0')
+# Verify if the column was created as supposed
 dfOriginal['strange_firstPolicy'].value_counts()
 
-#Plot birthday variable:
+#Plot firstPolicy variable with no strange values (where the created column equals zero):
 dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']=='0'].hist()
 dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']=='0'].value_counts().sort_index().plot(marker='o')
 plt.show()
 
-# 3. education
+# 3. education (categorical variable)
 
 # Create a variable to count the individuals per category:
 counteducation=dfOriginal['education'].value_counts().sort_index()
-plt.bar(np.arange(len(count.index)),count)
-plt.xticks(np.arange(len(count.index)),count.index)
+counteducation
+
+# Plot education variable:
+plt.bar(np.arange(len(counteducation.index)),counteducation)
+plt.xticks(np.arange(len(counteducation.index)),counteducation.index)
 plt.show()
 # There is a considerable number of individuals with high education (BSc/MSc and PhD). 
-#The number of individuals having PhD is not that high. We will consider later if it makes sense to join the categories BSc/MSc and PhD in a unique category.
+# The number of individuals having PhD is not that high. We will consider later if it makes sense to join the categories BSc/MSc and PhD in a unique category.
 
 # 4. salary
-# To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value as done with the previous cases, we decided to make the cumulative to plot.
-dfOriginal['salary'].value_counts().sort_index().plot() # there is a strange value on firstPolicy that is distorting the plot.
-dfOriginal['salary'].hist() # The plot with the strange value is not perceptive
+# To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value as done with the previous cases, we decided to make the cumulative to be used for plotting.
 
-# Create a new data frame with outlier values on salary
+# Plot salary for a first visual analysis:
+dfOriginal['salary'].value_counts().sort_index().plot() # there might be strange values on salary that are distorting the plot.
+dfOriginal['salary'].hist() # The plot with the strange value is not perceptive.
+
+# Check variable values and create a variable for that:
+countSalary = dfOriginal['salary'].value_counts().sort_index() # there are 2 out of the box values: 34490, 55215
+
+# Create a new column to indicate outliers as 1 and normal values as 0:
+# Explain chosen value for outliers (10000) (...)
 dfOriginal['Outliers_salary']=np.where(dfOriginal['salary']>10000, '1','0')
+# Verify if the column was created as supposed
 dfOriginal['Outliers_salary'].value_counts()
 
-
-# Plot the salary values and the cumulative values of salary
-countSalary = dfOriginal['salary'].value_counts().sort_index() #there are 2 out of the box values: 34490, 55215
+# Create a variable with the cumulative salary values 
 countSalaryCum = countSalary.cumsum()
+countSalaryCum
+#Plot the salary values and the cumulative values of salary
 countSalaryCum.plot()
 
-
+# Plot salary non outliers values (where the created column equals zero):
 dfOriginal['salary'][dfOriginal['Outliers_salary']=='0'].hist()
 dfOriginal['salary'][dfOriginal['Outliers_salary']=='0'].value_counts().sort_index().plot(marker='o')
 
-
-
+# Plot the cumulative salary non outliers values (where the created column equals zero):
 dfOriginal['salary'][dfOriginal['Outliers_salary']=='0'].value_counts().sort_index().cumsum().plot(marker='o')
-
-
-
-
-
 
 # Check with log dist: as the usual behavior of a salary variable is a distribution with a heavy tail on the left side, usually it is applied a log transformation on the distribution in order to transform it to a normal distribution.
 dfOriginal['logSalary'] = np.log(dfOriginal['salary'])
+#count by log salary value
 countLogSalary=dfOriginal['logSalary'].value_counts().sort_index()
+#cumulative of log salary
 countLogSalaryCum= countLogSalary.cumsum()
+# Plot both log salary and cululative log salary
 countLogSalary.plot()
 countLogSalaryCum.plot()
+# Log distributon: not applicable as original distribution is already normal (it does not follow the usual behavior).
+# Drop created column as it will not be used
 dfOriginal=dfOriginal.drop(['logSalary'], axis=1)
-# Log distributon: not applicable as original distribution is already normal. It does not follow the usual behavior. 
 
-# 5. livingArea
+# 5. livingArea (categorical variable)
 
 # Create a variable to count the individuals per category:
 countlivingArea=dfOriginal['livingArea'].value_counts().sort_index()
@@ -165,54 +176,122 @@ countlivingArea
 plt.bar(np.arange(len(countlivingArea.index)),countlivingArea)
 plt.xticks(np.arange(len(countlivingArea.index)),countlivingArea.index)
 plt.show()
+# As we dont have any information on the location of each category of living area variable, we probably will not be able to suggest modifications such as joining categories.
 
 # 6. children
 
 # Create a variable to count the individuals per category:
 countchildren=dfOriginal['children'].value_counts().sort_index()
-countlivingArea
-#Create a bar chart that shows the number of individuals per living area
+countchildren
+# Create a bar chart that shows the number of individuals with and without children
 plt.bar(np.arange(len(countchildren.index)),countchildren)
 plt.xticks(np.arange(len(countchildren.index)),countchildren.index)
 plt.show()
-#There are more individuals with children that without.
+# There are more individuals with children that without.
 
 # 7. cmv 
-
 # To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value, we decided to make the cumulative to plot, as done with the salary variable.
-dfOriginal['cmv'].value_counts().sort_index().plot() # there is a strange value on firstPolicy that is distorting the plot.
+
+#Plot cmv for a first visual analysis:
+dfOriginal['cmv'].value_counts().sort_index().plot() # there might be strange values on cmv that are distorting the plot.
 dfOriginal['cmv'].hist() # The plot with the strange value is not perceptive
 
-cmvValues=dfOriginal['cmv'].value_counts().sort_index() #There are values that are too high and values that are too low that might be considered as outliers.
-dfOriginal.dtypes
+# Create a variable that counts individuals by cmv value to check cmv values 
+cmvValues=dfOriginal['cmv'].value_counts().sort_index() 
+cmvValues #There are values that are too high and values that are too low that might be considered as outliers.
+# Create a boxplot to better visualize those values
 sns.boxplot(x=dfOriginal["cmv"]) 
 
-# Take the 6 lower values that are represented on the boxplot (outliers) - clients that give losses
-df_OutliersLow_cmv = dfOriginal.loc[(dfOriginal['cmv']<=cmvValues.index[5])]
-df_Outliers_cmv['cmv']
+# Create a new column for negative outliers that indicates outliers as 1 and other values as 0. Clients that give huge losses to the company will have value 1 in this column.
+# When creating the column put the 6 lower values that are represented on the boxplot (outliers) with value 1.
+dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],'1','0')
+# Verify if the column was created as supposed
+dfOriginal['df_OutliersLow_cmv'].value_counts()
 
-# Change the original data frame, taking the strange values away
-dfcmv=dfOriginal.loc[~(dfOriginal['cmv']<=cmvValues.index[5])]
-sns.boxplot(x=dfcmv["cmv"]) 
+# Create a box plot without the identified outliers:
+sns.boxplot(x = dfOriginal["cmv"][dfOriginal['df_OutliersLow_cmv'] == '0']) 
+#Check the ploted values in more detail:
+cmvValues = dfOriginal['cmv'][dfOriginal['df_OutliersLow_cmv']=='0'].value_counts().sort_index()
+cmvValues
+# There are 6 lower values and 3 higher values that will be considered as outliers.
 
-# Take out lower values and higher values
-cmvValues=dfcmv['cmv'].value_counts().sort_index()
+# Create a new column for positive outliers that indicates outliers as 1 and other values as 0. Clients that give huge profit to the company will have value 1 in this column.
+# When creating this column put the 3 lower values that are represented on the boxplot (outliers) with value 1.
+dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],'1','0')
+# Verify if the column was created as supposed
+dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
-df_OutliersLow_cmv = df_OutliersLow_cmv.append(dfcmv.loc[(dfcmv['cmv']<=cmvValues.index[5])])
-df_OutliersHigh_cmv= dfcmv.loc[(dfcmv['cmv']>=cmvValues.index[-3])]
-dfcmv=dfcmv.loc[~(dfcmv['cmv']<=cmvValues.index[5])]
-dfcmv=dfcmv.loc[~(dfcmv['cmv']>=cmvValues.index[-3])]
-sns.boxplot(x=dfcmv["cmv"]) 
+# Change the values of the new negative outliers to 1 in the df_OutliersLow_cmv column
+dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],'1',dfOriginal['df_OutliersLow_cmv'])
+# Verify if values were changed as supposed
+dfOriginal['df_OutliersLow_cmv'].value_counts()
 
-df_OutliersLow_cmv = df_OutliersLow_cmv.append(dfcmv.loc[(dfcmv['cmv']<=cmvValues.index[1])])
-dfcmv=dfcmv.loc[~(dfcmv['cmv']<=cmvValues.index[1])]
-sns.boxplot(x=dfcmv["cmv"]) 
+# Create a box plot without the until now identified outliers:
+sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == '0') & (dfOriginal['df_OutliersHigh_cmv'] == '0')]) 
+#Check the ploted values in more detail:
+cmvValues = dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv']=='0') & (dfOriginal['df_OutliersHigh_cmv'] == '0')].value_counts().sort_index()
+cmvValues
+# There are 2 lower values that will be considered as outliers.
+
+# Change the values of the new negative outliers to 1 in the df_OutliersLow_cmv column
+dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[1],'1',dfOriginal['df_OutliersLow_cmv'])
+# Verify if values were changed as supposed
+dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 
-countCmv=dfOriginal['cmv'].sort_index()
-countCmvCum= countCmv.cumsum()
-countCmv.plot()
-countCmvCum.plot()
+# Create a box plot without the until now identified outliers:
+sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == '0') & (dfOriginal['df_OutliersLow_cmv'] == '0')]) 
+#Check the ploted values in more detail:
+cmvValues = dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv']=='0') & (dfOriginal['df_OutliersHigh_cmv'] == '0')].value_counts().sort_index()
+cmvValues
+#There are 3 higher values that will be considered as outliers.
+
+# Change the values of the new positive outliers to 1 in the df_OutliersHigh_cmv column
+dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],'1',dfOriginal['df_OutliersHigh_cmv'])
+# Verify if values were changed as supposed
+dfOriginal['df_OutliersHigh_cmv'].value_counts()
+
+# Create a box plot without the until now identified outliers:
+sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == '0') & (dfOriginal['df_OutliersHigh_cmv'] == '0')]) 
+
+# 8. claims
+
+dfOriginal['claims'].value_counts().sort_index().plot() # there might be strange values on the claims that are distorting the plot.
+dfOriginal['claims'].hist()
+
+# Check variable values:
+valuesClaims = dfOriginal['claims'].value_counts().sort_index()
+valuesClaims
+# There is a small group of individuals who have high values of claims rate and that is the reason the plots are so distorted.
+
+# Plot only values less than 3 (...)
+dfOriginal['claims'].value_counts().sort_index().plot() 
+dfOriginal['claims'].hist()
+
+
+
+# todos valores abaixo de 3
+
+# 3 ou mais 1-3 <1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # colunas 0 e 1 ( outliers e strange values)
 #
