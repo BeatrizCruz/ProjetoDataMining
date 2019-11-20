@@ -4,7 +4,7 @@ Created on Sun Oct 13 13:44:55 2019
 
 @author: aSUS
 """
-#OLA
+
 import pandas as pd
 import sqlite3
 import numpy as np
@@ -82,7 +82,7 @@ dfOriginal['birthday'].value_counts().sort_index() # strange value on the birthd
 
 # Create a new column to indicate strange values as 1 and normal values as 0
 # Explain the choice of 1900: (...)
-dfOriginal['Strange_birthday']=np.where(dfOriginal['birthday']<1900, '1','0')
+dfOriginal['Strange_birthday'] = np.where(dfOriginal['birthday']<1900, '1','0')
 # Verify if the column was created as supposed
 dfOriginal['Strange_birthday'].value_counts()
 
@@ -264,15 +264,77 @@ valuesClaims = dfOriginal['claims'].value_counts().sort_index()
 valuesClaims
 # There is a small group of individuals who have high values of claims rate and that is the reason the plots are so distorted.
 
-# Plot only values less than 3 (...)
-dfOriginal['claims'].value_counts().sort_index().plot() 
-dfOriginal['claims'].hist()
+# Plot only values less than 3
+dfClaims=dfOriginal.groupby(['claims'])['claims'].count()
+dfClaims=pd.DataFrame(dfClaims, columns=['claims'])
+dfClaims=dfClaims[dfClaims.index<3]
+dfClaims['claims'].sort_index().plot()
+# People who have a claims rate of 0 are the ones with which the company did not spend anything.
+# People who have a claims rate between 0 and 1 (excluding) are the ones with which the company had profit. This means that the amount paid by the company was less than the premiums paid by the clients.
+# People who have a claims rate of 1 are the ones with which the company had no profit nor losses. 
+# People who have a claims rate higher than 1 are the ones with which the company had losses.
 
+#Lets look at people that have a claims rate lower than 1:
+dfClaims=dfClaims[dfClaims.index<1]
+dfClaims['claims'].sort_index().sum() #there are 8056 individuals that have a claims rate lower than 1
+#Plot of the results
+dfClaims['claims'].sort_index().plot()
+dfOriginal['claims'][dfOriginal['claims']<3].hist()
 
+# Lets distinguish between individuals that give losses (losses), individuals that give profit (profits), individuals that do not give profits nor losses (neutrals) and individuals with which the company did not spend anything (investigate). 
+# The individuals that have a column value of 'investigate' need to be investigated later as we do not have any information about their premium values on this variable. We only know that the amount paid by the company is zero. We will need to study the premium value with the premium variables studied furtherahead.
+dfOriginal['catClaims']=np.where(dfOriginal['claims']==0,'investigate','losses')
+dfOriginal['catClaims']=np.where((dfOriginal['claims']>0)&(dfOriginal['claims']<1),'profits',dfOriginal['catClaims'])
+dfOriginal['catClaims']=np.where((dfOriginal['claims']>0)&(dfOriginal['claims']==1),'neutrals',dfOriginal['catClaims'])
+#Check if the new column was created as wanted
+dfOriginal['catClaims'].value_counts()
 
-# todos valores abaixo de 3
+# 9. lobMotor
 
-# 3 ou mais 1-3 <1
+# Plot lobMotor for a first visual analysis:
+dfOriginal['lobMotor'].value_counts().sort_index().plot() 
+dfOriginal['lobMotor'].hist() # There might be few high values that are distorting the graphs
+
+valueslobMotor = dfOriginal['lobMotor'].value_counts().sort_index()
+valueslobMotor
+
+sns.boxplot(x=dfOriginal["lobMotor"])
+ 
+# Lets look for the fence high value of the box plot to define a from which value the lobMotor premium can be considered as an outlier.
+q1=dfOriginal["lobMotor"].quantile(0.25)
+q3=dfOriginal["lobMotor"].quantile(0.75)
+iqr=q3-q1 #Interquartile range
+fence_high=q3+1.5*iqr
+
+# Create a column that indicates if an individual is outlier or not (if it is, the column value will be 1)
+dfOriginal['Outliers_lobMot']=np.where(dfOriginal['lobMotor']>fence_high,1,0)
+# Verify if column was created correctly:
+dfOriginal['Outliers_lobMot'].value_counts()
+
+# Create a box plot without the outliers:
+sns.boxplot(x = dfOriginal['lobMotor'][dfOriginal['Outliers_lobMot']==0]) 
+
+# 10. lobHousehold
+
+# Plot lobHousehold for a first visual analysis:
+dfOriginal['lobHousehold'].value_counts().sort_index().plot() 
+dfOriginal['lobHousehold'].hist() # There might be few high values that are distorting the graphs
+
+valueslobHousehold = dfOriginal['lobHousehold'].value_counts().sort_index()
+valueslobHousehold
+
+# Box plot 
+sns.boxplot(x=dfOriginal["lobHousehold"])
+
+#Lets define 3000 from which individuals are considered outliers
+dfOriginal['Outliers_lobHousehold']=np.where(dfOriginal['lobHousehold']>3000,1,0)
+# Verify if column was created correctly:
+dfOriginal['Outliers_lobHousehold'].value_counts()
+sns.boxplot(x = dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0]) 
+
+dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0].value_counts().sort_index().plot()
+
+# Logaritmo? 
 
 
 
