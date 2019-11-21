@@ -14,6 +14,7 @@ import seaborn as sns
 
 
 my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
+my_path = r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
 #dbname = "datamining.db"
 
 # connect to the database
