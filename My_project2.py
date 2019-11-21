@@ -5,9 +5,9 @@ Created on Sun Oct 13 13:44:55 2019
 @author: aSUS
 """
 
-import pandas
-#!pip install --yes modin[dask]
-import modin as pd # replaces pandas for parallel running, defaults to pandas when better method not available
+import pandas as pd
+#!pip install modin[dask]
+#import modin.pandas as pd # replaces pandas for parallel running, defaults to pandas when better method not available
 
 import sqlite3
 import numpy as np
@@ -36,21 +36,17 @@ print(pd.read_sql_query(query2,conn))
 cur.execute('select * from LOB')
 col_name_list=[tuple[0] for tuple in cur.description]
 
-query="""
-select * from lob limit(10);
-"""
+query="select * from lob limit(10);"
 
-query="""
-select * from engage limit(10);
-"""
+query="select * from engage limit(10);"
  
 my_table= cursor.execute(query).fetchall()
 cursor.execute("select name from sqlite_master where type='table'")
 print(cursor.fetchall()) """
 
 #Diretorias:
-file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA\Data mining/Projeto/A2Z Insurance.csv'
-file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
+file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
 
 #import csv file:
 
@@ -417,7 +413,17 @@ dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0].value_counts().sort_ind
 
 # Transformar em Logaritmo? (ver mais tarde)
 
+#-----------------CHECK INCOHERENCES------------------#
 
+#if birthday is higher than First policy's year: 
+agesList=[18,16,15,10,5,0]
+countList=[]
+for j in agesList:
+    count_inc=0
+    for i, index in dfOriginal.iterrows():
+        if dfOriginal.loc[i,'firstPolicy']-dfOriginal.loc[i,'birthday']<j: count_inc+=1
+    countList.append(count_inc)
+countList
 
 
 
