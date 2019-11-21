@@ -13,7 +13,7 @@ import math
 import seaborn as sns
 
 
-my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
+""" my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
 my_path = r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
 #dbname = "datamining.db"
 
@@ -43,10 +43,11 @@ select * from engage limit(10);
  
 my_table= cursor.execute(query).fetchall()
 cursor.execute("select name from sqlite_master where type='table'")
-print(cursor.fetchall())
+print(cursor.fetchall()) """
 
 #Diretorias:
 file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA\Data mining/Projeto/A2Z Insurance.csv'
+file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
 
 #import csv file:
 
