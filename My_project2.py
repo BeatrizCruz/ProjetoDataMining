@@ -5,7 +5,10 @@ Created on Sun Oct 13 13:44:55 2019
 @author: aSUS
 """
 
-import pandas as pd
+import pandas
+#!pip install --yes modin[dask]
+import modin as pd # replaces pandas for parallel running, defaults to pandas when better method not available
+
 import sqlite3
 import numpy as np
 from matplotlib import pyplot as plt
