@@ -416,7 +416,7 @@ dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0].value_counts().sort_ind
 #-----------------CHECK INCOHERENCES------------------#
 
 #if birthday is higher than First policy's year: 
-agesList=[18,16,15,10,5,0]
+agesList=[0,16,18]
 countList=[]
 for j in agesList:
     count_inc=0
@@ -425,12 +425,16 @@ for j in agesList:
     countList.append(count_inc)
 countList
 
+# Check if there are many young people who have children 
+dfOriginal['age']= 2016-dfOriginal['birthday']
+dfOriginal['children'][dfOriginal['age']<=16].value_counts()
 
+# There are 31 people who are younger than 16 years old and that have children and 16 younger than 16 years old and that do not have children
 
+#Check if 
 
-
-
-
+dfOriginal['age'][dfOriginal['age']<=16].value_counts()
+dfOriginal["birthday"][dfOriginal["birthday"]>=1990].value_counts()
 
 
 
