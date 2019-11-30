@@ -415,7 +415,7 @@ dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0].value_counts().sort_ind
 
 #-----------------CHECK INCOHERENCES------------------#
 
-#if birthday is higher than First policy's year: 
+#Check if birthday is higher than First policy's year: 
 agesList=[0,16,18]
 countList=[]
 for j in agesList:
@@ -424,17 +424,62 @@ for j in agesList:
         if dfOriginal.loc[i,'firstPolicy']-dfOriginal.loc[i,'birthday']<j: count_inc+=1
     countList.append(count_inc)
 countList
+#There are 1997 people that have a firt policy before even being born. This does not make any sense.
 
-# Check if there are many young people who have children 
+# Create age column that calculates current ages of customers (useful to check the next incoherence).
 dfOriginal['age']= 2016-dfOriginal['birthday']
+# Check if there are people with less than 16 years old (including) who have children 
 dfOriginal['children'][dfOriginal['age']<=16].value_counts()
+# There are 31 people who are younger or equal to 16 years old and that have children and 16 younger or equal to 16 years old and that do not have children.
+# At this age, in normal situations, there should be zero people with children. Even if there were some cases in these situations, 31 is a huge number.
 
-# There are 31 people who are younger than 16 years old and that have children and 16 younger than 16 years old and that do not have children
+# Check if people with age <9 years old have basic education.
+dfOriginal['education'][dfOriginal['age']<9].value_counts()
+dfOriginal[dfOriginal['age']<9] # There are no people with less than 9 years old.
 
-#Check if 
+# Check if people with age <16 years old have high school education. This would not make sense: in normal circumstances, people with less than 16 years old have not completed the high school education yet.
+dfOriginal['education'][dfOriginal['age']<16].value_counts()
+# People with less than 16 years old only have basic education (12 people), which makes sense.
 
-dfOriginal['age'][dfOriginal['age']<=16].value_counts()
-dfOriginal["birthday"][dfOriginal["birthday"]>=1990].value_counts()
+# Check if people with age <20 years old have Bsc/Msc education. This would not make sense: in normal circumstances, people with less than 20 years old have not completed the Bsc/ Msc education yet.
+dfOriginal['education'][dfOriginal['age']<20].value_counts()
+# People with less than 20 years old only have basic education (262 people) and high school education (81 people).
+
+# Check if people with age <25 years old have Phd education. This would not make sense: in normal circumstances, people with less than 25 years old have not completed the Phd education yet.
+dfOriginal['education'][dfOriginal['age']<25].value_counts()
+#There are 8 people who have a Phd with age less than 25 years old, which does not make sense.
+
+# Check if people with less than 16 years old have a salary>0
+dfOriginal['salary'][(dfOriginal['age']<16) & (dfOriginal['salary']>0)].count()
+#there are 12 people with less than 16 years old and that have a salary, which does not make sense. At these ages the expected salary value was expected to be zero, which means that we were expecting the output of this code line to be zero.
+
+# Check if people with less than 16 years old have a motor premium. This would not make sense as people with these ages do not have driving license.
+dfOriginal['lobMotor'][dfOriginal['age']<16].count()
+# There are 12 people with less than 16 years old that have a motor premium, which does not make sense.
+
+# Check if people with less than 18 years old have a household premium (we defined the age 18 years old as the minimum age for a person to get a house).
+dfOriginal['lobHousehold'][dfOriginal['age']<18].count()
+# There are 116 people younger than 18 years old who have a household premium, which does not make sense.
+
+# Check if people with less than 16 years old have a work compensation premium, which does not make sense. The minimum age to start working is 16 years old.
+dfOriginal['lobWork'][dfOriginal['age']<16].count()
+# There are 12 people younger than 16 years old that have a work compensation premium.
+
+# Final Decision: drop birthday and age columns - they do not make any sense when considering other variables in the data set.
+
+# Create a column for year salary (useful to check the next incoherence).
+dfOriginal['yearSalary']=dfOriginal['salary']*12
+
+# Create a column with the total premiums (useful to check the next incoherence)
+dfOriginal['lobTotal']=dfOriginal['lobMotor']+dfOriginal['lobHousehold']+dfOriginal['lobHealth']+dfOriginal['lobLife']+dfOriginal['lobWork']
+
+# Check if the year salary is higher than the lobTotal. If not, it does not make sense.
+dfOriginal['id'][dfOriginal['yearSalary']<dfOriginal['lobTotal']].count()
+# There is one person that has a salary lower than the lobTotal, which does not make sense.
+
+# Check if the 50% of the year salary is higher than the lobTotal
+dfOriginal['id'][dfOriginal['yearSalary']*0.5<dfOriginal['lobTotal']].count()
+# There are 2 people that spend more than 50% of the year salary in the total of premiums, which migh be considered strange. It is not normal for a person spending more than 50% of the salary in premiums.
 
 
 
@@ -457,20 +502,12 @@ dfOriginal["birthday"][dfOriginal["birthday"]>=1990].value_counts()
 
 
 
-              
 
 
-#-----------------CHECK INCOHERENCES------------------#
 
-#if birthday is higher than First policy's year: 
-agesList=[18,16,15,10,5,0]
-countList=[]
-for j in agesList:
-    count_inc=0
-    for i, index in dfOriginal.iterrows():
-        if dfOriginal.loc[i,'firstPolicy']-dfOriginal.loc[i,'birthday']<j: count_inc+=1
-    countList.append(count_inc)
-countList
+
+
+
 
 
 #Line chart
