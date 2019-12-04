@@ -13,7 +13,7 @@ import sqlite3
 import numpy as np
 from matplotlib import pyplot as plt
 import math
-import seaborn as sns
+import seaborn as sb
 
 
 """ my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
@@ -473,22 +473,75 @@ dfOriginal['yearSalary']=dfOriginal['salary']*12
 # Create a column with the total premiums (useful to check the next incoherence)
 dfOriginal['lobTotal']=dfOriginal['lobMotor']+dfOriginal['lobHousehold']+dfOriginal['lobHealth']+dfOriginal['lobLife']+dfOriginal['lobWork']
 
-# Check if the year salary is higher than the lobTotal. If not, it does not make sense.
-dfOriginal['id'][dfOriginal['yearSalary']<dfOriginal['lobTotal']].count()
-# There is one person that has a salary lower than the lobTotal, which does not make sense.
+# Check if the 30% of the year salary is higher than the lobTotal
+dfOriginal[dfOriginal['yearSalary']*0.3<dfOriginal['lobTotal']]
+# There are 14 people that spend more than 30% of the year salary in the total of premiums.
 
 # Check if the 50% of the year salary is higher than the lobTotal
 dfOriginal['id'][dfOriginal['yearSalary']*0.5<dfOriginal['lobTotal']].count()
 # There are 2 people that spend more than 50% of the year salary in the total of premiums, which migh be considered strange. It is not normal for a person spending more than 50% of the salary in premiums.
 
+# Check if the year salary is higher than the lobTotal. If not, it does not make sense.
+dfOriginal['id'][dfOriginal['yearSalary']<dfOriginal['lobTotal']].count()
+# There is one person that has a salary lower than the lobTotal, which does not make sense.
+# We decided to add this customer to an incoherence column.
+dfOriginal['incoherences']=np.where(dfOriginal['yearSalary']<dfOriginal['lobTotal'],1,0)
+
+#---------------CREATE A DATA FRAME TO WORK ON (WITH NO INCOHERENCES)------------------------
+dfWork=dfOriginal[(dfOriginal['incoherences']==0) & (dfOriginal['strange_firstPolicy']==0)]
+dfWork=dfWork.drop(columns=['age', 'birthday','incoherences'])
+
+#----------------------------------MISSING VALUES----------------------------
+
+# Create a column called 'Nan' to count the number of missing values by row
+dfNan=dfWork.drop(columns=['yearSalary', 'lobTotal'])
+dfNan['Nan']=dfNan.isnull().sum(axis=1)
+#check missing values by row:
+dfNan['Nan'].value_counts()
+
+# Count missing values by column:
+dfNan.isnull().sum()
+
+# We realized that a lot of missing values are related to the lob variables.
+# We considered that these values would be equal to zero, as in an insurance company it is not normal not to register payments, unless they do not exist.
+dfWork[dfWork['lobMotor'].isnull()]
+dfWork['lobMotor']=np.where(dfWork['lobMotor'].isnull(),0,dfWork['lobMotor'])
+
+dfWork[dfWork['lobHealth'].isnull()]
+dfWork['lobHealth']=np.where(dfWork['lobHealth'].isnull(),0,dfWork['lobHealth'])
+
+dfWork[dfWork['lobLife'].isnull()]
+dfWork['lobLife']=np.where(dfWork['lobLife'].isnull(),0,dfWork['lobLife'])
+
+dfWork[dfWork['lobWork'].isnull()]
+dfWork['lobWork']=np.where(dfWork['lobWork'].isnull(),0,dfWork['lobWork'])
+
+# Check again Nan values by row:
+dfNan=dfWork.drop(columns=['yearSalary', 'lobTotal'])
+dfNan['Nan']=dfNan.isnull().sum(axis=1)
+#check missing values by row:
+dfNan['Nan'].value_counts()
+
+# Recalculate the column lobTotal (as there are no Null values on the lob variables anymore)
+dfWork['lobTotal']=dfWork['lobMotor']+dfWork['lobHousehold']+dfWork['lobHealth']+dfWork['lobLife']+dfWork['lobWork']
+dfWork.isnull().sum()
+
+#lob=0 para first policy Nan
+dfWork['lobTotal'][dfWork['firstPolicy'].isnull()].value_counts()
+# There are no values 
 
 
+# Correlation matrix
+dfCorr=pd.DataFrame(dfWork,columns=['firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
+corrMatrix=dfCorr.corr(method ='pearson')
 
-
-
-
-
-
+fig, ax = plt.subplots(figsize=(10,10))
+sb.heatmap(corrMatrix,annot=True,fmt=".3f")
+plt.show()
+# As this only gives information about the linear correlation, we are going to check in more detail with the pairplot
+dfCorr2=dfCorr.dropna()
+sb.pairplot(dfCorr2,diag_kind='kde',kind='scatter',palette='husl')
+plt.show()
 
 
 
