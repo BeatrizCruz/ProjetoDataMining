@@ -45,9 +45,9 @@ cursor.execute("select name from sqlite_master where type='table'")
 print(cursor.fetchall()) """
 
 #Diretorias:
-file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
 #file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
-
+file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 #import csv file:
 
 dfOriginal=pd.read_csv(file)
@@ -76,7 +76,9 @@ dfOriginal=dfOriginal.rename(columns={"Brithday Year": "birthday",
 
 # Plot birthday for a first visual analysis:
 dfOriginal['birthday'].value_counts().sort_index().plot() # there might be strange values on the birthday that are distorting the plot.
+plt.show()
 dfOriginal['birthday'].hist() # The plot with the strange value is not perceptive
+plt.show()
 
 # Check variable values:
 dfOriginal['birthday'].value_counts().sort_index() # strange value on the birthday: 1028
@@ -89,6 +91,7 @@ dfOriginal['Strange_birthday'].value_counts()
 
 #Plot birthday variable with no strange values (where the new column equals zero):
 dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].hist()
+plt.show()
 dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].value_counts().sort_index().plot(marker='o')
 plt.show()
 
@@ -96,7 +99,9 @@ plt.show()
 
 # Plot firstPolicy for a first visual analysis:
 dfOriginal['firstPolicy'].value_counts().sort_index().plot() # there might be strange values on firstPolicy that are distorting the plot.
+plt.show()
 dfOriginal['firstPolicy'].hist() # The plot with strange values is not perceptive
+plt.show()
 
 #Check variable values:
 dfOriginal['firstPolicy'].value_counts().sort_index() # there is a strange value: 53784
@@ -109,6 +114,7 @@ dfOriginal['strange_firstPolicy'].value_counts()
 
 #Plot firstPolicy variable with no strange values (where the created column equals zero):
 dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].hist()
+plt.show()
 dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].value_counts().sort_index().plot(marker='o')
 plt.show()
 
@@ -130,7 +136,9 @@ plt.show()
 
 # Plot salary for a first visual analysis:
 dfOriginal['salary'].value_counts().sort_index().plot() # there might be strange values on salary that are distorting the plot.
+plt.show()
 dfOriginal['salary'].hist() # The plot with the strange value is not perceptive.
+plt.show()
 
 # Check variable values and create a variable for that:
 countSalary = dfOriginal['salary'].value_counts().sort_index() # there are 2 out of the box values: 34490, 55215
@@ -146,13 +154,17 @@ countSalaryCum = countSalary.cumsum()
 countSalaryCum
 #Plot the salary values and the cumulative values of salary
 countSalaryCum.plot()
+plt.show()
 
 # Plot salary non outliers values (where the created column equals zero):
 dfOriginal['salary'][dfOriginal['Outliers_salary']==0].hist()
+plt.show()
 dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().plot(marker='o')
+plt.show()
 
 # Plot the cumulative salary non outliers values (where the created column equals zero):
 dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().cumsum().plot(marker='o')
+plt.show()
 
 # Check with log dist: as the usual behavior of a salary variable is a distribution with a heavy tail on the left side, usually it is applied a log transformation on the distribution in order to transform it to a normal distribution.
 dfOriginal['logSalary'] = np.log(dfOriginal['salary'])
@@ -162,7 +174,10 @@ countLogSalary=dfOriginal['logSalary'].value_counts().sort_index()
 countLogSalaryCum= countLogSalary.cumsum()
 # Plot both log salary and cululative log salary
 countLogSalary.plot()
+plt.show()
 countLogSalaryCum.plot()
+plt.show()
+
 # Log distributon: not applicable as original distribution is already normal (it does not follow the usual behavior).
 # Drop created column as it will not be used
 dfOriginal=dfOriginal.drop(['logSalary'], axis=1)
@@ -195,13 +210,16 @@ plt.show()
 
 #Plot cmv for a first visual analysis:
 dfOriginal['cmv'].value_counts().sort_index().plot() # there might be strange values on cmv that are distorting the plot.
+plt.show()
 dfOriginal['cmv'].hist() # The plot with the strange value is not perceptive
+plt.show()
 
 # Create a variable that counts individuals by cmv value to check cmv values 
 cmvValues=dfOriginal['cmv'].value_counts().sort_index() 
 cmvValues #There are values that are too high and values that are too low that might be considered as outliers.
 # Create a boxplot to better visualize those values
-sns.boxplot(x=dfOriginal["cmv"]) 
+sb.boxplot(x=dfOriginal["cmv"]) 
+plt.show()
 
 # Create a new column for negative outliers that indicates outliers as 1 and other values as 0. Clients that give huge losses to the company will have value 1 in this column.
 # When creating the column put the 6 lower values that are represented on the boxplot (outliers) with value 1.
@@ -210,7 +228,8 @@ dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 # Create a box plot without the identified outliers:
-sns.boxplot(x = dfOriginal["cmv"][dfOriginal['df_OutliersLow_cmv'] == 0]) 
+sb.boxplot(x = dfOriginal["cmv"][dfOriginal['df_OutliersLow_cmv'] == 0])
+plt.show() 
 #Check the ploted values in more detail:
 cmvValues = dfOriginal['cmv'][dfOriginal['df_OutliersLow_cmv']==0].value_counts().sort_index()
 cmvValues
@@ -228,7 +247,8 @@ dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 # Create a box plot without the until now identified outliers:
-sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)]) 
+sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)]) 
+plt.show()
 #Check the ploted values in more detail:
 cmvValues = dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv']==0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index()
 cmvValues
@@ -241,7 +261,8 @@ dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 
 # Create a box plot without the until now identified outliers:
-sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersLow_cmv'] == 0)]) 
+sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersLow_cmv'] == 0)]) 
+plt.show()
 #Check the ploted values in more detail:
 cmvValues = dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv']==0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index()
 cmvValues
@@ -253,12 +274,15 @@ dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[
 dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
 # Create a box plot without the until now identified outliers:
-sns.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)]) 
+sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)]) 
+plt.show()
 
 # 8. claims
 
 dfOriginal['claims'].value_counts().sort_index().plot() # there might be strange values on the claims that are distorting the plot.
+plt.show()
 dfOriginal['claims'].hist()
+plt.show()
 
 # Check variable values:
 valuesClaims = dfOriginal['claims'].value_counts().sort_index()
@@ -270,6 +294,7 @@ dfClaims=dfOriginal.groupby(['claims'])['claims'].count()
 dfClaims=pd.DataFrame(dfClaims, columns=['claims'])
 dfClaims=dfClaims[dfClaims.index<3]
 dfClaims['claims'].sort_index().plot()
+plt.show()
 # People who have a claims rate of 0 are the ones with which the company did not spend anything.
 # People who have a claims rate between 0 and 1 (excluding) are the ones with which the company had profit. This means that the amount paid by the company was less than the premiums paid by the clients.
 # People who have a claims rate of 1 are the ones with which the company had no profit nor losses. 
@@ -280,7 +305,9 @@ dfClaims=dfClaims[dfClaims.index<1]
 dfClaims['claims'].sort_index().sum() #there are 8056 individuals that have a claims rate lower than 1
 #Plot of the results
 dfClaims['claims'].sort_index().plot()
+plt.show()
 dfOriginal['claims'][dfOriginal['claims']<3].hist()
+plt.show()
 
 # Lets distinguish between individuals that give losses (losses), individuals that give profit (profits), individuals that do not give profits nor losses (neutrals) and individuals with which the company did not spend anything (investigate). 
 # The individuals that have a column value of 'investigate' need to be investigated later as we do not have any information about their premium values on this variable. We only know that the amount paid by the company is zero. We will need to study the premium value with the premium variables studied furtherahead.
@@ -294,14 +321,17 @@ dfOriginal['catClaims'].value_counts()
 
 # Plot lobMotor for a first visual analysis:
 dfOriginal['lobMotor'].value_counts().sort_index().plot() 
+plt.show()
 dfOriginal['lobMotor'].hist() # There might be few high values that are distorting the graphs
+plt.show()
 
 # Check variable values:
 valueslobMotor = dfOriginal['lobMotor'].value_counts().sort_index()
 valueslobMotor
 
-sns.boxplot(x=dfOriginal["lobMotor"])
- 
+sb.boxplot(x=dfOriginal["lobMotor"])
+plt.show()
+
 # Lets look for the fence high value of the box plot to define a from which value the lobMotor premium can be considered as an outlier.
 q1=dfOriginal["lobMotor"].quantile(0.25)
 q3=dfOriginal["lobMotor"].quantile(0.75)
@@ -314,29 +344,33 @@ dfOriginal['Outliers_lobMot']=np.where(dfOriginal['lobMotor']>fence_high,1,0)
 dfOriginal['Outliers_lobMot'].value_counts()
 
 # Create a box plot without the outliers:
-sns.boxplot(x = dfOriginal['lobMotor'][dfOriginal['Outliers_lobMot']==0]) 
-
+sb.boxplot(x = dfOriginal['lobMotor'][dfOriginal['Outliers_lobMot']==0]) 
+plt.show()
 # 10. lobHousehold
 
 # Plot lobHousehold for a first visual analysis:
 dfOriginal['lobHousehold'].value_counts().sort_index().plot() 
+plt.show()
 dfOriginal['lobHousehold'].hist() # There might be few high values that are distorting the graphs
+plt.show()
 
 valueslobHousehold = dfOriginal['lobHousehold'].value_counts().sort_index()
 valueslobHousehold
 
 # Box plot 
-sns.boxplot(x=dfOriginal["lobHousehold"])
+sb.boxplot(x=dfOriginal["lobHousehold"])
+plt.show()
 
 #Lets define 3000 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobHousehold']=np.where(dfOriginal['lobHousehold']>3000,1,0)
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobHousehold'].value_counts()
-sns.boxplot(x = dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0]) 
-
+sb.boxplot(x = dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0]) 
+plt.show()
 
 dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0].value_counts().sort_index().plot()
+plt.show()
 # We can observe that there are much more individuals with low values of household premiums than with high values, which makes sense because there are less houses that are expensive than cheaper ones.
 
 # Transformar em Logaritmo? (ver mais tarde)
@@ -344,14 +378,17 @@ dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0].value_counts(
 # 11. lobHealth 
 
 dfOriginal['lobHealth'].value_counts().sort_index().plot() 
+plt.show()
 dfOriginal['lobHealth'].hist() # There might be few high values that are distorting the graphs
+plt.show()
 
 # Check variable values:
 valueslobHealth  = dfOriginal['lobHealth'].value_counts().sort_index()
 valueslobHealth 
 
 #Box plot
-sns.boxplot(x = dfOriginal['lobHealth']) 
+sb.boxplot(x = dfOriginal['lobHealth']) 
+plt.show()
 
 #Lets define 550 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
@@ -360,9 +397,11 @@ dfOriginal['Outliers_lobHealth']=np.where(dfOriginal['lobHealth']>550,1,0)
 dfOriginal['Outliers_lobHealth'].value_counts()
 
 #Box plot without outliers
-sns.boxplot(x = dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0]) 
+sb.boxplot(x = dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0]) 
+plt.show()
 
 dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0].value_counts().sort_index().plot()
+plt.show()
 
 # We can observe that health premiums follows an approximatelly normal distribution, which makes sense. 
 # On one hand, the health premiums are not as expensive as, for example, the house hold premiums, so more people have access to it. 
@@ -372,15 +411,17 @@ dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0].value_counts().sort
 # 12. lobLife 
 
 dfOriginal['lobLife'].value_counts().sort_index().plot() 
+plt.show()
 dfOriginal['lobLife'].hist()
+plt.show()
 
 # Check variable values:
 valueslobLife  = dfOriginal['lobLife'].value_counts().sort_index()
 valueslobLife 
 
 # Box plot
-sns.boxplot(x = dfOriginal['lobLife']) 
-
+sb.boxplot(x = dfOriginal['lobLife']) 
+plt.show()
 # We decided not to consider outliers on this variable as there are no extreme individuals that influence the distribution (no individuals that highlight over the others).
 
 # We can observe that more people invest less on life premiums.
@@ -389,15 +430,17 @@ sns.boxplot(x = dfOriginal['lobLife'])
 
 # 13. lobWork  
 dfOriginal['lobWork'].value_counts().sort_index().plot() 
+plt.show()
 dfOriginal['lobWork'].hist()# There might be few high values that are distorting the graphs
+plt.show()
 
 # Check variable values:
 valueslobWork  = dfOriginal['lobWork'].value_counts().sort_index()
 valueslobWork 
 
 #Box plot
-sns.boxplot(x = dfOriginal['lobWork']) 
-
+sb.boxplot(x = dfOriginal['lobWork']) 
+plt.show()
 #Lets define 400 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobWork']=np.where(dfOriginal['lobWork']>400,1,0)
@@ -405,9 +448,11 @@ dfOriginal['Outliers_lobWork']=np.where(dfOriginal['lobWork']>400,1,0)
 dfOriginal['Outliers_lobWork'].value_counts()
 
 #Box plot without outliers
-sns.boxplot(x = dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0]) 
+sb.boxplot(x = dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0]) 
+plt.show()
 
 dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0].value_counts().sort_index().plot()
+plt.show()
 
 # There is a high number of indiviaduals with low work premiums values.
 
@@ -577,6 +622,7 @@ dfOriginal['age']=2016-dfOriginal['birthday']
 dfOriginal['age'].value_counts().plot()
 
 dfOriginal['age'].hist(bins=30)
+
 dfOriginal['age'].describe()
 
 
@@ -640,19 +686,19 @@ plt.show()
 
 #-----------------OUTLIERS------------------#
 #Check distribution plots of variables (to see presence of outliers)
-import seaborn as sns
-sns.boxplot(x=dfOriginal["birthday"]) 
-sns.boxplot(x=dfOriginal["education"]) 
-sns.boxplot(x=dfOriginal["salary"]) 
-sns.boxplot(x=dfOriginal["livingArea"]) 
-sns.boxplot(x=dfOriginal["children"]) 
-sns.boxplot(x=dfOriginal["cmv"]) 
-sns.boxplot(x=dfOriginal["claims"]) 
-sns.boxplot(x=dfOriginal["lobMotor"]) 
-sns.boxplot(x=dfOriginal["lobHousehold"]) 
-sns.boxplot(x=dfOriginal["lobHealth"]) 
-sns.boxplot(x=dfOriginal["lobLife"])
-sns.boxplot(x=dfOriginal["lobWork"]) 
+import seaborn as sb
+sb.boxplot(x=dfOriginal["birthday"]) 
+sb.boxplot(x=dfOriginal["education"]) 
+sb.boxplot(x=dfOriginal["salary"]) 
+sb.boxplot(x=dfOriginal["livingArea"]) 
+sb.boxplot(x=dfOriginal["children"]) 
+sb.boxplot(x=dfOriginal["cmv"]) 
+sb.boxplot(x=dfOriginal["claims"]) 
+sb.boxplot(x=dfOriginal["lobMotor"]) 
+sb.boxplot(x=dfOriginal["lobHousehold"]) 
+sb.boxplot(x=dfOriginal["lobHealth"]) 
+sb.boxplot(x=dfOriginal["lobLife"])
+sb.boxplot(x=dfOriginal["lobWork"]) 
 
 #Create a dataframe with outliers
 q1=dfOriginal["salary"].quantile(0.25)
