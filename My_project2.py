@@ -14,7 +14,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math
 import seaborn as sb
-
+from sklearn.neighbors import KNeighborsClassifier
 
 #""" my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
 #my_path = r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
@@ -89,6 +89,7 @@ dfOriginal['birthday'].value_counts().sort_index() # strange value on the birthd
 # Create a new column to indicate strange values as 1 and normal values as 0
 # Explain the choice of 1900: (...)
 dfOriginal['Strange_birthday'] = np.where(dfOriginal['birthday']<1900, 1,0)
+dfOriginal['Others'] = np.where(dfOriginal['birthday']<1900, 1,0)
 # Verify if the column was created as supposed
 dfOriginal['Strange_birthday'].value_counts()
 
@@ -118,6 +119,7 @@ dfOriginal['firstPolicy'].value_counts().sort_index() # there is a strange value
 # Create a new column to indicate strange values as 1 and normal values as 0:
 # Explain the choice of 2016: (...)
 dfOriginal['strange_firstPolicy']=np.where(dfOriginal['firstPolicy']>2016, 1,0)
+dfOriginal['Others']=np.where(dfOriginal['firstPolicy']>2016, 1,dfOriginal['Others'])
 # Verify if the column was created as supposed
 dfOriginal['strange_firstPolicy'].value_counts()
 
@@ -162,6 +164,7 @@ countSalary = dfOriginal['salary'].value_counts().sort_index() # there are 2 out
 # Create a new column to indicate outliers as 1 and normal values as 0:
 # Explain chosen value for outliers (10000) (...)
 dfOriginal['Outliers_salary']=np.where(dfOriginal['salary']>10000, 1,0)
+dfOriginal['Others']=np.where(dfOriginal['salary']>10000, 1,dfOriginal['Others'])
 # Verify if the column was created as supposed
 dfOriginal['Outliers_salary'].value_counts()
 
@@ -254,6 +257,7 @@ plt.show()
 # Create a new column for negative outliers that indicates outliers as 1 and other values as 0. Clients that give huge losses to the company will have value 1 in this column.
 # When creating the column put the 6 lower values that are represented on the boxplot (outliers) with value 1.
 dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,0)
+dfOriginal['Others'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,dfOriginal['Others'])
 # Verify if the column was created as supposed
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
@@ -269,11 +273,13 @@ cmvValues
 # Create a new column for positive outliers that indicates outliers as 1 and other values as 0. Clients that give huge profit to the company will have value 1 in this column.
 # When creating this column put the 3 lower values that are represented on the boxplot (outliers) with value 1.
 dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,0)
+dfOriginal['Others'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOriginal['Others'])
 # Verify if the column was created as supposed
 dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
 # Change the values of the new negative outliers to 1 in the df_OutliersLow_cmv column
 dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,dfOriginal['df_OutliersLow_cmv'])
+dfOriginal['Others'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,dfOriginal['Others'])
 # Verify if values were changed as supposed
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
@@ -288,6 +294,7 @@ cmvValues
 
 # Change the values of the new negative outliers to 1 in the df_OutliersLow_cmv column
 dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[1],1,dfOriginal['df_OutliersLow_cmv'])
+dfOriginal['Others'] = np.where(dfOriginal['cmv']<=cmvValues.index[1],1,dfOriginal['Others'])
 # Verify if values were changed as supposed
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
@@ -303,6 +310,7 @@ cmvValues
 
 # Change the values of the new positive outliers to 1 in the df_OutliersHigh_cmv column
 dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOriginal['df_OutliersHigh_cmv'])
+dfOriginal['Others'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOriginal['Others'])
 # Verify if values were changed as supposed
 dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
@@ -385,6 +393,7 @@ fence_high=q3+1.5*iqr
 
 # Create a column that indicates if an individual is outlier or not (if it is, the column value will be 1)
 dfOriginal['Outliers_lobMot']=np.where(dfOriginal['lobMotor']>fence_high,1,0)
+dfOriginal['Others']=np.where(dfOriginal['lobMotor']>fence_high,1,dfOriginal['Others'])
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobMot'].value_counts()
 
@@ -414,6 +423,7 @@ plt.show()
 #Lets define 3000 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobHousehold']=np.where(dfOriginal['lobHousehold']>3000,1,0)
+dfOriginal['Others']=np.where(dfOriginal['lobHousehold']>3000,1,dfOriginal['Others'])
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobHousehold'].value_counts()
 plt.figure()
@@ -449,6 +459,7 @@ plt.show()
 #Lets define 550 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobHealth']=np.where(dfOriginal['lobHealth']>550,1,0)
+dfOriginal['Others']=np.where(dfOriginal['lobHealth']>550,1,dfOriginal['Others'])
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobHealth'].value_counts()
 
@@ -510,6 +521,7 @@ plt.show()
 #Lets define 400 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobWork']=np.where(dfOriginal['lobWork']>400,1,0)
+dfOriginal['Others']=np.where(dfOriginal['lobWork']>400,1,dfOriginal['Others'])
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobWork'].value_counts()
 
@@ -599,15 +611,19 @@ dfOriginal['id'][dfOriginal['yearSalary']<dfOriginal['lobTotal']].count()
 # There is one person that has a salary lower than the lobTotal, which does not make sense.
 # We decided to add this customer to an incoherence column.
 dfOriginal['incoherences']=np.where(dfOriginal['yearSalary']<dfOriginal['lobTotal'],1,0)
+dfOriginal['Others']=np.where(dfOriginal['yearSalary']<dfOriginal['lobTotal'],1,dfOriginal['Others'])
 
-#---------------CREATE A DATA FRAME TO WORK ON (WITH NO INCOHERENCES)------------------------
-dfWork=dfOriginal[(dfOriginal['incoherences']==0) & (dfOriginal['strange_firstPolicy']==0)]
-dfWork=dfWork.drop(columns=['age', 'birthday','incoherences'])
+#---------------CREATE A DATA FRAME TO WORK ON (WITH NO INCOHERENCES AND NO OUTLIERS)------------------------
+# Take outliers, strange values and incoherences out:
+dfWork=dfOriginal[dfOriginal['Others']==0]
+
+# Drop columns that are not needed: because have all values zero and other reasons
+dfWork=dfWork.drop(columns=['age', 'birthday','incoherences','Strange_birthday','Others','strange_firstPolicy','Outliers_salary','df_OutliersLow_cmv','df_OutliersHigh_cmv','Outliers_lobMot','Outliers_lobHousehold','Outliers_lobHealth','Outliers_lobWork'])
 
 #----------------------------------MISSING VALUES----------------------------
 
 # Create a column called 'Nan' to count the number of missing values by row
-dfNan=dfWork.drop(columns=['yearSalary'])
+dfNan=dfWork.drop(columns=['yearSalary','lobTotal'])
 dfNan['Nan']=dfNan.isnull().sum(axis=1)
 
 # Check the number of rows that have 0, 1, 2, 3 etc Nan values
@@ -617,6 +633,7 @@ dfNan['Nan'].value_counts()
 # Count missing values by column:
 dfNan.isnull().sum()
 
+# LOBs
 # We realized that a lot of missing values are related to the lob variables.
 # We considered that these values would be equal to zero, as in an insurance company it is not normal not to register payments, unless they do not exist.
 dfWork[dfWork['lobMotor'].isnull()]
@@ -645,9 +662,13 @@ dfWork.isnull().sum()
 #Check again Nan values per column:
 dfNan.isnull().sum()
 
-# In living area there is one null value. Lets try to check and treat it:
+# LIVING AREA
+# In living area there is one null value. Lets try to check and treat it
 
+# This is the row:
 null=dfNan[dfNan['livingArea'].isnull()]
+null
+
 #Graph of lobhousehold and living area:
 plt.figure()
 sb.barplot(x="livingArea",y="lobHousehold",data=dfNan)
@@ -656,12 +677,103 @@ plt.show()
 # Check lobHousehold (>=0) by living area:
 dfNan[dfNan['lobHousehold']>=0].groupby(by=["livingArea"])["lobHousehold"].mean().reset_index(name = 'Average_lobH')
 # The average of lobHousehold does not differentiate a lot between different living areas.
-dfNan[dfNan['lobHousehold']>=0].groupby(by=["livingArea"])["lobHousehold"].sum().reset_index(name = 'Sum_lobH')
-# The sum of lobHousehold differentiates a lot between different living areas. The living area that has higher lob sum is the 4th and then the 1st.
 dfNan[dfNan['lobHousehold']>=0].groupby(by=["livingArea"])["lobHousehold"].var().reset_index(name = 'Var_lobH')
 # The variance does not differ a lot between living areas 1, 2 and 3, but the 4th one differs a lot from these 3 first areas.
 
-# Living area might be determined by LobHousehold, salary
+# Living area might be determined by LobHousehold
+plt.figure()
+sb.boxplot(x='livingArea', y='lobHousehold', data=dfWork)
+plt.show()
+# The boxplot shows that this does not happen
+
+# Treat the Nan value through KNN
+# Which variables should we use to predict the lobHousehold?
+dfWork2=dfWork.dropna()
+
+plt.figure()
+sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='livingArea')
+plt.show()
+# There is no variable that explains the variable living area
+plt.figure()
+sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='livingArea')
+plt.show()
+# There is no variable that explains the variable living area
+
+plt.figure()
+sb.pairplot(dfWork2, vars=['children','catClaims'], hue='livingArea')
+plt.show()
+
+
+dfWork2.groupby(by='livingArea').hist(alpha=0.4)
+# We realized that the variable livingArea is not explained by any of the other variables. Besides, we do not have any information about this variable's categories. 
+
+############################################################################################3
+# CHILDREN - MISSING VALUES IMPUTATION
+from sklearn.impute import KNNImputer
+
+#Check null values on children:
+dfWork['children'].isna().sum()          #There are 21 Nan values
+
+# Which variables better explain the variable children?
+plt.figure()
+sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='children')
+plt.show()
+plt.figure()
+sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='children')
+plt.show()
+# The variable salary explains the variable children.
+# The variable lobMotor explains the variable children.
+# Lets use the variables lobmotor and salary to explain the variable children and to treat the Nan values through the KNN:
+
+# Create a data frame that does not have null values on salary neither on lobMotor
+dfWork2=dfWork[~((dfWork['salary'].isna()) | (dfWork['lobMotor'].isna()))]
+#keep only 3 columns
+children_KNN=dfWork2[['id','salary','lobMotor','children']]
+#train the model and impute
+imputer =KNNImputer(n_neighbors=2)
+children_KNN2=imputer.fit_transform(children_KNN)
+
+
+
+
+
+###############################################################################################
+
+# Create a data frame that has Nan values on children
+children_incomplete=dfWork2.loc[dfWork2.children.isna(),]
+
+# Create a data frame that has no Nan values on children
+children_complete=dfWork2[~dfWork2.index.isin(children_incomplete.index)]
+
+#To do a classifier we need to change it to string
+children_complete.children=children_complete.children.astype('str')
+
+clf = KNeighborsClassifier(5,weights='distance', metric='euclidean')
+
+# Use the children_complete data frame to train the model:
+
+trained_model = clf.fit(children_complete.loc[:,['salary', 'lobMotor']],
+                        children_complete.loc[:,'children'])
+
+#Drop children on the incomplete data set
+imputed_values = trained_model.predict(children_incomplete.drop(columns=['children']))
+
+#reshape: -1 I dont know how many rows
+temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = ['children'])
+
+#drop children column from children_incomplete data frame:
+children_incomplete =children_incomplete.drop(columns=['children'])
+
+my_data_incomplete =my_data_incomplete.reset_index(drop=True)
+
+#concat to put everything together: concat the my_data_incomplete data frame (that does not have dependents column) with the temp_df (that has the dependents column determined by the KNN):
+my_data_incomplete =pd.concat([my_data_incomplete, temp_df],
+                              axis=1,
+                              ignore_index=True,
+                              verify_integrity=False)
+
+my_data_incomplete.columns = ['age','income', 'frq', 'dependents']
+# Missing the step of joining both the incomplete and the complete data frames again.
 
 
 
@@ -672,6 +784,25 @@ dfNan[dfNan['lobHousehold']>=0].groupby(by=["livingArea"])["lobHousehold"].var()
 
 
 
+
+
+
+
+
+
+
+dfCorr=pd.DataFrame(dfWork,columns=['firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
+corrMatrix=dfCorr.corr(method ='pearson')
+
+plt.figure()
+fig, ax = plt.subplots(figsize=(10,10))
+sb.heatmap(corrMatrix,annot=True,fmt=".3f")
+plt.show()
+# As this only gives information about the linear correlation, we are going to check in more detail with the pairplot
+plt.figure()
+dfCorr2=dfCorr.dropna()
+sb.pairplot(x='',diag_kind='kde',kind='scatter',palette='husl', hue='livingArea', data=dfWork)
+plt.show()
 
 
 
