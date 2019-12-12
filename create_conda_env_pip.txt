@@ -1,0 +1,4 @@
+cd <path_to_proj>
+conda create --name Dmining python --no-default-packages
+conda activate Dmining
+pip install -r <path_to_proj>\requirements.txt

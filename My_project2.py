@@ -45,15 +45,15 @@ from sklearn.neighbors import KNeighborsClassifier
 #print(cursor.fetchall()) """
 
 #Diretorias:
-file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
+#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
-#import csv file:
 
+#import csv file:
 dfOriginal=pd.read_csv(file)
 dfOriginal.head()
 
-#Rename column
+#Rename columns for easier access
 colNames=list(dfOriginal.columns)
 colNames
 dfOriginal=dfOriginal.rename(columns={"Brithday Year": "birthday",
@@ -78,26 +78,23 @@ dfOriginal=dfOriginal.rename(columns={"Brithday Year": "birthday",
 plt.figure()
 dfOriginal['birthday'].value_counts().sort_index().plot() # there might be strange values on the birthday that are distorting the plot.
 plt.show()
-
 plt.figure()
 dfOriginal['birthday'].hist() # The plot with the strange value is not perceptive
 plt.show()
 
-# Check variable values:
-dfOriginal['birthday'].value_counts().sort_index() # strange value on the birthday: 1028
+#Let's check variable values:
+dfOriginal['birthday'].value_counts().sort_index() # After checking variable values, we have a strange value on the birthday: 1028
 
-# Create a new column to indicate strange values as 1 and normal values as 0
-# Explain the choice of 1900: (...)
+# Create a new column to indicate strange values as 1 and normal values as 0 and a column that will reference all odd values for easier access
+# There are few people alive that were born before 1900
 dfOriginal['Strange_birthday'] = np.where(dfOriginal['birthday']<1900, 1,0)
 dfOriginal['Others'] = np.where(dfOriginal['birthday']<1900, 1,0)
-# Verify if the column was created as supposed
-dfOriginal['Strange_birthday'].value_counts()
+dfOriginal['Strange_birthday'].value_counts()   # Verify if the column was created as supposed
 
 #Plot birthday variable with no strange values (where the new column equals zero):
 plt.figure()
 dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].hist()
 plt.show()
-
 plt.figure()
 dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].value_counts().sort_index().plot(marker='o')
 plt.show()
