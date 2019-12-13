@@ -45,8 +45,8 @@ from sklearn.neighbors import KNeighborsClassifier
 #print(cursor.fetchall()) """
 
 #Diretorias:
-#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -709,7 +709,7 @@ dfWork2.groupby(by='livingArea').hist(alpha=0.4)
 from sklearn.impute import KNNImputer
 
 #Check null values on children:
-dfWork['children'].isna().sum()          #There are 21 Nan values
+dfWork['children'].isna().sum()     #There are 21 Nan values
 
 # Which variables better explain the variable children?
 plt.figure()
@@ -743,7 +743,7 @@ children_incomplete=dfWork2.loc[dfWork2.children.isna(),]
 children_complete=dfWork2[~dfWork2.index.isin(children_incomplete.index)]
 
 #To do a classifier we need to change it to string
-children_complete.children=children_complete.children.astype('str')
+children_complete.children=children_complete.children.astype('category')
 
 clf = KNeighborsClassifier(5,weights='distance', metric='euclidean')
 
