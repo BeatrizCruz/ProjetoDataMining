@@ -630,7 +630,9 @@ dfNan['Nan'].value_counts()
 # Count missing values by column:
 dfNan.isnull().sum()
 
-# LOBs
+################################################################################
+# LOB REPLACEMENT OF MISSING VALUES:
+
 # We realized that a lot of missing values are related to the lob variables.
 # We considered that these values would be equal to zero, as in an insurance company it is not normal not to register payments, unless they do not exist.
 dfWork[dfWork['lobMotor'].isnull()]
@@ -648,7 +650,6 @@ dfWork['lobWork'] = np.where(dfWork['lobWork'].isnull(),0,dfWork['lobWork'])
 # Check again Nan values by row:
 dfNan = dfWork.drop(columns = ['yearSalary', 'lobTotal'])
 dfNan['Nan'] = dfNan.isnull().sum(axis=1)
-#check missing values by row:
 dfNan['Nan'].value_counts()
 
 # Recalculate the column lobTotal (as there are no Null values on the lob variables anymore)
@@ -659,9 +660,10 @@ dfWork.isnull().sum()
 #Check again Nan values per column:
 dfNan.isnull().sum()
 
-# LIVING AREA
-# In living area there is one null value. Lets try to check and treat it
+#########################################################################################
+# LIVING AREA MISSING VALUES - Still have to decide what to do with this variable:
 
+# In living area there is one null value. Lets try to check and treat it
 # This is the row:
 null=dfNan[dfNan['livingArea'].isnull()]
 null
@@ -690,22 +692,103 @@ dfWork2=dfWork.dropna()
 plt.figure()
 sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='livingArea')
 plt.show()
-# There is no variable that explains the variable living area
 plt.figure()
 sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='livingArea')
 plt.show()
 # There is no variable that explains the variable living area
-
-plt.figure()
-sb.pairplot(dfWork2, vars=['children','catClaims'], hue='livingArea')
-plt.show()
-
 
 dfWork2.groupby(by='livingArea').hist(alpha=0.4)
 # We realized that the variable livingArea is not explained by any of the other variables. Besides, we do not have any information about this variable's categories. 
 
 ############################################################################################3
 # CHILDREN - MISSING VALUES IMPUTATION
+
+# dfChildren: to treat Children Nan values
+dfChildren=dfWork[['id','salary','lobMotor','children']]
+
+dfChildren['children'][dfChildren['salary'].isna()].isna().sum()
+dfChildren['children'][dfChildren['lobMotor'].isna()].isna().sum()
+# There is no individual that has both salary and children null.
+# There is no individual that has both LobMotor and children null.
+
+# Delete rows that have salary and/or lobMotor null.
+dfChildren = dfChildren[~((dfChildren['salary'].isna())|(dfChildren['lobMotor'].isna()))]
+
+# children_incomplete: has Nan values on children.
+# children_complete: no Nan values on children.
+children_incomplete=dfChildren.loc[dfChildren.children.isna(),]
+children_complete=dfChildren[~dfChildren.index.isin(children_incomplete.index)]
+
+# change children to string so it can be a classifier.
+children_complete.children = children_complete.children.astype('category')
+clf = KNeighborsClassifier(5,weights='distance', metric='euclidean')
+
+# Use the children_complete data frame to train the model:
+trained_model = clf.fit(children_complete.loc[:,['salary', 'lobMotor']],
+                        children_complete.loc[:,'children'])
+
+# Apply the trained model to the unknown data.
+# Drop children column from children_incomplete data frame.
+# Concat the my_data_incomplete data frame with the temp_df.
+# Introduce the data into the dfWork data frame.
+imputed_values = trained_model.predict(children_incomplete.drop(columns=['children','id']))
+temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = ['children'])
+children_incomplete = children_incomplete.drop(columns=['children'])
+children_incomplete = children_incomplete.reset_index(drop=True)
+children_incomplete = pd.concat([children_incomplete, temp_df],
+                              axis = 1,
+                              ignore_index = True,
+                              verify_integrity = False)
+children_incomplete.columns = ['id','salary','lobMotor', 'children']
+children_incomplete=children_incomplete.drop(columns=['salary','lobMotor'])
+children_incomplete['children']=pd.to_numeric(children_incomplete['children'])
+# Change this to a simpler thing: so it does not have to go by row but compare all at once: 
+for i, index in dfWork.iterrows():
+    for j, index in children_incomplete.iterrows():
+        if dfWork.loc[i,'id']==children_incomplete.loc[j,'id']:
+            dfWork.loc[i,'children']=children_incomplete.loc[j,'children']
+
+dfWork['children']=np.where(dfWork['id']==children_incomplete['id'],children_incomplete['children'],dfWork['children'])
+
+dfWork['children'][dfWork['id'].isin(children_incomplete['id'])]=np.where[dfWork['id']==children_incomplete['id'],children_incomplete['id'],dfWork['children']]
+
+#Check null values again:
+dfWork.isna().sum()
+###############################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ANOTHER WAY OF IMPUTATION KNN: CHILDREN:
 from sklearn.impute import KNNImputer
 
 #Check null values on children:
@@ -729,63 +812,6 @@ children_KNN=dfWork2[['id','salary','lobMotor','children']]
 #train the model and impute
 imputer =KNNImputer(n_neighbors=2)
 children_KNN2=imputer.fit_transform(children_KNN)
-
-
-
-
-
-###############################################################################################
-
-# Create a data frame that has Nan values on children
-children_incomplete=dfWork2.loc[dfWork2.children.isna(),]
-
-# Create a data frame that has no Nan values on children
-children_complete=dfWork2[~dfWork2.index.isin(children_incomplete.index)]
-
-#To do a classifier we need to change it to string
-children_complete.children=children_complete.children.astype('category')
-
-clf = KNeighborsClassifier(5,weights='distance', metric='euclidean')
-
-# Use the children_complete data frame to train the model:
-
-trained_model = clf.fit(children_complete.loc[:,['salary', 'lobMotor']],
-                        children_complete.loc[:,'children'])
-
-#Drop children on the incomplete data set
-imputed_values = trained_model.predict(children_incomplete.drop(columns=['children']))
-
-#reshape: -1 I dont know how many rows
-temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = ['children'])
-
-#drop children column from children_incomplete data frame:
-children_incomplete =children_incomplete.drop(columns=['children'])
-
-my_data_incomplete =my_data_incomplete.reset_index(drop=True)
-
-#concat to put everything together: concat the my_data_incomplete data frame (that does not have dependents column) with the temp_df (that has the dependents column determined by the KNN):
-my_data_incomplete =pd.concat([my_data_incomplete, temp_df],
-                              axis=1,
-                              ignore_index=True,
-                              verify_integrity=False)
-
-my_data_incomplete.columns = ['age','income', 'frq', 'dependents']
-# Missing the step of joining both the incomplete and the complete data frames again.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 dfCorr=pd.DataFrame(dfWork,columns=['firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
