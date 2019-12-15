@@ -4,7 +4,7 @@ Created on Sun Oct 13 13:44:55 2019
 
 @author: aSUS
 """
-
+#IMPORTS
 import pandas as pd
 #!pip install modin[dask]
 #import modin.pandas as pd # replaces pandas for parallel running, defaults to pandas when better method not available
@@ -105,7 +105,6 @@ plt.show()
 plt.figure()
 dfOriginal['firstPolicy'].value_counts().sort_index().plot() # there might be strange values on firstPolicy that are distorting the plot.
 plt.show()
-
 plt.figure()
 dfOriginal['firstPolicy'].hist() # The plot with strange values is not perceptive
 plt.show()
@@ -115,16 +114,15 @@ dfOriginal['firstPolicy'].value_counts().sort_index() # there is a strange value
 
 # Create a new column to indicate strange values as 1 and normal values as 0:
 # Explain the choice of 2016: (...)
+# Verify if the column was created as supposed
 dfOriginal['strange_firstPolicy']=np.where(dfOriginal['firstPolicy']>2016, 1,0)
 dfOriginal['Others']=np.where(dfOriginal['firstPolicy']>2016, 1,dfOriginal['Others'])
-# Verify if the column was created as supposed
 dfOriginal['strange_firstPolicy'].value_counts()
 
 #Plot firstPolicy variable with no strange values (where the created column equals zero):
 plt.figure()
 dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].hist()
 plt.show()
-
 plt.figure()
 dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].value_counts().sort_index().plot(marker='o')
 plt.show()
@@ -145,12 +143,10 @@ plt.show()
 
 # 4. salary
 # To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value as done with the previous cases, we decided to make the cumulative to be used for plotting.
-
 # Plot salary for a first visual analysis:
 plt.figure()
 dfOriginal['salary'].value_counts().sort_index().plot() # there might be strange values on salary that are distorting the plot.
 plt.show()
-
 plt.figure()
 dfOriginal['salary'].hist() # The plot with the strange value is not perceptive.
 plt.show()
@@ -160,15 +156,15 @@ countSalary = dfOriginal['salary'].value_counts().sort_index() # there are 2 out
 
 # Create a new column to indicate outliers as 1 and normal values as 0:
 # Explain chosen value for outliers (10000) (...)
+# Verify if the column was created as supposed
 dfOriginal['Outliers_salary']=np.where(dfOriginal['salary']>10000, 1,0)
 dfOriginal['Others']=np.where(dfOriginal['salary']>10000, 1,dfOriginal['Others'])
-# Verify if the column was created as supposed
 dfOriginal['Outliers_salary'].value_counts()
 
 # Create a variable with the cumulative salary values 
+#Plot the salary values and the cumulative values of salary
 countSalaryCum = countSalary.cumsum()
 countSalaryCum
-#Plot the salary values and the cumulative values of salary
 plt.figure()
 countSalaryCum.plot()
 plt.show()
@@ -177,7 +173,6 @@ plt.show()
 plt.figure()
 dfOriginal['salary'][dfOriginal['Outliers_salary']==0].hist()
 plt.show()
-
 plt.figure()
 dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().plot(marker='o')
 plt.show()
@@ -188,16 +183,16 @@ dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index
 plt.show()
 
 # Check with log dist: as the usual behavior of a salary variable is a distribution with a heavy tail on the left side, usually it is applied a log transformation on the distribution in order to transform it to a normal distribution.
+# count by log salary value
+# cumulative of log salary
 dfOriginal['logSalary'] = np.log(dfOriginal['salary'])
-#count by log salary value
 countLogSalary=dfOriginal['logSalary'].value_counts().sort_index()
-#cumulative of log salary
 countLogSalaryCum= countLogSalary.cumsum()
+
 # Plot both log salary and cululative log salary
 plt.figure()
 countLogSalary.plot()
 plt.show()
-
 plt.figure()
 countLogSalaryCum.plot()
 plt.show()
@@ -224,6 +219,7 @@ plt.show()
 # Create a variable to count the individuals per category:
 countchildren=dfOriginal['children'].value_counts().sort_index()
 countchildren
+
 # Create a bar chart that shows the number of individuals with and without children
 plt.figure()
 plt.bar(np.arange(len(countchildren.index)),countchildren)
@@ -238,7 +234,6 @@ plt.show()
 plt.figure()
 dfOriginal['cmv'].value_counts().sort_index().plot() # there might be strange values on cmv that are distorting the plot.
 plt.show()
-
 plt.figure()
 dfOriginal['cmv'].hist() # The plot with the strange value is not perceptive
 plt.show()
@@ -258,26 +253,26 @@ dfOriginal['Others'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,dfOrigin
 # Verify if the column was created as supposed
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
-# Create a box plot without the identified outliers:
+# Create a box plot without the identified outliers.
+#Check the ploted values in more detail.
 plt.figure()
 sb.boxplot(x = dfOriginal["cmv"][dfOriginal['df_OutliersLow_cmv'] == 0])
 plt.show() 
-#Check the ploted values in more detail:
 cmvValues = dfOriginal['cmv'][dfOriginal['df_OutliersLow_cmv']==0].value_counts().sort_index()
 cmvValues
 # There are 6 lower values and 3 higher values that will be considered as outliers.
 
 # Create a new column for positive outliers that indicates outliers as 1 and other values as 0. Clients that give huge profit to the company will have value 1 in this column.
 # When creating this column put the 3 lower values that are represented on the boxplot (outliers) with value 1.
+# Verify if the column was created as supposed
 dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,0)
 dfOriginal['Others'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOriginal['Others'])
-# Verify if the column was created as supposed
 dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
 # Change the values of the new negative outliers to 1 in the df_OutliersLow_cmv column
+# Verify if values were changed as supposed
 dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,dfOriginal['df_OutliersLow_cmv'])
 dfOriginal['Others'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,dfOriginal['Others'])
-# Verify if values were changed as supposed
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 # Create a box plot without the until now identified outliers:
@@ -321,7 +316,6 @@ plt.show()
 plt.figure()
 dfOriginal['claims'].value_counts().sort_index().plot() # there might be strange values on the claims that are distorting the plot.
 plt.show()
-
 plt.figure()
 dfOriginal['claims'].hist()
 plt.show()
@@ -350,7 +344,6 @@ dfClaims['claims'].sort_index().sum() #there are 8056 individuals that have a cl
 plt.figure()
 dfClaims['claims'].sort_index().plot()
 plt.show()
-
 plt.figure()
 dfOriginal['claims'][dfOriginal['claims']<3].hist()
 plt.show()
@@ -369,7 +362,6 @@ dfOriginal['catClaims'].value_counts()
 plt.figure()
 dfOriginal['lobMotor'].value_counts().sort_index().plot() 
 plt.show()
-
 plt.figure()
 dfOriginal['lobMotor'].hist() # There might be few high values that are distorting the graphs
 plt.show()
@@ -377,7 +369,6 @@ plt.show()
 # Check variable values:
 valueslobMotor = dfOriginal['lobMotor'].value_counts().sort_index()
 valueslobMotor
-
 plt.figure()
 sb.boxplot(x=dfOriginal["lobMotor"])
 plt.show()
@@ -404,11 +395,9 @@ plt.show()
 plt.figure()
 dfOriginal['lobHousehold'].value_counts().sort_index().plot() 
 plt.show()
-
 plt.figure()
 dfOriginal['lobHousehold'].hist() # There might be few high values that are distorting the graphs
 plt.show()
-
 valueslobHousehold = dfOriginal['lobHousehold'].value_counts().sort_index()
 valueslobHousehold
 
@@ -439,7 +428,6 @@ plt.show()
 plt.figure()
 dfOriginal['lobHealth'].value_counts().sort_index().plot() 
 plt.show()
-
 plt.figure()
 dfOriginal['lobHealth'].hist() # There might be few high values that are distorting the graphs
 plt.show()
@@ -464,7 +452,6 @@ dfOriginal['Outliers_lobHealth'].value_counts()
 plt.figure()
 sb.boxplot(x = dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0]) 
 plt.show()
-
 plt.figure()
 dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0].value_counts().sort_index().plot()
 plt.show()
@@ -479,7 +466,6 @@ plt.show()
 plt.figure()
 dfOriginal['lobLife'].value_counts().sort_index().plot() 
 plt.show()
-
 plt.figure()
 dfOriginal['lobLife'].hist()
 plt.show()
@@ -493,16 +479,13 @@ plt.figure()
 sb.boxplot(x = dfOriginal['lobLife']) 
 plt.show()
 # We decided not to consider outliers on this variable as there are no extreme individuals that influence the distribution (no individuals that highlight over the others).
-
 # We can observe that more people invest less on life premiums.
-
 # Transformar em Logaritmo? (ver mais tarde)
 
 # 13. lobWork  
 plt.figure()
 dfOriginal['lobWork'].value_counts().sort_index().plot() 
 plt.show()
-
 plt.figure()
 dfOriginal['lobWork'].hist()# There might be few high values that are distorting the graphs
 plt.show()
@@ -526,13 +509,11 @@ dfOriginal['Outliers_lobWork'].value_counts()
 plt.figure()
 sb.boxplot(x = dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0]) 
 plt.show()
-
 plt.figure()
 dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0].value_counts().sort_index().plot()
 plt.show()
 
 # There is a high number of indiviaduals with low work premiums values.
-
 # Transformar em Logaritmo? (ver mais tarde)
 
 #-----------------CHECK INCOHERENCES------------------#
@@ -549,81 +530,63 @@ countList
 #There are 1997 people that have a firt policy before even being born. This does not make any sense.
 
 # Create age column that calculates current ages of customers (useful to check the next incoherence).
-dfOriginal['age']= 2016-dfOriginal['birthday']
 # Check if there are people with less than 16 years old (including) who have children 
+dfOriginal['age']= 2016-dfOriginal['birthday']
 dfOriginal['children'][dfOriginal['age']<=16].value_counts()
 # There are 31 people who are younger or equal to 16 years old and that have children and 16 younger or equal to 16 years old and that do not have children.
 # At this age, in normal situations, there should be zero people with children. Even if there were some cases in these situations, 31 is a huge number.
 
 # Check if people with age <9 years old have basic education.
+# Check if people with age <16 years old have high school education. This would not make sense: in normal circumstances, people with less than 16 years old have not completed the high school education yet.
+# Check if people with age <20 years old have Bsc/Msc education. This would not make sense: in normal circumstances, people with less than 20 years old have not completed the Bsc/ Msc education yet.
+# Check if people with age <25 years old have Phd education. This would not make sense: in normal circumstances, people with less than 25 years old have not completed the Phd education yet.
 dfOriginal['education'][dfOriginal['age']<9].value_counts()
 dfOriginal[dfOriginal['age']<9] # There are no people with less than 9 years old.
-
-# Check if people with age <16 years old have high school education. This would not make sense: in normal circumstances, people with less than 16 years old have not completed the high school education yet.
-dfOriginal['education'][dfOriginal['age']<16].value_counts()
-# People with less than 16 years old only have basic education (12 people), which makes sense.
-
-# Check if people with age <20 years old have Bsc/Msc education. This would not make sense: in normal circumstances, people with less than 20 years old have not completed the Bsc/ Msc education yet.
-dfOriginal['education'][dfOriginal['age']<20].value_counts()
-# People with less than 20 years old only have basic education (262 people) and high school education (81 people).
-
-# Check if people with age <25 years old have Phd education. This would not make sense: in normal circumstances, people with less than 25 years old have not completed the Phd education yet.
-dfOriginal['education'][dfOriginal['age']<25].value_counts()
-#There are 8 people who have a Phd with age less than 25 years old, which does not make sense.
+dfOriginal['education'][dfOriginal['age']<16].value_counts() # People with less than 16 years old only have basic education (12 people), which makes sense.
+dfOriginal['education'][dfOriginal['age']<20].value_counts() # People with less than 20 years old only have basic education (262 people) and high school education (81 people).
+dfOriginal['education'][dfOriginal['age']<25].value_counts() #There are 8 people who have a Phd with age less than 25 years old, which does not make sense.
 
 # Check if people with less than 16 years old have a salary>0
-dfOriginal['salary'][(dfOriginal['age']<16) & (dfOriginal['salary']>0)].count()
-#there are 12 people with less than 16 years old and that have a salary, which does not make sense. At these ages the expected salary value was expected to be zero, which means that we were expecting the output of this code line to be zero.
+dfOriginal['salary'][(dfOriginal['age']<16) & (dfOriginal['salary']>0)].count() #there are 12 people with less than 16 years old and that have a salary, which does not make sense. At these ages the expected salary value was expected to be zero, which means that we were expecting the output of this code line to be zero.
 
 # Check if people with less than 16 years old have a motor premium. This would not make sense as people with these ages do not have driving license.
-dfOriginal['lobMotor'][dfOriginal['age']<16].count()
-# There are 12 people with less than 16 years old that have a motor premium, which does not make sense.
+dfOriginal['lobMotor'][dfOriginal['age']<16].count() # There are 12 people with less than 16 years old that have a motor premium, which does not make sense.
 
 # Check if people with less than 18 years old have a household premium (we defined the age 18 years old as the minimum age for a person to get a house).
-dfOriginal['lobHousehold'][dfOriginal['age']<18].count()
-# There are 116 people younger than 18 years old who have a household premium, which does not make sense.
+dfOriginal['lobHousehold'][dfOriginal['age']<18].count() # There are 116 people younger than 18 years old who have a household premium, which does not make sense.
 
 # Check if people with less than 16 years old have a work compensation premium, which does not make sense. The minimum age to start working is 16 years old.
-dfOriginal['lobWork'][dfOriginal['age']<16].count()
-# There are 12 people younger than 16 years old that have a work compensation premium.
+dfOriginal['lobWork'][dfOriginal['age']<16].count() # There are 12 people younger than 16 years old that have a work compensation premium.
 
 # Final Decision: drop birthday and age columns - they do not make any sense when considering other variables in the data set.
 
 # Create a column for year salary (useful to check the next incoherence).
-dfOriginal['yearSalary']=dfOriginal['salary']*12
-
 # Create a column with the total premiums (useful to check the next incoherence)
-dfOriginal['lobTotal']=dfOriginal['lobMotor']+dfOriginal['lobHousehold']+dfOriginal['lobHealth']+dfOriginal['lobLife']+dfOriginal['lobWork']
-
 # Check if the 30% of the year salary is higher than the lobTotal
-dfOriginal[dfOriginal['yearSalary']*0.3<dfOriginal['lobTotal']]
-# There are 14 people that spend more than 30% of the year salary in the total of premiums.
-
 # Check if the 50% of the year salary is higher than the lobTotal
-dfOriginal['id'][dfOriginal['yearSalary']*0.5<dfOriginal['lobTotal']].count()
-# There are 2 people that spend more than 50% of the year salary in the total of premiums, which migh be considered strange. It is not normal for a person spending more than 50% of the salary in premiums.
+dfOriginal['yearSalary']=dfOriginal['salary']*12
+dfOriginal['lobTotal']=dfOriginal['lobMotor']+dfOriginal['lobHousehold']+dfOriginal['lobHealth']+dfOriginal['lobLife']+dfOriginal['lobWork']
+dfOriginal[dfOriginal['yearSalary']*0.3<dfOriginal['lobTotal']] # There are 14 people that spend more than 30% of the year salary in the total of premiums.
+dfOriginal['id'][dfOriginal['yearSalary']*0.5<dfOriginal['lobTotal']].count() # There are 2 people that spend more than 50% of the year salary in the total of premiums, which migh be considered strange. It is not normal for a person spending more than 50% of the salary in premiums.
 
 # Check if the year salary is higher than the lobTotal. If not, it does not make sense.
-dfOriginal['id'][dfOriginal['yearSalary']<dfOriginal['lobTotal']].count()
-# There is one person that has a salary lower than the lobTotal, which does not make sense.
+dfOriginal['id'][dfOriginal['yearSalary']<dfOriginal['lobTotal']].count() # There is one person that has a salary lower than the lobTotal, which does not make sense.
 # We decided to add this customer to an incoherence column.
 dfOriginal['incoherences']=np.where(dfOriginal['yearSalary']<dfOriginal['lobTotal'],1,0)
 dfOriginal['Others']=np.where(dfOriginal['yearSalary']<dfOriginal['lobTotal'],1,dfOriginal['Others'])
 
 #---------------CREATE A DATA FRAME TO WORK ON (WITH NO INCOHERENCES AND NO OUTLIERS)------------------------
-# Take outliers, strange values and incoherences out:
-dfWork=dfOriginal[dfOriginal['Others']==0]
-
+# Take outliers, strange values and incoherences out.
 # Drop columns that are not needed: because have all values zero and other reasons
+dfWork=dfOriginal[dfOriginal['Others']==0]
 dfWork=dfWork.drop(columns=['age', 'birthday','incoherences','Strange_birthday','Others','strange_firstPolicy','Outliers_salary','df_OutliersLow_cmv','df_OutliersHigh_cmv','Outliers_lobMot','Outliers_lobHousehold','Outliers_lobHealth','Outliers_lobWork'])
 
 #----------------------------------MISSING VALUES----------------------------
 
 # Create a column called 'Nan' to count the number of missing values by row
+# Check the number of rows that have 0, 1, 2, 3 etc Nan values
 dfNan=dfWork.drop(columns=['yearSalary','lobTotal'])
 dfNan['Nan']=dfNan.isnull().sum(axis=1)
-
-# Check the number of rows that have 0, 1, 2, 3 etc Nan values
 dfNan['Nan'].value_counts()
 # Maximum number of Nan values is a row is 3.
 
@@ -637,13 +600,10 @@ dfNan.isnull().sum()
 # We considered that these values would be equal to zero, as in an insurance company it is not normal not to register payments, unless they do not exist.
 dfWork[dfWork['lobMotor'].isnull()]
 dfWork['lobMotor'] = np.where(dfWork['lobMotor'].isnull(),0,dfWork['lobMotor'])
-
 dfWork[dfWork['lobHealth'].isnull()]
 dfWork['lobHealth'] = np.where(dfWork['lobHealth'].isnull(),0,dfWork['lobHealth'])
-
 dfWork[dfWork['lobLife'].isnull()]
 dfWork['lobLife'] = np.where(dfWork['lobLife'].isnull(),0,dfWork['lobLife'])
-
 dfWork[dfWork['lobWork'].isnull()]
 dfWork['lobWork'] = np.where(dfWork['lobWork'].isnull(),0,dfWork['lobWork'])
 
@@ -700,8 +660,28 @@ plt.show()
 dfWork2.groupby(by='livingArea').hist(alpha=0.4)
 # We realized that the variable livingArea is not explained by any of the other variables. Besides, we do not have any information about this variable's categories. 
 
+# As we probably will not use this variable on our analysis, we decided to input a random variable into the nan value on this variable.
+# Check again null values by column
+import random
+dfWork['livingArea']=np.where(dfWork['livingArea'].isna(),random.choice(dfWork['livingArea'][~dfWork['livingArea'].isna()]),dfWork['livingArea'])
+dfWork.isna().sum()
+
 ############################################################################################3
 # CHILDREN - MISSING VALUES IMPUTATION
+
+#Check null values on children:
+dfWork['children'].isna().sum()     #There are 21 Nan values
+
+# Which variables better explain the variable children?
+plt.figure()
+sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='children')
+plt.show()
+plt.figure()
+sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='children')
+plt.show()
+# The variable salary explains the variable children.
+# The variable lobMotor explains the variable children.
+# Lets use the variables lobmotor and salary to explain the variable children and to treat the Nan values through the KNN:
 
 # dfChildren: to treat Children Nan values
 dfChildren=dfWork[['id','salary','lobMotor','children']]
@@ -742,21 +722,111 @@ children_incomplete = pd.concat([children_incomplete, temp_df],
 children_incomplete.columns = ['id','salary','lobMotor', 'children']
 children_incomplete=children_incomplete.drop(columns=['salary','lobMotor'])
 children_incomplete['children']=pd.to_numeric(children_incomplete['children'])
+
 # Change this to a simpler thing: so it does not have to go by row but compare all at once: 
 for i, index in dfWork.iterrows():
     for j, index in children_incomplete.iterrows():
         if dfWork.loc[i,'id']==children_incomplete.loc[j,'id']:
             dfWork.loc[i,'children']=children_incomplete.loc[j,'children']
 
-dfWork['children']=np.where(dfWork['id']==children_incomplete['id'],children_incomplete['children'],dfWork['children'])
-
-dfWork['children'][dfWork['id'].isin(children_incomplete['id'])]=np.where[dfWork['id']==children_incomplete['id'],children_incomplete['id'],dfWork['children']]
+#dfWork['children']=np.where(dfWork['id']==children_incomplete['id'],children_incomplete['children'],dfWork['children'])
+#dfWork['children'][dfWork['id'].isin(children_incomplete['id'])]=np.where[dfWork['id']==children_incomplete['id'],children_incomplete['id'],dfWork['children']]
 
 #Check null values again:
 dfWork.isna().sum()
 ###############################################################################################
+# EDUCATION - MISSING VALUES IMPUTATION
 
+#Check null values on education:
+dfWork['education'].isna().sum()   #There are 17 Nan values
 
+# Which variables better explain the variable education?
+plt.figure()
+sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='education')
+plt.show()
+plt.figure()
+sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='education')
+plt.show()
+# The variables that better explain education (better discriminate the different classes of education) are: lobMotor, lobHousehold, salary
+# Lets use the variables lobmotor, lobHousehold and salary to explain the variable education and to treat the Nan values through the KNN:
+
+# dfEducation: to treat education Nan values
+dfEducation=dfWork[['id','salary','lobMotor','lobHousehold','education']]
+
+dfEducation['education'][dfEducation['salary'].isna()].isna().sum()
+# There is one individual that has both salary and education null. (THINK ABOUT THIS INDIVIDUAL LATER)
+
+# Delete rows that have salary null.
+dfEducation = dfEducation[~((dfEducation['salary'].isna()))]
+
+# education_incomplete: has Nan values on education.
+# education_complete: no Nan values on education.
+education_incomplete=dfEducation.loc[dfEducation.education.isna(),]
+education_complete=dfEducation[~dfEducation.index.isin(education_incomplete.index)]
+
+# change education to string so it can be a classifier.
+education_complete.children = education_complete.education.astype('category')
+clf = KNeighborsClassifier(5,weights='distance', metric='euclidean')
+
+# Use the education_complete data frame to train the model:
+trained_model = clf.fit(education_complete.loc[:,['salary', 'lobMotor','lobHousehold']],
+                        education_complete.loc[:,'education'])
+
+# Apply the trained model to the unknown data.
+# Drop education column from education_incomplete data frame.
+# Concat the my_data_incomplete data frame with the temp_df.
+# Introduce the data into the dfWork data frame.
+imputed_values = trained_model.predict(education_incomplete.drop(columns=['education','id']))
+temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = ['education'])
+education_incomplete = education_incomplete.drop(columns=['education'])
+education_incomplete = education_incomplete.reset_index(drop=True)
+education_incomplete = pd.concat([education_incomplete, temp_df],
+                              axis = 1,
+                              ignore_index = True,
+                              verify_integrity = False)
+education_incomplete.columns = ['id','salary','lobMotor','lobHousehold','education']
+education_incomplete=education_incomplete.drop(columns=['salary','lobMotor','lobHousehold'])
+
+# Change this to a simpler thing: so it does not have to go by row but compare all at once: 
+for i, index in dfWork.iterrows():
+    for j, index in education_incomplete.iterrows():
+        if dfWork.loc[i,'id']==education_incomplete.loc[j,'id']:
+            dfWork.loc[i,'education']=education_incomplete.loc[j,'education']
+
+#Check null values again:
+dfWork.isna().sum() # There is still 1 null value as expected because the individual has both salary and education null.
+
+# Estimate the education value of this individual only with the variables lobMotor and lobHousehold.
+dfEducation=dfWork[['id','lobMotor','lobHousehold','education']]
+education_incomplete=dfEducation.loc[dfEducation.education.isna(),]
+education_complete=dfEducation[~dfEducation.index.isin(education_incomplete.index)]
+education_complete.children = education_complete.education.astype('category')
+trained_model = clf.fit(education_complete.loc[:,['lobMotor','lobHousehold']],
+                        education_complete.loc[:,'education'])
+
+imputed_values = trained_model.predict(education_incomplete.drop(columns=['education','id']))
+temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = ['education'])
+education_incomplete = education_incomplete.drop(columns=['education'])
+education_incomplete = education_incomplete.reset_index(drop=True)
+education_incomplete = pd.concat([education_incomplete, temp_df],
+                              axis = 1,
+                              ignore_index = True,
+                              verify_integrity = False)
+
+education_incomplete.columns = ['id','lobMotor','lobHousehold','education']
+education_incomplete=education_incomplete.drop(columns=['lobMotor','lobHousehold'])
+
+for i, index in dfWork.iterrows():
+    for j, index in education_incomplete.iterrows():
+        if dfWork.loc[i,'id']==education_incomplete.loc[j,'id']:
+            dfWork.loc[i,'education']=education_incomplete.loc[j,'education']
+
+# Check again nan values:
+dfWork.isna().sum()
+
+######################################################################################
+# SALARY
+# FIRST POLICY
 
 
 
