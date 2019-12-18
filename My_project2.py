@@ -11,10 +11,13 @@ import pandas as pd
 
 import sqlite3
 import numpy as np
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt # For plots.
 import math
 import seaborn as sb
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier # To treat missing values in children, education and firstPolicy variables.
+import random # To treat missing values in livingArea variable.
+from sklearn.neighbors import KNeighborsRegressor # To treat missing values in salary.
+import statsmodels.api as sm # To create a linear regression for the variable salary.
 
 #""" my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
 #my_path = r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
@@ -415,7 +418,6 @@ dfOriginal['Outliers_lobHousehold'].value_counts()
 plt.figure()
 sb.boxplot(x = dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0]) 
 plt.show()
-
 plt.figure()
 dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0].value_counts().sort_index().plot()
 plt.show()
@@ -662,13 +664,106 @@ dfWork2.groupby(by='livingArea').hist(alpha=0.4)
 
 # As we probably will not use this variable on our analysis, we decided to input a random variable into the nan value on this variable.
 # Check again null values by column
-import random
 dfWork['livingArea']=np.where(dfWork['livingArea'].isna(),random.choice(dfWork['livingArea'][~dfWork['livingArea'].isna()]),dfWork['livingArea'])
 dfWork.isna().sum()
 
-############################################################################################3
-# CHILDREN - MISSING VALUES IMPUTATION
+############################################################################################
+# Function to treat Nan Values through KNN:
+def KNN(myDf,treatVariable,categorical,expVariables,K):
+    """The varList must have an id column, the variable to treat and the explainable variables!"""
+    varList=list(myDf)
+    # df_inc: has Nan values on the treatVariable.
+    # df_comp: no Nan values on the treatVariable.
+    df_inc=myDf.loc[myDf[treatVariable].isna(),]
+    df_comp=myDf[~myDf.index.isin(df_inc.index)]
+    # change categorical variable to string to guarantee it can be a classifier.
+    if categorical==True:
+        df_comp[treatVariable]=df_comp[treatVariable].astype('category')
+    clf = KNeighborsClassifier(K,weights='distance', metric='euclidean')
+    # Use the df_comp data frame to train the model:
+    trained_model = clf.fit(df_comp.loc[:,expVariables],
+                        df_comp.loc[:,treatVariable])
+    # Apply the trained model to the unknown data.
+    # Drop treatVariable column from df_inc data frame.
+    # Concat the df_inc data frame with the temp_df.
+    # Introduce the data into the dfWork data frame.
+    imputed_values = trained_model.predict(df_inc.drop(columns=[treatVariable,'id']))
+    temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = [treatVariable])
+    df_inc = df_inc.drop(columns=[treatVariable])
+    df_inc = df_inc.reset_index(drop=True)
+    df_inc = pd.concat([df_inc, temp_df],
+                              axis = 1,
+                              ignore_index = True,
+                              verify_integrity = False)
+    df_inc.columns = varList
+    df_inc = df_inc.drop(columns=expVariables)
+    for i, index in dfWork.iterrows():
+        for j, index in df_inc.iterrows():
+            if dfWork.loc[i,'id']==df_inc.loc[j,'id']:
+                dfWork.loc[i,treatVariable]=df_inc.loc[j,treatVariable]
 
+# Function to treat Nan Values through KN Regression:
+def KNRegressor (myDf,treatVariable,categorical,expVariables,K):
+    varList=list(myDf)
+    if categorical==True:
+            myDf = myDf[expVariables].apply(pd.to_numeric)
+    else: myDf = myDf[varList].apply(pd.to_numeric)
+    # df_inc: has Nan values on the treatVariable.
+    # df_comp: no Nan values on the treatVariable.
+    df_inc=myDf.loc[myDf[treatVariable].isna(),]
+    df_comp=myDf[~myDf.index.isin(df_inc.index)]
+    # Define a regressor with KNN.
+    my_regressor = KNeighborsRegressor(K,weights='distance',metric='euclidean')
+    trained_model = my_regressor.fit(df_comp.loc[:,expVariables],
+                        df_comp.loc[:,treatVariable])
+    # Apply the trained model to the unknown data.
+    # Drop treatVariable column from df_inc data frame.
+    # Concat the df_inc data frame with the temp_df.
+    # Introduce the data into the dfWork data frame.
+    imputed_values = trained_model.predict(df_inc.drop(columns=[treatVariable,'id']))
+    temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = [treatVariable])
+    df_inc = df_inc.drop(columns=[treatVariable])
+    df_inc = df_inc.reset_index(drop=True)
+    df_inc = pd.concat([df_inc, temp_df],
+                              axis = 1,
+                              ignore_index = True,
+                              verify_integrity = False)
+    df_inc.columns = varList
+    df_inc = df_inc.drop(columns=expVariables)
+    for i, index in dfWork.iterrows():
+        for j, index in df_inc.iterrows():
+            if dfWork.loc[i,'id']==df_inc.loc[j,'id']:
+                dfWork.loc[i,treatVariable]=df_inc.loc[j,treatVariable]
+                
+def Regression(myDf,indepVariables,depVariable,treatNa):
+    varList=list(myDf)
+    # df_comp: dataframe without null values.
+    df_inc=myDf[pd.isnull(myDf).any(axis=1)]
+    df_comp=myDf[~myDf.index.isin(df_inc.index)]
+    # Apply a linear regression.
+    lm=sm.OLS(df_comp[depVariable],df_comp[indepVariables])
+    slr_results = lm.fit()
+    if treatNa==True:
+        imputed_values=lm.predict(df_inc.drop(columns=[depVariable,'id']))
+        temp_df=pd.DataFrame(imputed_values.reshape(-1,1), columns = [depVariable])
+        df_inc = df_inc.drop(columns=[depVariable])
+        df_inc = df_inc.reset_index(drop=True)
+        df_inc = pd.concat([df_inc, temp_df],
+                                  axis = 1,
+                                  ignore_index = True,
+                                  verify_integrity = False)
+        df_inc.columns = varList
+        df_inc = df_inc.drop(columns=indepVariables)
+        for i, index in dfWork.iterrows():
+            for j, index in df_inc.iterrows():
+                if dfWork.loc[i,'id']==df_inc.loc[j,'id']:
+                    dfWork.loc[i,depVariable]=df_inc.loc[j,depVariable]
+    return slr_results.summary()
+
+
+
+############################################################################################
+# CHILDREN - MISSING VALUES IMPUTATION
 #Check null values on children:
 dfWork['children'].isna().sum()     #There are 21 Nan values
 
@@ -685,52 +780,16 @@ plt.show()
 
 # dfChildren: to treat Children Nan values
 dfChildren=dfWork[['id','salary','lobMotor','children']]
-
 dfChildren['children'][dfChildren['salary'].isna()].isna().sum()
 dfChildren['children'][dfChildren['lobMotor'].isna()].isna().sum()
 # There is no individual that has both salary and children null.
-# There is no individual that has both LobMotor and children null.
+# There is no individual that has both LobMotor and children null (this would never happen as we have already treated null values for lob variables)
 
 # Delete rows that have salary and/or lobMotor null.
 dfChildren = dfChildren[~((dfChildren['salary'].isna())|(dfChildren['lobMotor'].isna()))]
 
-# children_incomplete: has Nan values on children.
-# children_complete: no Nan values on children.
-children_incomplete=dfChildren.loc[dfChildren.children.isna(),]
-children_complete=dfChildren[~dfChildren.index.isin(children_incomplete.index)]
-
-# change children to string so it can be a classifier.
-children_complete.children = children_complete.children.astype('category')
-clf = KNeighborsClassifier(5,weights='distance', metric='euclidean')
-
-# Use the children_complete data frame to train the model:
-trained_model = clf.fit(children_complete.loc[:,['salary', 'lobMotor']],
-                        children_complete.loc[:,'children'])
-
-# Apply the trained model to the unknown data.
-# Drop children column from children_incomplete data frame.
-# Concat the my_data_incomplete data frame with the temp_df.
-# Introduce the data into the dfWork data frame.
-imputed_values = trained_model.predict(children_incomplete.drop(columns=['children','id']))
-temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = ['children'])
-children_incomplete = children_incomplete.drop(columns=['children'])
-children_incomplete = children_incomplete.reset_index(drop=True)
-children_incomplete = pd.concat([children_incomplete, temp_df],
-                              axis = 1,
-                              ignore_index = True,
-                              verify_integrity = False)
-children_incomplete.columns = ['id','salary','lobMotor', 'children']
-children_incomplete=children_incomplete.drop(columns=['salary','lobMotor'])
-children_incomplete['children']=pd.to_numeric(children_incomplete['children'])
-
-# Change this to a simpler thing: so it does not have to go by row but compare all at once: 
-for i, index in dfWork.iterrows():
-    for j, index in children_incomplete.iterrows():
-        if dfWork.loc[i,'id']==children_incomplete.loc[j,'id']:
-            dfWork.loc[i,'children']=children_incomplete.loc[j,'children']
-
-#dfWork['children']=np.where(dfWork['id']==children_incomplete['id'],children_incomplete['children'],dfWork['children'])
-#dfWork['children'][dfWork['id'].isin(children_incomplete['id'])]=np.where[dfWork['id']==children_incomplete['id'],children_incomplete['id'],dfWork['children']]
+# Apply the KNN Function:
+KNRegressor(myDf=dfChildren, treatVariable='children', categorical=True, expVariables=['salary','lobMotor'],K=5)
 
 #Check null values again:
 dfWork.isna().sum()
@@ -741,10 +800,8 @@ dfWork.isna().sum()
 dfWork['education'].isna().sum()   #There are 17 Nan values
 
 # Which variables better explain the variable education?
-plt.figure()
 sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='education')
 plt.show()
-plt.figure()
 sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='education')
 plt.show()
 # The variables that better explain education (better discriminate the different classes of education) are: lobMotor, lobHousehold, salary
@@ -759,75 +816,258 @@ dfEducation['education'][dfEducation['salary'].isna()].isna().sum()
 # Delete rows that have salary null.
 dfEducation = dfEducation[~((dfEducation['salary'].isna()))]
 
-# education_incomplete: has Nan values on education.
-# education_complete: no Nan values on education.
-education_incomplete=dfEducation.loc[dfEducation.education.isna(),]
-education_complete=dfEducation[~dfEducation.index.isin(education_incomplete.index)]
-
-# change education to string so it can be a classifier.
-education_complete.children = education_complete.education.astype('category')
-clf = KNeighborsClassifier(5,weights='distance', metric='euclidean')
-
-# Use the education_complete data frame to train the model:
-trained_model = clf.fit(education_complete.loc[:,['salary', 'lobMotor','lobHousehold']],
-                        education_complete.loc[:,'education'])
-
-# Apply the trained model to the unknown data.
-# Drop education column from education_incomplete data frame.
-# Concat the my_data_incomplete data frame with the temp_df.
-# Introduce the data into the dfWork data frame.
-imputed_values = trained_model.predict(education_incomplete.drop(columns=['education','id']))
-temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = ['education'])
-education_incomplete = education_incomplete.drop(columns=['education'])
-education_incomplete = education_incomplete.reset_index(drop=True)
-education_incomplete = pd.concat([education_incomplete, temp_df],
-                              axis = 1,
-                              ignore_index = True,
-                              verify_integrity = False)
-education_incomplete.columns = ['id','salary','lobMotor','lobHousehold','education']
-education_incomplete=education_incomplete.drop(columns=['salary','lobMotor','lobHousehold'])
-
-# Change this to a simpler thing: so it does not have to go by row but compare all at once: 
-for i, index in dfWork.iterrows():
-    for j, index in education_incomplete.iterrows():
-        if dfWork.loc[i,'id']==education_incomplete.loc[j,'id']:
-            dfWork.loc[i,'education']=education_incomplete.loc[j,'education']
+#Apply KN Regression function:
+# NÃO CONSIGO APLICAR O KN REGRESSION! NÃO SEI PORQUÊ!!!!!!!!!!!!!!!!!!!!!!!!!!!
+KNN(myDf=dfEducation, treatVariable='education', categorical=True, expVariables=['salary', 'lobMotor','lobHousehold'],K=5)
 
 #Check null values again:
 dfWork.isna().sum() # There is still 1 null value as expected because the individual has both salary and education null.
 
 # Estimate the education value of this individual only with the variables lobMotor and lobHousehold.
 dfEducation=dfWork[['id','lobMotor','lobHousehold','education']]
-education_incomplete=dfEducation.loc[dfEducation.education.isna(),]
-education_complete=dfEducation[~dfEducation.index.isin(education_incomplete.index)]
-education_complete.children = education_complete.education.astype('category')
-trained_model = clf.fit(education_complete.loc[:,['lobMotor','lobHousehold']],
-                        education_complete.loc[:,'education'])
 
-imputed_values = trained_model.predict(education_incomplete.drop(columns=['education','id']))
-temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = ['education'])
-education_incomplete = education_incomplete.drop(columns=['education'])
-education_incomplete = education_incomplete.reset_index(drop=True)
-education_incomplete = pd.concat([education_incomplete, temp_df],
-                              axis = 1,
-                              ignore_index = True,
-                              verify_integrity = False)
-
-education_incomplete.columns = ['id','lobMotor','lobHousehold','education']
-education_incomplete=education_incomplete.drop(columns=['lobMotor','lobHousehold'])
-
-for i, index in dfWork.iterrows():
-    for j, index in education_incomplete.iterrows():
-        if dfWork.loc[i,'id']==education_incomplete.loc[j,'id']:
-            dfWork.loc[i,'education']=education_incomplete.loc[j,'education']
+#Apply KNN function:
+KNN(myDf=dfEducation, treatVariable='education', categorical=True, expVariables=['lobMotor','lobHousehold'], K=5)
 
 # Check again nan values:
 dfWork.isna().sum()
 
 ######################################################################################
 # SALARY
+# Which variables better explain salary?
+# 1. Linear correlation: to check if there are linear correlations between variables.
+# Through the heatmap, we can check that there is no variable that is highly linearly correlated with salary in absolute value. 
+dfCorr=pd.DataFrame(dfWork,columns=['firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
+dfCorrP=dfCorr.corr(method ='pearson')
+mask = np.zeros_like(dfCorrP)
+mask[np.triu_indices_from(mask)] = True
+with sb.axes_style("white"):
+    fig, ax = plt.subplots(figsize=(10,10))
+    ax = sb.heatmap(dfCorrP, annot=True, mask=mask, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
+    fig.suptitle('Heatmap - Linear Correlations (Pearson)')
+
+# 2. Non linear correlations: to check if there are non linear correlations between variables:
+# Through the heatmap, we can check that there is no variable that is highly non linearly correlated with salary in absolute value. 
+dfCorrS=dfCorr.corr(method ='spearman')
+mask = np.zeros_like(dfCorrS)
+mask[np.triu_indices_from(mask)] = True
+with sb.axes_style("white"):
+    fig, ax = plt.subplots(figsize=(10,10))
+    ax = sb.heatmap(dfCorrS, annot=True, mask=mask, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
+    fig.suptitle('Heatmap - Non Linear Correlations (Spearman)')
+
+# 3.  Plot the distribution of salary according to other variables: to check if there are variables that follow a specific distribution with the salary.
+# To complement the point 3 (not actually necessary)
+fig=plt.figure()
+fig.suptitle('Distribution of Salary vs Other Variables')
+plt.subplot2grid((2,4),(0,0))
+plt.scatter(dfWork['cmv'], dfWork['salary'], alpha=0.5)
+plt.xlabel("CMV")
+plt.ylabel("Salary")
+
+plt.subplot2grid((2,4),(0,1))
+plt.scatter(dfWork['claims'], dfWork['salary'], alpha=0.5)
+plt.xlabel("Claims")
+
+plt.subplot2grid((2,4),(0,2))
+plt.scatter(dfWork['lobMotor'], dfWork['salary'], alpha=0.5)
+plt.xlabel("lobMotor")
+
+plt.subplot2grid((2,4),(0,3))
+plt.scatter(dfWork['lobHousehold'], dfWork['salary'], alpha=0.5)
+plt.xlabel("lobHousehold")
+
+plt.subplot2grid((2,4),(1,0))
+plt.scatter(dfWork['lobHealth'], dfWork['salary'], alpha=0.5)
+plt.xlabel("lobHealth")
+plt.ylabel("Salary")
+
+plt.subplot2grid((2,4),(1,1))
+plt.scatter(dfWork['lobLife'], dfWork['salary'], alpha=0.5)
+plt.xlabel("lobLife")
+
+plt.subplot2grid((2,4),(1,2))
+plt.scatter(dfWork['lobWork'], dfWork['salary'], alpha=0.5)
+plt.xlabel("lobWork")
+
+plt.subplot2grid((2,4),(1,3))
+plt.scatter(dfWork['lobTotal'], dfWork['salary'], alpha=0.5)
+plt.xlabel("lobTotal")
+plt.tight_layout(rect=[0.5, 0, 1, 1], h_pad=0.5)
+plt.plot()
+# The variables that might better explain salary are: LobHousehold, LobLife and lobWork. As this analysis is only conceptually based, it is not enough.
+# 4. Let's build a linear regression to check which variables are more significant to explain salary.
+
+dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
+Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
+Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
+
+
+# Results: 
+# 1. The variables that are statistically significant for alpha=0.05 are cmv, claims, lobMotor, lobHealth, lobLife and lobWork as the p-values<=0.05-->Reject Ho and there is statistical evidence that the estimates are statistical significant.
+# 2. Estimate a new model only with the most relevant variables (without the lobHousehold variable).
+# 3. Second estimated model: High R^2 (0.877) which means that the created regression has a low error, fits well the data (explains well the variability of the variable salary).
+
+# Let's use these variables (significant) to treat the null values of salary through a linear regression. - The one estimated secondly.
+Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+dfSalary = dfWork[['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
+
+# dfSalary_incomplete: dataframe with individuals that have salary null.
+# dfSalary_complete: dataframe with individuals that do not have salary null.
+dfSalary_incomplete = dfSalary[dfSalary.salary.isna()]
+dfSalary_complete = dfSalary[~dfSalary.index.isin(dfSalary_incomplete.index)]
+
+my_regressor = KNeighborsRegressor(10,weights='distance',metric='euclidean')
+
+#different algorithm(decision tree): do not have to calculate all distances...
+#income will be the result: apply the rule on the previous row:
+neigh = my_regressor.fit(dfSalary_complete.loc[:,['lobMotor','lobHousehold','lobHealth','lobLife','lobWork']], 
+                         dfSalary_complete.loc[:,['salary']])
+
+imputed_salary = neigh.predict(dfSalary_incomplete.drop(columns = ['salary','id']))
+
+temp_df=pd.DataFrame(imputed_salary.reshape(-1,1),columns=['salary'])
+
+dfSalary_incomplete=dfSalary_incomplete.drop(columns=['salary'])
+dfSalary_incomplete=dfSalary_incomplete.reset_index(drop=True)
+dfSalary_incomplete=pd.concat([dfSalary_incomplete,temp_df],axis=1,ignore_index=True,verify_integrity=False)
+dfSalary_incomplete.columns=['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']
+dfSalary_incomplete=dfSalary_incomplete.drop(columns=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
+# Input estimated values into the dfWork data frame.
+for i, index in dfWork.iterrows():
+        for j, index in dfSalary_incomplete.iterrows():
+            if dfWork.loc[i,'id']==dfSalary_incomplete.loc[j,'id']:
+                dfWork.loc[i,'salary']=dfSalary_incomplete.loc[j,'salary']
+
+#Check again Null values.
+#Recalculate column yearSalary.
+#Check again Null values.
+dfWork.isna().sum()
+dfWork['yearSalary']=dfWork['salary']*12
+dfWork.isna().sum()
+
+#############################################################################################################
 # FIRST POLICY
 
+# Firstly, lets check which variables might better explain first policy.
+# 1. There is no variable highly linearly correlated with first policy in absolute value.
+# There is no variable linearly correlated with firstPolicy.
+# 2. Check non linear correlations through the Spearman correlations. - already previously created heatmap.
+# There is no variable non linearly correlated with firstPolicy.
+# 3. Lets check non linear correlations visually (not necessary, just a complement to point 2.)
+            
+fig=plt.figure()
+fig.suptitle('Distribution of firstPolicy vs Other Variables')
+plt.subplot2grid((2,4),(0,0))
+plt.scatter(dfWork['cmv'], dfWork['firstPolicy'], alpha=0.5)
+plt.xlabel("CMV")
+plt.ylabel("fisrtPolicy")
+
+plt.subplot2grid((2,4),(0,1))
+plt.scatter(dfWork['claims'], dfWork['firstPolicy'], alpha=0.5)
+plt.xlabel("Claims")
+
+plt.subplot2grid((2,4),(0,2))
+plt.scatter(dfWork['lobMotor'], dfWork['firstPolicy'], alpha=0.5)
+plt.xlabel("lobMotor")
+
+plt.subplot2grid((2,4),(0,3))
+plt.scatter(dfWork['lobHousehold'], dfWork['firstPolicy'], alpha=0.5)
+plt.xlabel("lobHousehold")
+
+plt.subplot2grid((2,4),(1,0))
+plt.scatter(dfWork['lobHealth'], dfWork['firstPolicy'], alpha=0.5)
+plt.xlabel("lobHealth")
+plt.ylabel("fisrtPolicy")
+
+plt.subplot2grid((2,4),(1,1))
+plt.scatter(dfWork['lobLife'], dfWork['firstPolicy'], alpha=0.5)
+plt.xlabel("lobLife")
+
+plt.subplot2grid((2,4),(1,2))
+plt.scatter(dfWork['lobWork'], dfWork['firstPolicy'], alpha=0.5)
+plt.xlabel("lobWork")
+
+plt.subplot2grid((2,4),(1,3))
+plt.scatter(dfWork['salary'], dfWork['firstPolicy'], alpha=0.5)
+plt.xlabel("salary")
+plt.tight_layout(rect=[0.5, 0, 1, 1], h_pad=0.5)
+plt.plot()
+# Visually we can also observe what was stated before, that there is no variable non linearly correlated with first policy.
+
+# 4. Let's build a linear regression to check which variables are more significant to explain firstPolicy.
+
+dfFirstPolicy=dfWork[['firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
+# dfFirstPolicy_incomplete: dataframe with individuals who have null values in firstPolicy.
+# dfFirstPolicy_complete: dataframe with individuals who have no null values in firstPolicy.
+dfFirstPolicy_incomplete = dfFirstPolicy[dfFirstPolicy.firstPolicy.isna()]
+dfFirstPolicy_complete = dfFirstPolicy[~dfFirstPolicy.index.isin(dfFirstPolicy_incomplete.index)]
+
+lm=sm.OLS(dfFirstPolicy_complete['firstPolicy'],dfFirstPolicy_complete[['salary','cmv','claims','lobHousehold','lobHealth','lobLife','lobWork']])
+slr_results = lm.fit()
+slr_results.summary()
+
+lm=sm.OLS(dfFirstPolicy_complete['firstPolicy'],dfFirstPolicy_complete[['salary','cmv','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']])
+slr_results = lm.fit()
+slr_results.summary()
+
+lm=sm.OLS(dfFirstPolicy_complete['firstPolicy'],dfFirstPolicy_complete[['lobMotor','lobHealth','lobLife']])
+slr_results = lm.fit()
+slr_results.summary()
+# Results: 
+# 1. All variables are statistically significant for alpha=0.05 as the p-values<=0.05 for all variables -->Reject Ho and there is statistical evidence that the estimates are statistical significant.
+# 2. High R^2 (0.997) which means that the created regression has a low error, fits well the data (explains well the variability of the variable salary).
+
+# Let's use these variables (significant) to treat the nul values of salary through a linear regression.
+dfFirstPolicy = dfWork[['id','firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
+
+# dfSalary_incomplete: dataframe with individuals that have salary null.
+# dfSalary_complete: dataframe with individuals that do not have salary null.
+dfFirstPolicy_incomplete = dfFirstPolicy[dfSalary.salary.isna()]
+dfFirstPolicy_complete = dfFirstPolicy[~dfSalary.index.isin(dfFirstPolicy_incomplete.index)]
+
+my_regressor = KNeighborsRegressor(10,weights='distance',metric='euclidean')
+
+
+
+
+
+
+
+
+#different algorithm(decision tree): do not have to calculate all distances...
+#income will be the result: apply the rule on the previous row:
+neigh = my_regressor.fit(dfSalary_complete.loc[:,['lobMotor','lobHousehold','lobHealth','lobLife','lobWork']], 
+                         dfSalary_complete.loc[:,['salary']])
+
+imputed_salary = neigh.predict(dfSalary_incomplete.drop(columns = ['salary','id']))
+
+temp_df=pd.DataFrame(imputed_salary.reshape(-1,1),columns=['salary'])
+
+dfSalary_incomplete=dfSalary_incomplete.drop(columns=['salary'])
+dfSalary_incomplete=dfSalary_incomplete.reset_index(drop=True)
+dfSalary_incomplete=pd.concat([dfSalary_incomplete,temp_df],axis=1,ignore_index=True,verify_integrity=False)
+dfSalary_incomplete.columns=['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']
+dfSalary_incomplete=dfSalary_incomplete.drop(columns=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
+# Input estimated values into the dfWork data frame.
+for i, index in dfWork.iterrows():
+        for j, index in dfSalary_incomplete.iterrows():
+            if dfWork.loc[i,'id']==dfSalary_incomplete.loc[j,'id']:
+                dfWork.loc[i,'salary']=dfSalary_incomplete.loc[j,'salary']
 
 
 
@@ -839,6 +1079,17 @@ dfWork.isna().sum()
 
 
 
+
+
+
+
+
+
+
+
+
+
+    
 
 
 
@@ -921,12 +1172,24 @@ dfWork['lobTotal'][dfWork['firstPolicy'].isnull()].value_counts()
 #KNN Treatment of Nan
 # Correlation matrix: to check if there linear correlations between variables
 dfCorr=pd.DataFrame(dfWork,columns=['firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
-corrMatrix=dfCorr.corr(method ='pearson')
+dfCorr=dfCorr.corr(method ='pearson')
+mask = np.zeros_like(dfCorr)
+mask[np.triu_indices_from(mask)] = True
+with sb.axes_style("white"):
+    fig, ax = plt.subplots(figsize=(10,10))
+    ax = sb.heatmap(dfCorr, annot=True, mask=mask, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
 
-plt.figure()
-fig, ax = plt.subplots(figsize=(10,10))
-sb.heatmap(corrMatrix,annot=True,fmt=".3f")
+
+
+
+
+
+sb.heatmap(dfCorr,annot=True,fmt=".3f", cbar_kws={'label': 'Colorbar'})
 plt.show()
+
+
+
+
 # As this only gives information about the linear correlation, we are going to check in more detail with the pairplot
 plt.figure()
 dfCorr2=dfCorr.dropna()
