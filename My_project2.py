@@ -706,8 +706,9 @@ def KNN(myDf,treatVariable,categorical,expVariables,K):
 def KNRegressor (myDf,treatVariable,categorical,expVariables,K):
     varList=list(myDf)
     if categorical==True:
-            myDf = myDf[expVariables].apply(pd.to_numeric)
-    else: myDf = myDf[varList].apply(pd.to_numeric)
+            myDf[expVariables] = myDf[expVariables].apply(pd.to_numeric)
+            myDf[treatVariable] = myDf[treatVariable].astype('category')
+    else: myDf[varList] = myDf[varList].apply(pd.to_numeric)
     # df_inc: has Nan values on the treatVariable.
     # df_comp: no Nan values on the treatVariable.
     df_inc=myDf.loc[myDf[treatVariable].isna(),]
@@ -818,6 +819,7 @@ dfEducation = dfEducation[~((dfEducation['salary'].isna()))]
 
 #Apply KN Regression function:
 # NÃO CONSIGO APLICAR O KN REGRESSION! NÃO SEI PORQUÊ!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Error is on the imputed_values!
 KNN(myDf=dfEducation, treatVariable='education', categorical=True, expVariables=['salary', 'lobMotor','lobHousehold'],K=5)
 
 #Check null values again:
@@ -909,49 +911,19 @@ Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','
 # 3. Second estimated model: High R^2 (0.877) which means that the created regression has a low error, fits well the data (explains well the variability of the variable salary).
 
 # Let's use these variables (significant) to treat the null values of salary through a linear regression. - The one estimated secondly.
+dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','lobWork']]
+
+# THIS DOES NOT WORK!! DO NOT KNOW WHY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Error is on the imputed_value!!
 Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=True)
 
 
+#Check null values:
+dfWork.isna().sum()
 
-
-
-
-
-
-
-
-
-
-
-
-dfSalary = dfWork[['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
-
-# dfSalary_incomplete: dataframe with individuals that have salary null.
-# dfSalary_complete: dataframe with individuals that do not have salary null.
-dfSalary_incomplete = dfSalary[dfSalary.salary.isna()]
-dfSalary_complete = dfSalary[~dfSalary.index.isin(dfSalary_incomplete.index)]
-
-my_regressor = KNeighborsRegressor(10,weights='distance',metric='euclidean')
-
-#different algorithm(decision tree): do not have to calculate all distances...
-#income will be the result: apply the rule on the previous row:
-neigh = my_regressor.fit(dfSalary_complete.loc[:,['lobMotor','lobHousehold','lobHealth','lobLife','lobWork']], 
-                         dfSalary_complete.loc[:,['salary']])
-
-imputed_salary = neigh.predict(dfSalary_incomplete.drop(columns = ['salary','id']))
-
-temp_df=pd.DataFrame(imputed_salary.reshape(-1,1),columns=['salary'])
-
-dfSalary_incomplete=dfSalary_incomplete.drop(columns=['salary'])
-dfSalary_incomplete=dfSalary_incomplete.reset_index(drop=True)
-dfSalary_incomplete=pd.concat([dfSalary_incomplete,temp_df],axis=1,ignore_index=True,verify_integrity=False)
-dfSalary_incomplete.columns=['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']
-dfSalary_incomplete=dfSalary_incomplete.drop(columns=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
-# Input estimated values into the dfWork data frame.
-for i, index in dfWork.iterrows():
-        for j, index in dfSalary_incomplete.iterrows():
-            if dfWork.loc[i,'id']==dfSalary_incomplete.loc[j,'id']:
-                dfWork.loc[i,'salary']=dfSalary_incomplete.loc[j,'salary']
+# If we want to solve with KN Regressor: It Works!! (I have tried)
+dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','lobWork']]
+KNRegressor(myDf=dfSalary, treatVariable='salary', categorical=False,expVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],K=5)
 
 #Check again Null values.
 #Recalculate column yearSalary.
@@ -1012,35 +984,15 @@ plt.plot()
 # 4. Let's build a linear regression to check which variables are more significant to explain firstPolicy.
 
 dfFirstPolicy=dfWork[['firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
-# dfFirstPolicy_incomplete: dataframe with individuals who have null values in firstPolicy.
-# dfFirstPolicy_complete: dataframe with individuals who have no null values in firstPolicy.
-dfFirstPolicy_incomplete = dfFirstPolicy[dfFirstPolicy.firstPolicy.isna()]
-dfFirstPolicy_complete = dfFirstPolicy[~dfFirstPolicy.index.isin(dfFirstPolicy_incomplete.index)]
+Regression(myDf=dfFirstPolicy, indepVariables=['salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='firstPolicy',treatNa=False)
 
-lm=sm.OLS(dfFirstPolicy_complete['firstPolicy'],dfFirstPolicy_complete[['salary','cmv','claims','lobHousehold','lobHealth','lobLife','lobWork']])
-slr_results = lm.fit()
-slr_results.summary()
-
-lm=sm.OLS(dfFirstPolicy_complete['firstPolicy'],dfFirstPolicy_complete[['salary','cmv','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']])
-slr_results = lm.fit()
-slr_results.summary()
-
-lm=sm.OLS(dfFirstPolicy_complete['firstPolicy'],dfFirstPolicy_complete[['lobMotor','lobHealth','lobLife']])
-slr_results = lm.fit()
-slr_results.summary()
 # Results: 
 # 1. All variables are statistically significant for alpha=0.05 as the p-values<=0.05 for all variables -->Reject Ho and there is statistical evidence that the estimates are statistical significant.
 # 2. High R^2 (0.997) which means that the created regression has a low error, fits well the data (explains well the variability of the variable salary).
+# THESE RESULTS ARE WEIRD!!!!
 
-# Let's use these variables (significant) to treat the nul values of salary through a linear regression.
-dfFirstPolicy = dfWork[['id','firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
-
-# dfSalary_incomplete: dataframe with individuals that have salary null.
-# dfSalary_complete: dataframe with individuals that do not have salary null.
-dfFirstPolicy_incomplete = dfFirstPolicy[dfSalary.salary.isna()]
-dfFirstPolicy_complete = dfFirstPolicy[~dfSalary.index.isin(dfFirstPolicy_incomplete.index)]
-
-my_regressor = KNeighborsRegressor(10,weights='distance',metric='euclidean')
+# Let's use these variables (significant) to treat the null values: DECIDE THE METHOD!
+# OPTIONS: KNN, KNREGRESSOR, REGRESSION.
 
 
 
@@ -1049,25 +1001,37 @@ my_regressor = KNeighborsRegressor(10,weights='distance',metric='euclidean')
 
 
 
-#different algorithm(decision tree): do not have to calculate all distances...
-#income will be the result: apply the rule on the previous row:
-neigh = my_regressor.fit(dfSalary_complete.loc[:,['lobMotor','lobHousehold','lobHealth','lobLife','lobWork']], 
-                         dfSalary_complete.loc[:,['salary']])
 
-imputed_salary = neigh.predict(dfSalary_incomplete.drop(columns = ['salary','id']))
 
-temp_df=pd.DataFrame(imputed_salary.reshape(-1,1),columns=['salary'])
 
-dfSalary_incomplete=dfSalary_incomplete.drop(columns=['salary'])
-dfSalary_incomplete=dfSalary_incomplete.reset_index(drop=True)
-dfSalary_incomplete=pd.concat([dfSalary_incomplete,temp_df],axis=1,ignore_index=True,verify_integrity=False)
-dfSalary_incomplete.columns=['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']
-dfSalary_incomplete=dfSalary_incomplete.drop(columns=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
-# Input estimated values into the dfWork data frame.
-for i, index in dfWork.iterrows():
-        for j, index in dfSalary_incomplete.iterrows():
-            if dfWork.loc[i,'id']==dfSalary_incomplete.loc[j,'id']:
-                dfWork.loc[i,'salary']=dfSalary_incomplete.loc[j,'salary']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
