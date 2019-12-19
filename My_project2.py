@@ -670,7 +670,7 @@ dfWork.isna().sum()
 
 ############################################################################################
 # Function to treat Nan Values through KNN:
-def KNClassifier(myDf,treatVariable,expVariables,K, weights):
+def KNClassifier(myDf,treatVariable,expVariables,K, weights,metric):
     """
     This function predicts a categorical variable through the KNN method (using KNeighborsClassifier). The arguments are the following:
     - myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables)
@@ -686,7 +686,7 @@ def KNClassifier(myDf,treatVariable,expVariables,K, weights):
     df_comp=myDf[~myDf.index.isin(df_inc.index)]
     # change categorical variable to string to guarantee it can be a classifier.
     df_comp[treatVariable]=df_comp[treatVariable].astype('category')
-    clf = KNeighborsClassifier(K,weights, metric='euclidean')
+    clf = KNeighborsClassifier(K,weights,metric)
     # Use the df_comp data frame to train the model:
     trained_model = clf.fit(df_comp.loc[:,expVariables],
                         df_comp.loc[:,treatVariable])
@@ -710,7 +710,7 @@ def KNClassifier(myDf,treatVariable,expVariables,K, weights):
                 dfWork.loc[i,treatVariable]=df_inc.loc[j,treatVariable]
 
 # Function to treat Nan Values through KN Regression:
-def KNRegressor (myDf,treatVariable,expVariables,K, weights):
+def KNRegressor (myDf,treatVariable,expVariables,K, weights, metric):
     """
     This function predicts a continuous variable through the KNN method (using KNeighborsRegressor). The arguments are the following:
     - myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables).
@@ -726,7 +726,7 @@ def KNRegressor (myDf,treatVariable,expVariables,K, weights):
     df_inc=myDf.loc[myDf[treatVariable].isna(),]
     df_comp=myDf[~myDf.index.isin(df_inc.index)]
     # Define a regressor with KNN.
-    my_regressor = KNeighborsRegressor(K,weights,metric='euclidean')
+    my_regressor = KNeighborsRegressor(K,weights,metric)
     trained_model = my_regressor.fit(df_comp.loc[:,expVariables],
                         df_comp.loc[:,treatVariable])
     # Apply the trained model to the unknown data.
@@ -783,6 +783,12 @@ def Regression(myDf,indepVariables,depVariable,treatNa):
 
 ############################################################################################
 # CHILDREN - MISSING VALUES IMPUTATION
+
+pd.pivot_table(dfWork,values='children', index=['education'],aggfunc=np.mean)
+pd.pivot_table(dfWork,values='children', index=['livingArea'],aggfunc=np.mean)
+# All education levels seem to have the same percentage of people with children. Therefore, we do not have to consider education to determine children.
+# Same applied for livingArea
+
 #Check null values on children:
 dfWork['children'].isna().sum()     #There are 21 Nan values
 
@@ -798,7 +804,7 @@ plt.show()
 # Lets use the variables lobmotor and salary to explain the variable children and to treat the Nan values through the KNN:
 
 # dfChildren: to treat Children Nan values
-dfChildren=dfWork[['id','salary','lobMotor','children']]
+dfChildren=dfWork[['id','salary','lobMotor','lobHealth','children']]
 dfChildren['children'][dfChildren['salary'].isna()].isna().sum()
 dfChildren['children'][dfChildren['lobMotor'].isna()].isna().sum()
 # There is no individual that has both salary and children null.
@@ -808,12 +814,16 @@ dfChildren['children'][dfChildren['lobMotor'].isna()].isna().sum()
 dfChildren = dfChildren[~((dfChildren['salary'].isna())|(dfChildren['lobMotor'].isna()))]
 
 # Apply the KNN Function:
-KNClassifier(myDf=dfChildren, treatVariable='children', expVariables=['salary','lobMotor'],K=5,weights='distance')
+KNClassifier(myDf=dfChildren, treatVariable='children', expVariables=['salary','lobMotor','lobHealth'],K=5,weights='distance', metric='manhattan')
+# We decided to use the manhattan distance because it considers the absolute distance in each variable.
 
 #Check null values again:
 dfWork.isna().sum()
 ###############################################################################################
 # EDUCATION - MISSING VALUES IMPUTATION
+
+
+
 
 #Check null values on education:
 dfWork['education'].isna().sum()   #There are 17 Nan values
@@ -827,16 +837,16 @@ plt.show()
 # Lets use the variables lobmotor, lobHousehold and salary to explain the variable education and to treat the Nan values through the KNN:
 
 # dfEducation: to treat education Nan values
-dfEducation=dfWork[['id','salary','lobMotor','lobHousehold','education']]
+dfEducation=dfWork[['id','salary','lobMotor','lobHousehold','lobWork','lobLife','education']]
 
 dfEducation['education'][dfEducation['salary'].isna()].isna().sum()
-# There is one individual that has both salary and education null. (THINK ABOUT THIS INDIVIDUAL LATER)
+# There is one individual that has both salary and education null.
 
 # Delete rows that have salary null.
 dfEducation = dfEducation[~((dfEducation['salary'].isna()))]
 
 #Apply KNN function:
-KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['salary', 'lobMotor','lobHousehold'],K=5,weights='distance')
+KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['salary', 'lobMotor','lobHousehold','lobWork','lobLife'],K=5,weights='distance', metric='manhattan')
 
 #Check null values again:
 dfWork.isna().sum() # There is still 1 null value as expected because the individual has both salary and education null.
@@ -845,7 +855,8 @@ dfWork.isna().sum() # There is still 1 null value as expected because the indivi
 dfEducation=dfWork[['id','lobMotor','lobHousehold','education']]
 
 #Apply KNN function:
-KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['lobMotor','lobHousehold'], K=5,weights='distance')
+KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['lobMotor','lobHousehold','lobWork','lobLife'], K=5,weights='distance', metric='manhattan')
+# Check different values of K!!!!!!!!!!!!!!!!!!!!
 
 # Check again nan values:
 dfWork.isna().sum()
@@ -916,7 +927,7 @@ plt.plot()
 # The variables that might better explain salary are: LobHousehold, LobLife and lobWork. As this analysis is only conceptually based, it is not enough.
 # 4. Let's build a linear regression to check which variables are more significant to explain salary.
 
-dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
+dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','children']]
 Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
 dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','lobWork']]
 Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
@@ -936,7 +947,7 @@ Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','
 #Check null values:
 dfWork.isna().sum()
 
-# If we want to solve with KN Regressor: It Works!! (I have tried)
+# If we want to solve with KN Regressor: It Works (I have tried)
 dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','lobWork']]
 KNRegressor(myDf=dfSalary, treatVariable='salary', categorical=False,expVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],K=5)
 
@@ -997,7 +1008,6 @@ plt.plot()
 # Visually we can also observe what was stated before, that there is no variable non linearly correlated with first policy.
 
 # 4. Let's build a linear regression to check which variables are more significant to explain firstPolicy.
-
 dfFirstPolicy=dfWork[['firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
 Regression(myDf=dfFirstPolicy, indepVariables=['salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='firstPolicy',treatNa=False)
 
@@ -1008,18 +1018,36 @@ Regression(myDf=dfFirstPolicy, indepVariables=['salary','cmv','claims','lobMotor
 
 # Let's use these variables (significant) to treat the null values: DECIDE THE METHOD!
 # OPTIONS: KNN, KNREGRESSOR, REGRESSION.
+dfWork
 
 
 
+###############################################################################################
+#-------------------------------------------NEW VARIABLES----------------------------------------------------
 
+# lobTotal (already created)
+# yearSalary (already created)
+# Ratios lobs 
+dfWork['motorRatio']=dfWork["lobMotor"]/dfWork['lobTotal']
+dfWork['householdRatio']=dfWork["lobHousehold"]/dfWork['lobTotal']
+dfWork['healthRatio']=dfWork["lobHealth"]/dfWork['lobTotal']
+dfWork['lifeRatio']=dfWork["lobLife"]/dfWork['lobTotal']
+dfWork['workCRatio']=dfWork["lobWork"]/dfWork['lobTotal']
 
+# AmountPaidInsurance = (Claims/2)*lobTotal
+dfWork['insuranceAmountPaid']=(dfWork['claims']/2)*dfWork['lobTotal']
 
+# lobTotal/salary
+dfWork['ratioSalary']=dfWork['lobTotal']/dfWork['salary']
 
+# Years has been a customer= 1998-firstPolicy
+dfWork['yearCustomer']=1998-dfWork['firstPolicy']
 
+#----------------------------------------------MULTIDIMENSIONAL OUTLIERS -------------------------------------------------#
+from kmodes.kprototypes import KPrototypes
 
-
-
-
+test=KPrototypes(n_clusters=1000, init='Huang')
+cluster=test.fit_predict(X, categorical=[3,4])
 
 
 
