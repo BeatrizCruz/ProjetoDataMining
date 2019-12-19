@@ -736,6 +736,8 @@ def KNRegressor (myDf,treatVariable,categorical,expVariables,K):
             if dfWork.loc[i,'id']==df_inc.loc[j,'id']:
                 dfWork.loc[i,treatVariable]=df_inc.loc[j,treatVariable]
                 
+# Function to create a regression (and then if wanted to predict through it)
+                
 def Regression(myDf,indepVariables,depVariable,treatNa):
     varList=list(myDf)
     # df_comp: dataframe without null values.
