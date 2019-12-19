@@ -18,7 +18,8 @@ from sklearn.neighbors import KNeighborsClassifier # To treat missing values in 
 import random # To treat missing values in livingArea variable.
 from sklearn.neighbors import KNeighborsRegressor # To treat missing values in salary.
 import statsmodels.api as sm # To create a linear regression for the variable salary.
-
+from sklearn.linear_model import LinearRegression # to create a linear regression for the variable salary.
+from sklearn import linear_model
 #""" my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
 #my_path = r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
 ##dbname = "datamining.db"
@@ -669,17 +670,23 @@ dfWork.isna().sum()
 
 ############################################################################################
 # Function to treat Nan Values through KNN:
-def KNN(myDf,treatVariable,categorical,expVariables,K):
-    """The varList must have an id column, the variable to treat and the explainable variables!"""
+def KNClassifier(myDf,treatVariable,expVariables,K, weights):
+    """
+    This function predicts a categorical variable through the KNN method (using KNeighborsClassifier). The arguments are the following:
+    - myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables)
+    - treatVariable: variable to predict (string type).
+    - expVariables: list of variables that will be used to explain the treatVariable
+    - K: number of neighbors to use.
+    - weights: to choose the weight function to use (distance, uniform, callable)- for a more detailed explanation check the KNeighborsRegressor parameters.
+    """
     varList=list(myDf)
     # df_inc: has Nan values on the treatVariable.
     # df_comp: no Nan values on the treatVariable.
     df_inc=myDf.loc[myDf[treatVariable].isna(),]
     df_comp=myDf[~myDf.index.isin(df_inc.index)]
     # change categorical variable to string to guarantee it can be a classifier.
-    if categorical==True:
-        df_comp[treatVariable]=df_comp[treatVariable].astype('category')
-    clf = KNeighborsClassifier(K,weights='distance', metric='euclidean')
+    df_comp[treatVariable]=df_comp[treatVariable].astype('category')
+    clf = KNeighborsClassifier(K,weights, metric='euclidean')
     # Use the df_comp data frame to train the model:
     trained_model = clf.fit(df_comp.loc[:,expVariables],
                         df_comp.loc[:,treatVariable])
@@ -703,18 +710,23 @@ def KNN(myDf,treatVariable,categorical,expVariables,K):
                 dfWork.loc[i,treatVariable]=df_inc.loc[j,treatVariable]
 
 # Function to treat Nan Values through KN Regression:
-def KNRegressor (myDf,treatVariable,categorical,expVariables,K):
+def KNRegressor (myDf,treatVariable,expVariables,K, weights):
+    """
+    This function predicts a continuous variable through the KNN method (using KNeighborsRegressor). The arguments are the following:
+    - myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables).
+    - treatVariable: variable to predict (string type).
+    - expVariables: list of variables that will be used to explain the treatVariable.
+    - K: number of neighbors to use.
+    - weights: to choose the weight function to use (distance, uniform, callable)- for a more detailed explanation check the KNeighborsRegressor parameters.
+    """
     varList=list(myDf)
-    if categorical==True:
-            myDf[expVariables] = myDf[expVariables].apply(pd.to_numeric)
-            myDf[treatVariable] = myDf[treatVariable].astype('category')
-    else: myDf[varList] = myDf[varList].apply(pd.to_numeric)
+    myDf[varList] = myDf[varList].apply(pd.to_numeric)
     # df_inc: has Nan values on the treatVariable.
     # df_comp: no Nan values on the treatVariable.
     df_inc=myDf.loc[myDf[treatVariable].isna(),]
     df_comp=myDf[~myDf.index.isin(df_inc.index)]
     # Define a regressor with KNN.
-    my_regressor = KNeighborsRegressor(K,weights='distance',metric='euclidean')
+    my_regressor = KNeighborsRegressor(K,weights,metric='euclidean')
     trained_model = my_regressor.fit(df_comp.loc[:,expVariables],
                         df_comp.loc[:,treatVariable])
     # Apply the trained model to the unknown data.
@@ -739,15 +751,21 @@ def KNRegressor (myDf,treatVariable,categorical,expVariables,K):
 # Function to create a regression (and then if wanted to predict through it)
                 
 def Regression(myDf,indepVariables,depVariable,treatNa):
+    """
+    - myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables).
+    - treatVariable: variable to predict (string type).
+    - expVariables: list of variables that will be used to explain the treatVariable.
+    - treatNa: boolean to define if it is to predict values with the created regression.
+    """
     varList=list(myDf)
     # df_comp: dataframe without null values.
     df_inc=myDf[pd.isnull(myDf).any(axis=1)]
     df_comp=myDf[~myDf.index.isin(df_inc.index)]
     # Apply a linear regression.
-    lm=sm.OLS(df_comp[depVariable],df_comp[indepVariables])
-    slr_results = lm.fit()
-    if treatNa==True:
-        imputed_values=lm.predict(df_inc.drop(columns=[depVariable,'id']))
+    model=sm.OLS(df_comp[depVariable],df_comp[indepVariables])
+    slr_results = model.fit()
+    if treatNa==True:        
+        imputed_values=model.predict(df_inc.drop(columns=[depVariable,'id']))
         temp_df=pd.DataFrame(imputed_values.reshape(-1,1), columns = [depVariable])
         df_inc = df_inc.drop(columns=[depVariable])
         df_inc = df_inc.reset_index(drop=True)
@@ -762,8 +780,6 @@ def Regression(myDf,indepVariables,depVariable,treatNa):
                 if dfWork.loc[i,'id']==df_inc.loc[j,'id']:
                     dfWork.loc[i,depVariable]=df_inc.loc[j,depVariable]
     return slr_results.summary()
-
-
 
 ############################################################################################
 # CHILDREN - MISSING VALUES IMPUTATION
@@ -792,7 +808,7 @@ dfChildren['children'][dfChildren['lobMotor'].isna()].isna().sum()
 dfChildren = dfChildren[~((dfChildren['salary'].isna())|(dfChildren['lobMotor'].isna()))]
 
 # Apply the KNN Function:
-KNN(myDf=dfChildren, treatVariable='children', categorical=True, expVariables=['salary','lobMotor'],K=5)
+KNClassifier(myDf=dfChildren, treatVariable='children', expVariables=['salary','lobMotor'],K=5,weights='distance')
 
 #Check null values again:
 dfWork.isna().sum()
@@ -820,7 +836,7 @@ dfEducation['education'][dfEducation['salary'].isna()].isna().sum()
 dfEducation = dfEducation[~((dfEducation['salary'].isna()))]
 
 #Apply KNN function:
-KNN(myDf=dfEducation, treatVariable='education', categorical=True, expVariables=['salary', 'lobMotor','lobHousehold'],K=5)
+KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['salary', 'lobMotor','lobHousehold'],K=5,weights='distance')
 
 #Check null values again:
 dfWork.isna().sum() # There is still 1 null value as expected because the individual has both salary and education null.
@@ -829,7 +845,7 @@ dfWork.isna().sum() # There is still 1 null value as expected because the indivi
 dfEducation=dfWork[['id','lobMotor','lobHousehold','education']]
 
 #Apply KNN function:
-KNN(myDf=dfEducation, treatVariable='education', categorical=True, expVariables=['lobMotor','lobHousehold'], K=5)
+KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['lobMotor','lobHousehold'], K=5,weights='distance')
 
 # Check again nan values:
 dfWork.isna().sum()
@@ -902,6 +918,7 @@ plt.plot()
 
 dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
 Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
+dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','lobWork']]
 Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
 
 # Results: 
