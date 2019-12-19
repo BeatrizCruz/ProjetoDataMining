@@ -792,7 +792,7 @@ dfChildren['children'][dfChildren['lobMotor'].isna()].isna().sum()
 dfChildren = dfChildren[~((dfChildren['salary'].isna())|(dfChildren['lobMotor'].isna()))]
 
 # Apply the KNN Function:
-KNRegressor(myDf=dfChildren, treatVariable='children', categorical=True, expVariables=['salary','lobMotor'],K=5)
+KNN(myDf=dfChildren, treatVariable='children', categorical=True, expVariables=['salary','lobMotor'],K=5)
 
 #Check null values again:
 dfWork.isna().sum()
@@ -819,9 +819,7 @@ dfEducation['education'][dfEducation['salary'].isna()].isna().sum()
 # Delete rows that have salary null.
 dfEducation = dfEducation[~((dfEducation['salary'].isna()))]
 
-#Apply KN Regression function:
-# NÃO CONSIGO APLICAR O KN REGRESSION! NÃO SEI PORQUÊ!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# Error is on the imputed_values!
+#Apply KNN function:
 KNN(myDf=dfEducation, treatVariable='education', categorical=True, expVariables=['salary', 'lobMotor','lobHousehold'],K=5)
 
 #Check null values again:
@@ -906,7 +904,6 @@ dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHousehold','lobHeal
 Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
 Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
 
-
 # Results: 
 # 1. The variables that are statistically significant for alpha=0.05 are cmv, claims, lobMotor, lobHealth, lobLife and lobWork as the p-values<=0.05-->Reject Ho and there is statistical evidence that the estimates are statistical significant.
 # 2. Estimate a new model only with the most relevant variables (without the lobHousehold variable).
@@ -918,7 +915,6 @@ dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','
 # THIS DOES NOT WORK!! DO NOT KNOW WHY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # Error is on the imputed_value!!
 Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=True)
-
 
 #Check null values:
 dfWork.isna().sum()
