@@ -822,7 +822,7 @@ dfWork.isna().sum()
 ###############################################################################################
 # EDUCATION - MISSING VALUES IMPUTATION
 
-
+dfWork['educationBinary']=
 
 
 #Check null values on education:
@@ -1019,8 +1019,6 @@ Regression(myDf=dfFirstPolicy, indepVariables=['salary','cmv','claims','lobMotor
 # Let's use these variables (significant) to treat the null values: DECIDE THE METHOD!
 # OPTIONS: KNN, KNREGRESSOR, REGRESSION.
 dfWork
-
-
 
 ###############################################################################################
 #-------------------------------------------NEW VARIABLES----------------------------------------------------
