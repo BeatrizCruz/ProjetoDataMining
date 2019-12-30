@@ -49,8 +49,8 @@ from sklearn import linear_model
 #print(cursor.fetchall()) """
 
 #Diretorias:
-file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -79,15 +79,16 @@ dfOriginal=dfOriginal.rename(columns={"Brithday Year": "birthday",
 # 1. birthday:
 
 # Plot birthday for a first visual analysis:
-plt.figure()
-dfOriginal['birthday'].value_counts().sort_index().plot() # there might be strange values on the birthday that are distorting the plot.
-plt.show()
-plt.figure()
-dfOriginal['birthday'].hist() # The plot with the strange value is not perceptive
-plt.show()
+# plt.figure()
+# dfOriginal['birthday'].value_counts().sort_index().plot()
+# there might be strange values on the birthday that are distorting the plot.
+# plt.show()
+# plt.figure()
+# dfOriginal['birthday'].hist() # The plot with the strange value is not perceptive
+# plt.show()
 
 #Let's check variable values:
-dfOriginal['birthday'].value_counts().sort_index() # After checking variable values, we have a strange value on the birthday: 1028
+print(dfOriginal['birthday'].value_counts().sort_index())# After checking variable values, we have a strange value on the birthday: 1028
 
 # Create a new column to indicate strange values as 1 and normal values as 0 and a column that will reference all odd values for easier access
 # There are few people alive that were born before 1900
@@ -96,22 +97,22 @@ dfOriginal['Others'] = np.where(dfOriginal['birthday']<1900, 1,0)
 dfOriginal['Strange_birthday'].value_counts()   # Verify if the column was created as supposed
 
 #Plot birthday variable with no strange values (where the new column equals zero):
-plt.figure()
-dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].hist()
-plt.show()
-plt.figure()
-dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].value_counts().sort_index().plot(marker='o')
-plt.show()
+# plt.figure()
+# dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].hist()
+# plt.show()
+# plt.figure()
+# dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].value_counts().sort_index().plot(marker='o') # ESTE!!!!!!!!!!!!!!!!!!!!!!
+# plt.show()
 
 # 2. firstPolicy
 
 # Plot firstPolicy for a first visual analysis:
-plt.figure()
-dfOriginal['firstPolicy'].value_counts().sort_index().plot() # there might be strange values on firstPolicy that are distorting the plot.
-plt.show()
-plt.figure()
-dfOriginal['firstPolicy'].hist() # The plot with strange values is not perceptive
-plt.show()
+# plt.figure()
+# dfOriginal['firstPolicy'].value_counts().sort_index().plot() # there might be strange values on firstPolicy that are distorting the plot.
+# plt.show()
+# plt.figure()
+# dfOriginal['firstPolicy'].hist() # The plot with strange values is not perceptive
+# plt.show()
 
 #Check variable values:
 dfOriginal['firstPolicy'].value_counts().sort_index() # there is a strange value: 53784
@@ -124,12 +125,12 @@ dfOriginal['Others']=np.where(dfOriginal['firstPolicy']>2016, 1,dfOriginal['Othe
 dfOriginal['strange_firstPolicy'].value_counts()
 
 #Plot firstPolicy variable with no strange values (where the created column equals zero):
-plt.figure()
-dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].hist()
-plt.show()
-plt.figure()
-dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].value_counts().sort_index().plot(marker='o')
-plt.show()
+# plt.figure()
+# dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].hist()
+# plt.show()
+# plt.figure()
+# dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].value_counts().sort_index().plot(marker='o') #ESTE!!!!!!!!!!!!!!!!!!!!!
+# plt.show()
 
 # 3. education (categorical variable)
 
@@ -138,33 +139,37 @@ counteducation=dfOriginal['education'].value_counts().sort_index()
 counteducation
 
 # Plot education variable:
-plt.figure()
-plt.bar(np.arange(len(counteducation.index)),counteducation)
-plt.xticks(np.arange(len(counteducation.index)),counteducation.index)
-plt.show()
+# plt.figure()                                                                                                #ESTE!!!!!!!!!!!!!!!!!!!!!!!!
+# plt.bar(np.arange(len(counteducation.index)),counteducation)
+# plt.xticks(np.arange(len(counteducation.index)),counteducation.index)
+# plt.show()
 # There is a considerable number of individuals with high education (BSc/MSc and PhD). 
 # The number of individuals having PhD is not that high. We will consider later if it makes sense to join the categories BSc/MSc and PhD in a unique category.
 
 # 4. salary
 # To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value as done with the previous cases, we decided to make the cumulative to be used for plotting.
 # Plot salary for a first visual analysis:
-plt.figure()
-dfOriginal['salary'].value_counts().sort_index().plot() # there might be strange values on salary that are distorting the plot.
-plt.show()
-plt.figure()
-dfOriginal['salary'].hist() # The plot with the strange value is not perceptive.
-plt.show()
+# plt.figure()
+# dfOriginal['salary'].value_counts().sort_index().plot() # there might be strange values on salary that are distorting the plot.
+# plt.show()
+# plt.figure()
+# dfOriginal['salary'].hist() # The plot with the strange value is not perceptive.
+# plt.show()
 
 # Check variable values and create a variable for that:
 countSalary = dfOriginal['salary'].value_counts().sort_index() # there are 2 out of the box values: 34490, 55215
-
+countSalary
 # Create a new column to indicate outliers as 1 and normal values as 0:
 # Explain chosen value for outliers (10000) (...)
 # Verify if the column was created as supposed
 dfOriginal['Outliers_salary']=np.where(dfOriginal['salary']>10000, 1,0)
 dfOriginal['Others']=np.where(dfOriginal['salary']>10000, 1,dfOriginal['Others'])
 dfOriginal['Outliers_salary'].value_counts()
-
+#lower than minimum wage in 2016 (530€)
+dfOriginal[dfOriginal["salary"]<530].count()        #minimum wage 2016
+dfOriginal[dfOriginal["salary"]<970].count()        #average wage 2016
+dfOriginal[dfOriginal["salary"]<293].count()        #minimum wage 1998
+dfOriginal[dfOriginal["salary"]<565].count()        #average wage 1998
 # Create a variable with the cumulative salary values 
 #Plot the salary values and the cumulative values of salary
 countSalaryCum = countSalary.cumsum()
@@ -174,17 +179,20 @@ countSalaryCum.plot()
 plt.show()
 
 # Plot salary non outliers values (where the created column equals zero):
-plt.figure()
-dfOriginal['salary'][dfOriginal['Outliers_salary']==0].hist()
-plt.show()
-plt.figure()
-dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().plot(marker='o')
-plt.show()
+# plt.figure()
+# dfOriginal['salary'][dfOriginal['Outliers_salary']==0].hist()
+# plt.show()
+# plt.figure()    #as scatter
+# dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().plot(style=".")
+# plt.show()
+# plt.figure()    #as histogram
+# dfOriginal['salary'][dfOriginal['Outliers_salary']==0].sort_index().plot(kind="hist")
+# plt.show()
 
 # Plot the cumulative salary non outliers values (where the created column equals zero):
-plt.figure()
-dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().cumsum().plot(marker='o')
-plt.show()
+# plt.figure()
+# dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().cumsum().plot(marker='o')
+# plt.show()
 
 # Check with log dist: as the usual behavior of a salary variable is a distribution with a heavy tail on the left side, usually it is applied a log transformation on the distribution in order to transform it to a normal distribution.
 # count by log salary value
@@ -194,12 +202,12 @@ countLogSalary=dfOriginal['logSalary'].value_counts().sort_index()
 countLogSalaryCum= countLogSalary.cumsum()
 
 # Plot both log salary and cululative log salary
-plt.figure()
-countLogSalary.plot()
-plt.show()
-plt.figure()
-countLogSalaryCum.plot()
-plt.show()
+# plt.figure()
+# countLogSalary.plot()
+# plt.show()
+# plt.figure()
+# countLogSalaryCum.plot()
+# plt.show()
 
 # Log distributon: not applicable as original distribution is already normal (it does not follow the usual behavior).
 # Drop created column as it will not be used
@@ -212,10 +220,10 @@ countlivingArea=dfOriginal['livingArea'].value_counts().sort_index()
 countlivingArea
 
 #Create a bar chart that shows the number of individuals per living area
-plt.figure()
-plt.bar(np.arange(len(countlivingArea.index)),countlivingArea)
-plt.xticks(np.arange(len(countlivingArea.index)),countlivingArea.index)
-plt.show()
+# plt.figure()
+# plt.bar(np.arange(len(countlivingArea.index)),countlivingArea)
+# plt.xticks(np.arange(len(countlivingArea.index)),countlivingArea.index)
+# plt.show()
 # As we dont have any information on the location of each category of living area variable, we probably will not be able to suggest modifications such as joining categories.
 
 # 6. children
@@ -225,30 +233,29 @@ countchildren=dfOriginal['children'].value_counts().sort_index()
 countchildren
 
 # Create a bar chart that shows the number of individuals with and without children
-plt.figure()
-plt.bar(np.arange(len(countchildren.index)),countchildren)
-plt.xticks(np.arange(len(countchildren.index)),countchildren.index)
-plt.show()
+# plt.figure()
+# plt.bar(np.arange(len(countchildren.index)),countchildren)
+# plt.xticks(np.arange(len(countchildren.index)),countchildren.index)
+# plt.show()
 # There are more individuals with children that without.
 
 # 7. cmv 
 # To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value, we decided to make the cumulative to plot, as done with the salary variable.
 
 #Plot cmv for a first visual analysis:
-plt.figure()
-dfOriginal['cmv'].value_counts().sort_index().plot() # there might be strange values on cmv that are distorting the plot.
-plt.show()
-plt.figure()
-dfOriginal['cmv'].hist() # The plot with the strange value is not perceptive
-plt.show()
+# plt.figure()
+# dfOriginal['cmv'].value_counts().sort_index().plot() # there might be strange values on cmv that are distorting the plot.
+# plt.show()
+# plt.figure()
+# dfOriginal['cmv'].hist() # The plot with the strange value is not perceptive
+# plt.show()
 
 # Create a variable that counts individuals by cmv value to check cmv values 
-cmvValues=dfOriginal['cmv'].value_counts().sort_index() 
-cmvValues #There are values that are too high and values that are too low that might be considered as outliers.
+cmvValues=dfOriginal['cmv'].value_counts().sort_index()
 # Create a boxplot to better visualize those values
-plt.figure()
-sb.boxplot(x=dfOriginal["cmv"]) 
-plt.show()
+# plt.figure()
+# sb.boxplot(x=dfOriginal["cmv"])
+# plt.show()
 
 # Create a new column for negative outliers that indicates outliers as 1 and other values as 0. Clients that give huge losses to the company will have value 1 in this column.
 # When creating the column put the 6 lower values that are represented on the boxplot (outliers) with value 1.
@@ -259,9 +266,9 @@ dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 # Create a box plot without the identified outliers.
 #Check the ploted values in more detail.
-plt.figure()
-sb.boxplot(x = dfOriginal["cmv"][dfOriginal['df_OutliersLow_cmv'] == 0])
-plt.show() 
+# plt.figure()
+# sb.boxplot(x = dfOriginal["cmv"][dfOriginal['df_OutliersLow_cmv'] == 0])
+# plt.show()
 cmvValues = dfOriginal['cmv'][dfOriginal['df_OutliersLow_cmv']==0].value_counts().sort_index()
 cmvValues
 # There are 6 lower values and 3 higher values that will be considered as outliers.
@@ -280,9 +287,9 @@ dfOriginal['Others'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,dfOrigin
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 # Create a box plot without the until now identified outliers:
-plt.figure()
-sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)]) 
-plt.show()
+# plt.figure()
+# sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)])
+# plt.show()
 #Check the ploted values in more detail:
 cmvValues = dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv']==0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index()
 cmvValues
@@ -311,18 +318,18 @@ dfOriginal['Others'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOrigi
 dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
 # Create a box plot without the until now identified outliers:
-plt.figure()
-sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)]) 
-plt.show()
+# plt.figure()
+# sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)])
+# plt.show()
 
 # 8. claims
 
-plt.figure()
-dfOriginal['claims'].value_counts().sort_index().plot() # there might be strange values on the claims that are distorting the plot.
-plt.show()
-plt.figure()
-dfOriginal['claims'].hist()
-plt.show()
+# plt.figure()
+# dfOriginal['claims'].value_counts().sort_index().plot() # there might be strange values on the claims that are distorting the plot.
+# plt.show()
+# plt.figure()
+# dfOriginal['claims'].hist()
+# plt.show()
 
 # Check variable values:
 valuesClaims = dfOriginal['claims'].value_counts().sort_index()
@@ -333,9 +340,9 @@ valuesClaims
 dfClaims=dfOriginal.groupby(['claims'])['claims'].count()
 dfClaims=pd.DataFrame(dfClaims, columns=['claims'])
 dfClaims=dfClaims[dfClaims.index<3]
-plt.figure()
-dfClaims['claims'].sort_index().plot()
-plt.show()
+# plt.figure()
+# dfClaims['claims'].sort_index().plot()
+# plt.show()
 # People who have a claims rate of 0 are the ones with which the company did not spend anything.
 # People who have a claims rate between 0 and 1 (excluding) are the ones with which the company had profit. This means that the amount paid by the company was less than the premiums paid by the clients.
 # People who have a claims rate of 1 are the ones with which the company had no profit nor losses. 
@@ -345,12 +352,12 @@ plt.show()
 dfClaims=dfClaims[dfClaims.index<1]
 dfClaims['claims'].sort_index().sum() #there are 8056 individuals that have a claims rate lower than 1
 #Plot of the results
-plt.figure()
-dfClaims['claims'].sort_index().plot()
-plt.show()
-plt.figure()
-dfOriginal['claims'][dfOriginal['claims']<3].hist()
-plt.show()
+# plt.figure()
+# dfClaims['claims'].sort_index().plot()
+# plt.show()
+# plt.figure()
+# dfOriginal['claims'][dfOriginal['claims']<3].hist()
+# plt.show()
 
 # Lets distinguish between individuals that give losses (losses), individuals that give profit (profits), individuals that do not give profits nor losses (neutrals) and individuals with which the company did not spend anything (investigate). 
 # The individuals that have a column value of 'investigate' need to be investigated later as we do not have any information about their premium values on this variable. We only know that the amount paid by the company is zero. We will need to study the premium value with the premium variables studied furtherahead.
@@ -363,19 +370,19 @@ dfOriginal['catClaims'].value_counts()
 # 9. lobMotor
 
 # Plot lobMotor for a first visual analysis:
-plt.figure()
-dfOriginal['lobMotor'].value_counts().sort_index().plot() 
-plt.show()
-plt.figure()
-dfOriginal['lobMotor'].hist() # There might be few high values that are distorting the graphs
-plt.show()
+# plt.figure()
+# dfOriginal['lobMotor'].value_counts().sort_index().plot()
+# plt.show()
+# plt.figure()
+# dfOriginal['lobMotor'].hist() # There might be few high values that are distorting the graphs
+# plt.show()
 
 # Check variable values:
 valueslobMotor = dfOriginal['lobMotor'].value_counts().sort_index()
 valueslobMotor
-plt.figure()
-sb.boxplot(x=dfOriginal["lobMotor"])
-plt.show()
+# plt.figure()
+# sb.boxplot(x=dfOriginal["lobMotor"])
+# plt.show()
 
 # Lets look for the fence high value of the box plot to define a from which value the lobMotor premium can be considered as an outlier.
 q1=dfOriginal["lobMotor"].quantile(0.25)
@@ -390,25 +397,25 @@ dfOriginal['Others']=np.where(dfOriginal['lobMotor']>fence_high,1,dfOriginal['Ot
 dfOriginal['Outliers_lobMot'].value_counts()
 
 # Create a box plot without the outliers:
-plt.figure()
-sb.boxplot(x = dfOriginal['lobMotor'][dfOriginal['Outliers_lobMot']==0]) 
-plt.show()
+# plt.figure()
+# sb.boxplot(x = dfOriginal['lobMotor'][dfOriginal['Outliers_lobMot']==0])
+# plt.show()
 # 10. lobHousehold
 
 # Plot lobHousehold for a first visual analysis:
-plt.figure()
-dfOriginal['lobHousehold'].value_counts().sort_index().plot() 
-plt.show()
-plt.figure()
-dfOriginal['lobHousehold'].hist() # There might be few high values that are distorting the graphs
-plt.show()
+# plt.figure()
+# dfOriginal['lobHousehold'].value_counts().sort_index().plot()
+# plt.show()
+# plt.figure()
+# dfOriginal['lobHousehold'].hist() # There might be few high values that are distorting the graphs
+# plt.show()
 valueslobHousehold = dfOriginal['lobHousehold'].value_counts().sort_index()
 valueslobHousehold
 
 # Box plot 
-plt.figure()
-sb.boxplot(x=dfOriginal["lobHousehold"])
-plt.show()
+# plt.figure()
+# sb.boxplot(x=dfOriginal["lobHousehold"])
+# plt.show()
 
 #Lets define 3000 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
@@ -416,33 +423,33 @@ dfOriginal['Outliers_lobHousehold']=np.where(dfOriginal['lobHousehold']>3000,1,0
 dfOriginal['Others']=np.where(dfOriginal['lobHousehold']>3000,1,dfOriginal['Others'])
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobHousehold'].value_counts()
-plt.figure()
-sb.boxplot(x = dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0]) 
-plt.show()
-plt.figure()
-dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0].value_counts().sort_index().plot()
-plt.show()
+# plt.figure()
+# sb.boxplot(x = dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0])
+# plt.show()
+# plt.figure()
+# dfOriginal['lobHousehold'][dfOriginal['Outliers_lobHousehold']==0].value_counts().sort_index().plot()
+# plt.show()
 # We can observe that there are much more individuals with low values of household premiums than with high values, which makes sense because there are less houses that are expensive than cheaper ones.
 
 # Transformar em Logaritmo? (ver mais tarde)
 
 # 11. lobHealth 
 
-plt.figure()
-dfOriginal['lobHealth'].value_counts().sort_index().plot() 
-plt.show()
-plt.figure()
-dfOriginal['lobHealth'].hist() # There might be few high values that are distorting the graphs
-plt.show()
+# plt.figure()
+# dfOriginal['lobHealth'].value_counts().sort_index().plot()
+# plt.show()
+# plt.figure()
+# dfOriginal['lobHealth'].hist() # There might be few high values that are distorting the graphs
+# plt.show()
 
 # Check variable values:
 valueslobHealth  = dfOriginal['lobHealth'].value_counts().sort_index()
 valueslobHealth 
 
 #Box plot
-plt.figure()
-sb.boxplot(x = dfOriginal['lobHealth']) 
-plt.show()
+# plt.figure()
+# sb.boxplot(x = dfOriginal['lobHealth'])
+# plt.show()
 
 #Lets define 550 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
@@ -452,12 +459,12 @@ dfOriginal['Others']=np.where(dfOriginal['lobHealth']>550,1,dfOriginal['Others']
 dfOriginal['Outliers_lobHealth'].value_counts()
 
 #Box plot without outliers
-plt.figure()
-sb.boxplot(x = dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0]) 
-plt.show()
-plt.figure()
-dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0].value_counts().sort_index().plot()
-plt.show()
+# plt.figure()
+# sb.boxplot(x = dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0])
+# plt.show()
+# plt.figure()
+# dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0].value_counts().sort_index().plot()
+# plt.show()
 
 # We can observe that health premiums follows an approximatelly normal distribution, which makes sense. 
 # On one hand, the health premiums are not as expensive as, for example, the house hold premiums, so more people have access to it. 
@@ -466,41 +473,41 @@ plt.show()
 
 # 12. lobLife 
 
-plt.figure()
-dfOriginal['lobLife'].value_counts().sort_index().plot() 
-plt.show()
-plt.figure()
-dfOriginal['lobLife'].hist()
-plt.show()
+# plt.figure()
+# dfOriginal['lobLife'].value_counts().sort_index().plot()
+# plt.show()
+# plt.figure()
+# dfOriginal['lobLife'].hist()
+# plt.show()
 
 # Check variable values:
 valueslobLife  = dfOriginal['lobLife'].value_counts().sort_index()
 valueslobLife 
 
 # Box plot
-plt.figure()
-sb.boxplot(x = dfOriginal['lobLife']) 
-plt.show()
+# plt.figure()
+# sb.boxplot(x = dfOriginal['lobLife'])
+# plt.show()
 # We decided not to consider outliers on this variable as there are no extreme individuals that influence the distribution (no individuals that highlight over the others).
 # We can observe that more people invest less on life premiums.
 # Transformar em Logaritmo? (ver mais tarde)
 
 # 13. lobWork  
-plt.figure()
-dfOriginal['lobWork'].value_counts().sort_index().plot() 
-plt.show()
-plt.figure()
-dfOriginal['lobWork'].hist()# There might be few high values that are distorting the graphs
-plt.show()
+# plt.figure()
+# dfOriginal['lobWork'].value_counts().sort_index().plot()
+# plt.show()
+# plt.figure()
+# dfOriginal['lobWork'].hist()# There might be few high values that are distorting the graphs
+# plt.show()
 
 # Check variable values:
 valueslobWork  = dfOriginal['lobWork'].value_counts().sort_index()
 valueslobWork 
 
 #Box plot
-plt.figure()
-sb.boxplot(x = dfOriginal['lobWork']) 
-plt.show()
+# plt.figure()
+# sb.boxplot(x = dfOriginal['lobWork'])
+# plt.show()
 #Lets define 400 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobWork']=np.where(dfOriginal['lobWork']>400,1,0)
@@ -509,12 +516,12 @@ dfOriginal['Others']=np.where(dfOriginal['lobWork']>400,1,dfOriginal['Others'])
 dfOriginal['Outliers_lobWork'].value_counts()
 
 #Box plot without outliers
-plt.figure()
-sb.boxplot(x = dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0]) 
-plt.show()
-plt.figure()
-dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0].value_counts().sort_index().plot()
-plt.show()
+# plt.figure()
+# sb.boxplot(x = dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0])
+# plt.show()
+# plt.figure()
+# dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0].value_counts().sort_index().plot()
+# plt.show()
 
 # There is a high number of indiviaduals with low work premiums values.
 # Transformar em Logaritmo? (ver mais tarde)
@@ -632,9 +639,9 @@ null=dfNan[dfNan['livingArea'].isnull()]
 null
 
 #Graph of lobhousehold and living area:
-plt.figure()
-sb.barplot(x="livingArea",y="lobHousehold",data=dfNan)
-plt.show()
+# plt.figure()
+# sb.barplot(x="livingArea",y="lobHousehold",data=dfNan)
+# plt.show()
 
 # Check lobHousehold (>=0) by living area:
 dfNan[dfNan['lobHousehold']>=0].groupby(by=["livingArea"])["lobHousehold"].mean().reset_index(name = 'Average_lobH')
@@ -643,21 +650,21 @@ dfNan[dfNan['lobHousehold']>=0].groupby(by=["livingArea"])["lobHousehold"].var()
 # The variance does not differ a lot between living areas 1, 2 and 3, but the 4th one differs a lot from these 3 first areas.
 
 # Living area might be determined by LobHousehold
-plt.figure()
-sb.boxplot(x='livingArea', y='lobHousehold', data=dfWork)
-plt.show()
+# plt.figure()
+# sb.boxplot(x='livingArea', y='lobHousehold', data=dfWork)
+# plt.show()
 # The boxplot shows that this does not happen
 
 # Treat the Nan value through KNN
 # Which variables should we use to predict the lobHousehold?
 dfWork2=dfWork.dropna()
 
-plt.figure()
-sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='livingArea')
-plt.show()
-plt.figure()
-sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='livingArea')
-plt.show()
+# plt.figure()
+# sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='livingArea')
+# plt.show()
+# plt.figure()
+# sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='livingArea')
+# plt.show()
 # There is no variable that explains the variable living area
 
 dfWork2.groupby(by='livingArea').hist(alpha=0.4)
@@ -686,7 +693,7 @@ def KNClassifier(myDf,treatVariable,expVariables,K, weights,metric):
     df_comp=myDf[~myDf.index.isin(df_inc.index)]
     # change categorical variable to string to guarantee it can be a classifier.
     df_comp[treatVariable]=df_comp[treatVariable].astype('category')
-    clf = KNeighborsClassifier(K,weights,metric)
+    clf = KNeighborsClassifier(K,weights,metric=metric)
     # Use the df_comp data frame to train the model:
     trained_model = clf.fit(df_comp.loc[:,expVariables],
                         df_comp.loc[:,treatVariable])
@@ -726,7 +733,7 @@ def KNRegressor (myDf,treatVariable,expVariables,K, weights, metric):
     df_inc=myDf.loc[myDf[treatVariable].isna(),]
     df_comp=myDf[~myDf.index.isin(df_inc.index)]
     # Define a regressor with KNN.
-    my_regressor = KNeighborsRegressor(K,weights,metric)
+    my_regressor = KNeighborsRegressor(K,weights,metric=metric)
     trained_model = my_regressor.fit(df_comp.loc[:,expVariables],
                         df_comp.loc[:,treatVariable])
     # Apply the trained model to the unknown data.
@@ -749,23 +756,25 @@ def KNRegressor (myDf,treatVariable,expVariables,K, weights, metric):
                 dfWork.loc[i,treatVariable]=df_inc.loc[j,treatVariable]
                 
 # Function to create a regression (and then if wanted to predict through it)
-                
+"""               
 def Regression(myDf,indepVariables,depVariable,treatNa):
-    """
+    ""
     - myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables).
     - treatVariable: variable to predict (string type).
     - expVariables: list of variables that will be used to explain the treatVariable.
     - treatNa: boolean to define if it is to predict values with the created regression.
-    """
-    varList=list(myDf)
+    ""
+    varList=list(myDf)  #get the list of variables
     # df_comp: dataframe without null values.
-    df_inc=myDf[pd.isnull(myDf).any(axis=1)]
-    df_comp=myDf[~myDf.index.isin(df_inc.index)]
+    df_inc=myDf[pd.isnull(myDf).any(axis=1)]        #only rows with null values
+    df_comp=myDf[~myDf.index.isin(df_inc.index)]    #only rows complete
     # Apply a linear regression.
     model=sm.OLS(df_comp[depVariable],df_comp[indepVariables])
     slr_results = model.fit()
     if treatNa==True:        
-        imputed_values=model.predict(df_inc.drop(columns=[depVariable,'id']))
+        #imputed_values=model.predict(df_inc.drop(columns=[depVariable,'id']))
+        imputed_values = model.predict(df_inc[indepVariables])
+        print(imputed_values)
         temp_df=pd.DataFrame(imputed_values.reshape(-1,1), columns = [depVariable])
         df_inc = df_inc.drop(columns=[depVariable])
         df_inc = df_inc.reset_index(drop=True)
@@ -780,7 +789,7 @@ def Regression(myDf,indepVariables,depVariable,treatNa):
                 if dfWork.loc[i,'id']==df_inc.loc[j,'id']:
                     dfWork.loc[i,depVariable]=df_inc.loc[j,depVariable]
     return slr_results.summary()
-
+"""
 ############################################################################################
 # CHILDREN - MISSING VALUES IMPUTATION
 
@@ -793,12 +802,12 @@ pd.pivot_table(dfWork,values='children', index=['livingArea'],aggfunc=np.mean)
 dfWork['children'].isna().sum()     #There are 21 Nan values
 
 # Which variables better explain the variable children?
-plt.figure()
-sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='children')
-plt.show()
-plt.figure()
-sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='children')
-plt.show()
+# plt.figure()
+# sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='children')
+# plt.show()
+# plt.figure()
+# sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='children')
+# plt.show()
 # The variable salary explains the variable children.
 # The variable lobMotor explains the variable children.
 # Lets use the variables lobmotor and salary to explain the variable children and to treat the Nan values through the KNN:
@@ -814,7 +823,8 @@ dfChildren['children'][dfChildren['lobMotor'].isna()].isna().sum()
 dfChildren = dfChildren[~((dfChildren['salary'].isna())|(dfChildren['lobMotor'].isna()))]
 
 # Apply the KNN Function:
-KNClassifier(myDf=dfChildren, treatVariable='children', expVariables=['salary','lobMotor','lobHealth'],K=5,weights='distance', metric='manhattan')
+KNClassifier(myDf=dfChildren, treatVariable='children', expVariables=['salary','lobMotor','lobHealth'],K=5,weights='distance', metric='euclidean')
+#TODO: verify manhattan distance, instead of euclidean
 # We decided to use the manhattan distance because it considers the absolute distance in each variable.
 
 #Check null values again:
@@ -822,17 +832,17 @@ dfWork.isna().sum()
 ###############################################################################################
 # EDUCATION - MISSING VALUES IMPUTATION
 
-dfWork['educationBinary']=
+#dfWork['educationBinary']=
 
 
 #Check null values on education:
 dfWork['education'].isna().sum()   #There are 17 Nan values
 
 # Which variables better explain the variable education?
-sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='education')
-plt.show()
-sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='education')
-plt.show()
+# sb.pairplot(dfWork2, vars=['firstPolicy','salary','cmv','claims','lobHousehold'], hue='education')
+# plt.show()
+# # sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='education')
+# # plt.show()
 # The variables that better explain education (better discriminate the different classes of education) are: lobMotor, lobHousehold, salary
 # Lets use the variables lobmotor, lobHousehold and salary to explain the variable education and to treat the Nan values through the KNN:
 
@@ -845,17 +855,18 @@ dfEducation['education'][dfEducation['salary'].isna()].isna().sum()
 # Delete rows that have salary null.
 dfEducation = dfEducation[~((dfEducation['salary'].isna()))]
 
-#Apply KNN function:
-KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['salary', 'lobMotor','lobHousehold','lobWork','lobLife'],K=5,weights='distance', metric='manhattan')
-
-#Check null values again:
-dfWork.isna().sum() # There is still 1 null value as expected because the individual has both salary and education null.
-
-# Estimate the education value of this individual only with the variables lobMotor and lobHousehold.
-dfEducation=dfWork[['id','lobMotor','lobHousehold','education']]
-
-#Apply KNN function:
-KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['lobMotor','lobHousehold','lobWork','lobLife'], K=5,weights='distance', metric='manhattan')
+# #Apply KNN function:
+# KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['salary', 'lobMotor','lobHousehold','lobWork','lobLife'],K=5,weights='distance', metric='euclidean')
+# #TODO: manhattan
+# #Check null values again:
+# dfWork.isna().sum() # There is still 1 null value as expected because the individual has both salary and education null.
+#
+# # Estimate the education value of this individual only with the variables lobMotor and lobHousehold.
+# dfEducation=dfWork[['id','lobMotor','lobHousehold','education']]
+#
+# #Apply KNN function:
+# KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['lobMotor','lobHousehold','lobWork','lobLife'], K=5,weights='distance', metric='euclidean')
+# #TODO:manhattan
 # Check different values of K!!!!!!!!!!!!!!!!!!!!
 
 # Check again nan values:
@@ -887,50 +898,50 @@ with sb.axes_style("white"):
 
 # 3.  Plot the distribution of salary according to other variables: to check if there are variables that follow a specific distribution with the salary.
 # To complement the point 3 (not actually necessary)
-fig=plt.figure()
-fig.suptitle('Distribution of Salary vs Other Variables')
-plt.subplot2grid((2,4),(0,0))
-plt.scatter(dfWork['cmv'], dfWork['salary'], alpha=0.5)
-plt.xlabel("CMV")
-plt.ylabel("Salary")
-
-plt.subplot2grid((2,4),(0,1))
-plt.scatter(dfWork['claims'], dfWork['salary'], alpha=0.5)
-plt.xlabel("Claims")
-
-plt.subplot2grid((2,4),(0,2))
-plt.scatter(dfWork['lobMotor'], dfWork['salary'], alpha=0.5)
-plt.xlabel("lobMotor")
-
-plt.subplot2grid((2,4),(0,3))
-plt.scatter(dfWork['lobHousehold'], dfWork['salary'], alpha=0.5)
-plt.xlabel("lobHousehold")
-
-plt.subplot2grid((2,4),(1,0))
-plt.scatter(dfWork['lobHealth'], dfWork['salary'], alpha=0.5)
-plt.xlabel("lobHealth")
-plt.ylabel("Salary")
-
-plt.subplot2grid((2,4),(1,1))
-plt.scatter(dfWork['lobLife'], dfWork['salary'], alpha=0.5)
-plt.xlabel("lobLife")
-
-plt.subplot2grid((2,4),(1,2))
-plt.scatter(dfWork['lobWork'], dfWork['salary'], alpha=0.5)
-plt.xlabel("lobWork")
-
-plt.subplot2grid((2,4),(1,3))
-plt.scatter(dfWork['lobTotal'], dfWork['salary'], alpha=0.5)
-plt.xlabel("lobTotal")
-plt.tight_layout(rect=[0.5, 0, 1, 1], h_pad=0.5)
-plt.plot()
+# fig=plt.figure()
+# fig.suptitle('Distribution of Salary vs Other Variables')
+# plt.subplot2grid((2,4),(0,0))
+# plt.scatter(dfWork['cmv'], dfWork['salary'], alpha=0.5)
+# plt.xlabel("CMV")
+# plt.ylabel("Salary")
+#
+# plt.subplot2grid((2,4),(0,1))
+# plt.scatter(dfWork['claims'], dfWork['salary'], alpha=0.5)
+# plt.xlabel("Claims")
+#
+# plt.subplot2grid((2,4),(0,2))
+# plt.scatter(dfWork['lobMotor'], dfWork['salary'], alpha=0.5)
+# plt.xlabel("lobMotor")
+#
+# plt.subplot2grid((2,4),(0,3))
+# plt.scatter(dfWork['lobHousehold'], dfWork['salary'], alpha=0.5)
+# plt.xlabel("lobHousehold")
+#
+# plt.subplot2grid((2,4),(1,0))
+# plt.scatter(dfWork['lobHealth'], dfWork['salary'], alpha=0.5)
+# plt.xlabel("lobHealth")
+# plt.ylabel("Salary")
+#
+# plt.subplot2grid((2,4),(1,1))
+# plt.scatter(dfWork['lobLife'], dfWork['salary'], alpha=0.5)
+# plt.xlabel("lobLife")
+#
+# plt.subplot2grid((2,4),(1,2))
+# plt.scatter(dfWork['lobWork'], dfWork['salary'], alpha=0.5)
+# plt.xlabel("lobWork")
+#
+# plt.subplot2grid((2,4),(1,3))
+# plt.scatter(dfWork['lobTotal'], dfWork['salary'], alpha=0.5)
+# plt.xlabel("lobTotal")
+# plt.tight_layout(rect=[0.5, 0, 1, 1], h_pad=0.5)
+# plt.plot()
 # The variables that might better explain salary are: LobHousehold, LobLife and lobWork. As this analysis is only conceptually based, it is not enough.
 # 4. Let's build a linear regression to check which variables are more significant to explain salary.
 
-dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','children']]
-Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
-dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','lobWork']]
-Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
+# dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','children']]
+# Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
+# dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','lobWork']]
+# Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
 
 # Results: 
 # 1. The variables that are statistically significant for alpha=0.05 are cmv, claims, lobMotor, lobHealth, lobLife and lobWork as the p-values<=0.05-->Reject Ho and there is statistical evidence that the estimates are statistical significant.
@@ -942,7 +953,86 @@ dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','
 
 # THIS DOES NOT WORK!! DO NOT KNOW WHY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # Error is on the imputed_value!!
-Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=True)
+#Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=True)
+myDf=dfSalary
+indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork']
+depVariable='salary'
+treatNa=True
+#####################################33333
+########sem ser como função
+#def Regression(myDf,indepVariables,depVariable,treatNa):
+"""
+- myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables).
+- treatVariable: variable to predict (string type).
+- expVariables: list of variables that will be used to explain the treatVariable.
+- treatNa: boolean to define if it is to predict values with the created regression.
+"""
+varList=list(myDf)  #get the list of variables
+# df_comp: dataframe without null values.
+from sklearn.linear_model import LinearRegression
+from sklearn import metrics
+df_inc=myDf[pd.isnull(myDf).any(axis=1)]        #only rows with null values
+df_comp=myDf[~myDf.index.isin(df_inc.index)]    #only rows complete
+X = df_comp[indepVariables].values.reshape(-1,len(indepVariables))
+Y = df_comp[depVariable].values.reshape(-1,1)
+regressor=LinearRegression()
+regressor.fit(X,Y) #train
+y_pred=regressor.predict(X)# for metrics
+metricsDf= pd.DataFrame({"Actual":Y.flatten(),"Predicted":y_pred.flatten()}) # for comparison
+
+df1 = metricsDf.head(50)                                                    #Let's plot a comparison for the first 50 values
+df1.plot(kind='bar',figsize=(16,10))                                        #of predicted Vs actual
+plt.grid(which='major', linestyle='-', linewidth='0.5', color='green')
+plt.grid(which='minor', linestyle=':', linewidth='0.5', color='black')
+plt.show()
+
+print('R^2:', metrics.r2_score(Y, y_pred))                                  #Let's print some metrics
+print('Mean Absolute Error:', metrics.mean_absolute_error(Y, y_pred))
+print('Mean Squared Error:', metrics.mean_squared_error(Y, y_pred))
+print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(Y, y_pred)))
+
+df_inc[depVariable]=regressor.predict(df_inc[indepVariables])               #Actual prediction
+df_inc
+for myindex in df_inc["id"]:
+    print(myindex)
+    dfWork.loc["id"==index , dfWork[depVariable]] = df_inc.loc["id"==index,depVariable]
+
+df_inc["id"]
+
+
+    #imputed_values=model.predict(df_inc.drop(columns=[depVariable,'id']))
+df_comp[indepVariables]
+df_inc[indepVariables]
+#imputed_values = model.predict(df_inc[indepVariables])
+model.predict(myDf[indepVariables])
+imputed_values = model.predict(myDf[indepVariables])
+print(imputed_values)
+temp_df=pd.DataFrame(imputed_values.reshape(-1,1), columns = [depVariable])
+df_inc = df_inc.drop(columns=[depVariable])
+df_inc = df_inc.reset_index(drop=True)
+df_inc = pd.concat([df_inc, temp_df],
+                          axis = 1,
+                          ignore_index = True,
+                          verify_integrity = False)
+df_inc.columns = varList
+df_inc = df_inc.drop(columns=indepVariables)
+
+for index in df_inc["id"]:
+    dfWork.loc["id"==index , dfWork[depVariable]] = df_inc.loc["id"==index,depVariable]
+
+
+
+
+    #    for i, index in dfWork.iterrows():
+    #        for j, index in df_inc.iterrows():
+    #            if dfWork.loc[i,'id']==df_inc.loc[j,'id']:
+    #                dfWork.loc[i,depVariable]=df_inc.loc[j,depVariable]
+    #return slr_results.summary()
+
+###################################################333
+
+
+
 
 #Check null values:
 dfWork.isna().sum()
@@ -1009,7 +1099,7 @@ plt.plot()
 
 # 4. Let's build a linear regression to check which variables are more significant to explain firstPolicy.
 dfFirstPolicy=dfWork[['firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
-Regression(myDf=dfFirstPolicy, indepVariables=['salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='firstPolicy',treatNa=False)
+#Regression(myDf=dfFirstPolicy, indepVariables=['salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='firstPolicy',treatNa=False)
 
 # Results: 
 # 1. All variables are statistically significant for alpha=0.05 as the p-values<=0.05 for all variables -->Reject Ho and there is statistical evidence that the estimates are statistical significant.
@@ -1042,10 +1132,10 @@ dfWork['ratioSalary']=dfWork['lobTotal']/dfWork['salary']
 dfWork['yearCustomer']=1998-dfWork['firstPolicy']
 
 #----------------------------------------------MULTIDIMENSIONAL OUTLIERS -------------------------------------------------#
-from kmodes.kprototypes import KPrototypes
-
-test=KPrototypes(n_clusters=1000, init='Huang')
-cluster=test.fit_predict(X, categorical=[3,4])
+# from kmodes.kprototypes import KPrototypes
+#
+# test=KPrototypes(n_clusters=1000, init='Huang')
+# cluster=test.fit_predict(X, categorical=[3,4])
 
 
 
