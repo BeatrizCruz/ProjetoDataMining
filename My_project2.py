@@ -49,8 +49,8 @@ from sklearn import linear_model
 #print(cursor.fetchall()) """
 
 #Diretorias:
-#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -107,6 +107,20 @@ plt.show()
 plt.figure()
 dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].value_counts().sort_index().plot(marker="o") # ESTE!!!!!!!!!!!!!!!!!!!!!!
 plt.show()
+
+import plotly.offline as pyo
+import plotly.graph_objs as go
+df=pd.DataFrame(dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].value_counts())
+df.reset_index(level=0, inplace=True)
+df=df.rename(columns={'index':'Year'})
+df=df.sort_values(by='Year')
+
+data= go.Scatter(x=df['Year'],y=df['birthday'],mode='markers')
+layout = go.Layout(title='Birthday Variable',template='simple_white',
+        xaxis=dict(title='Year',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+# https://plot.ly/python/templates/
 
 # 2. firstPolicy
 
@@ -683,9 +697,10 @@ dfWork.isna().sum()
 ############################################################################################
 # Function to treat Nan Values through KNN:
 #TODO:rever esta função
-def KNClassifier(myDf,treatVariable,expVariables,K, weights,metric,p=2):
+def KNClassifier(dfWork,myDf,treatVariable,expVariables,K, weights,metric,p=2):
     """
     This function predicts a categorical variable through the KNN method (using KNeighborsClassifier). The arguments are the following:
+    - dfWork: original data frame in which we want to introduce the final estimated values
     - myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables)
     - treatVariable: variable to predict (string type).
     - expVariables: list of variables that will be used to explain the treatVariable
@@ -717,19 +732,18 @@ def KNClassifier(myDf,treatVariable,expVariables,K, weights,metric,p=2):
                               verify_integrity = False)
     df_inc.columns = varList
     df_inc = df_inc.drop(columns=expVariables)
-
-    for i, index in dfWork.iterrows():
-        for j, index in df_inc.iterrows():
-            if dfWork.loc[i,'id']==df_inc.loc[j,'id']:
-                dfWork.loc[i,treatVariable]=df_inc.loc[j,treatVariable]
-
-    for myindex in df_inc["id"]:
-        dfWork.loc[dfWork.id == myindex, treatVariable] = df_inc.loc[df_inc.id == myindex, treatVariable]
+    from functools import reduce
+    dfWork = reduce(lambda left,right: pd.merge(left, right, on='id', how='left'), [dfWork,df_inc])
+    dfWork[treatVariable+'_x']=np.where(dfWork[treatVariable+'_x'].isna(),dfWork[treatVariable+'_y'],dfWork[treatVariable+'_x'])
+    dfWork=dfWork.rename(columns={treatVariable+'_x':treatVariable})
+    dfWork=dfWork.drop(columns=treatVariable+'_y')
+    return dfWork
 
 # Function to treat Nan Values through KN Regression:
-def KNRegressor (myDf,treatVariable,expVariables,K, weights, metric,p=2):
+def KNRegressor (dfWork, myDf,treatVariable,expVariables,K, weights, metric,p=2):
     """
     This function predicts a continuous variable through the KNN method (using KNeighborsRegressor). The arguments are the following:
+    - dfWork: original data frame in which we want to introduce the final estimated values
     - myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables).
     - treatVariable: variable to predict (string type).
     - expVariables: list of variables that will be used to explain the treatVariable.
@@ -743,7 +757,7 @@ def KNRegressor (myDf,treatVariable,expVariables,K, weights, metric,p=2):
     df_inc=myDf.loc[myDf[treatVariable].isna(),]
     df_comp=myDf[~myDf.index.isin(df_inc.index)]
     # Define a regressor with KNN.
-    my_regressor = KNeighborsRegressor(K,weights,metric=metric,p)
+    my_regressor = KNeighborsRegressor(K,weights,metric=metric,p=p)
     trained_model = my_regressor.fit(df_comp.loc[:,expVariables],
                         df_comp.loc[:,treatVariable])
     # Apply the trained model to the unknown data.
@@ -760,46 +774,47 @@ def KNRegressor (myDf,treatVariable,expVariables,K, weights, metric,p=2):
                               verify_integrity = False)
     df_inc.columns = varList
     df_inc = df_inc.drop(columns=expVariables)
-    for i, index in dfWork.iterrows():
-        for j, index in df_inc.iterrows():
-            if dfWork.loc[i,'id']==df_inc.loc[j,'id']:
-                dfWork.loc[i,treatVariable]=df_inc.loc[j,treatVariable]
-                
+    dfWork = reduce(lambda left,right: pd.merge(left, right, on='id', how='left'), [dfWork,df_inc])
+    dfWork[treatVariable+'_x']=np.where(dfWork[treatVariable+'_x'].isna(),dfWork[treatVariable+'_y'],dfWork[treatVariable+'_x'])
+    dfWork=dfWork.rename(columns={treatVariable+'_x':treatVariable})
+    dfWork=dfWork.drop(columns=treatVariable+'_y')
+    return dfWork
+            
 # Function to create a regression (and then if wanted to predict through it)
-"""               
 def Regression(myDf,indepVariables,depVariable,treatNa):
-    ""
+    """
     - myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables).
     - treatVariable: variable to predict (string type).
     - expVariables: list of variables that will be used to explain the treatVariable.
     - treatNa: boolean to define if it is to predict values with the created regression.
-    ""
+    """
     varList=list(myDf)  #get the list of variables
     # df_comp: dataframe without null values.
+    from sklearn.linear_model import LinearRegression
+    from sklearn import metrics
     df_inc=myDf[pd.isnull(myDf).any(axis=1)]        #only rows with null values
     df_comp=myDf[~myDf.index.isin(df_inc.index)]    #only rows complete
-    # Apply a linear regression.
-    model=sm.OLS(df_comp[depVariable],df_comp[indepVariables])
-    slr_results = model.fit()
-    if treatNa==True:        
-        #imputed_values=model.predict(df_inc.drop(columns=[depVariable,'id']))
-        imputed_values = model.predict(df_inc[indepVariables])
-        print(imputed_values)
-        temp_df=pd.DataFrame(imputed_values.reshape(-1,1), columns = [depVariable])
-        df_inc = df_inc.drop(columns=[depVariable])
-        df_inc = df_inc.reset_index(drop=True)
-        df_inc = pd.concat([df_inc, temp_df],
-                                  axis = 1,
-                                  ignore_index = True,
-                                  verify_integrity = False)
-        df_inc.columns = varList
-        df_inc = df_inc.drop(columns=indepVariables)
-        for i, index in dfWork.iterrows():
-            for j, index in df_inc.iterrows():
-                if dfWork.loc[i,'id']==df_inc.loc[j,'id']:
-                    dfWork.loc[i,depVariable]=df_inc.loc[j,depVariable]
-    return slr_results.summary()
-"""
+    X = df_comp[indepVariables].values.reshape(-1,len(indepVariables))
+    Y = df_comp[depVariable].values.reshape(-1,1)
+    regressor=LinearRegression()
+    regressor.fit(X,Y) #train
+    y_pred=regressor.predict(X)# for metrics
+    metricsDf= pd.DataFrame({"Actual":Y.flatten(),"Predicted":y_pred.flatten()}) # for comparison
+#    df1 = metricsDf.head(50)                                                    #Let's plot a comparison for the first 50 values
+#    df1.plot(kind='bar',figsize=(16,10))                                        #of predicted Vs actual
+#    plt.grid(which='major', linestyle='-', linewidth='0.5', color='green')
+#    plt.grid(which='minor', linestyle=':', linewidth='0.5', color='black')
+#    plt.show()
+    print('R^2:', metrics.r2_score(Y, y_pred))                                  #Let's print some metrics
+    print('Mean Absolute Error:', metrics.mean_absolute_error(Y, y_pred))
+    print('Mean Squared Error:', metrics.mean_squared_error(Y, y_pred))
+    print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(Y, y_pred)))
+    if (treatNa==True):
+        df_inc[depVariable]=regressor.predict(df_inc[indepVariables])               #Actual prediction
+        for myindex in df_inc["id"]:
+            dfWork.loc[dfWork.id == myindex , depVariable] = df_inc.loc[df_inc.id==myindex,depVariable]
+        return dfWork
+ 
 ############################################################################################
 # CHILDREN - MISSING VALUES IMPUTATION
 
@@ -833,17 +848,13 @@ dfChildren['children'][dfChildren['lobMotor'].isna()].isna().sum()
 dfChildren = dfChildren[~((dfChildren['salary'].isna())|(dfChildren['lobMotor'].isna()))]
 
 # Apply the KNN Function:
-KNClassifier(myDf=dfChildren, treatVariable='children', expVariables=['salary','lobMotor','lobHealth'],K=5,weights='distance', metric='minkowski',p=2)
-#TODO: verify manhattan distance, instead of euclidean
+dfWork=KNClassifier(dfWork=dfWork,myDf=dfChildren, treatVariable='children', expVariables=['salary','lobMotor','lobHealth'],K=5,weights='distance', metric='minkowski',p=1)
 # We decided to use the manhattan distance because it considers the absolute distance in each variable.
 
 #Check null values again:
 dfWork.isna().sum()
 ###############################################################################################
 # EDUCATION - MISSING VALUES IMPUTATION
-
-#dfWork['educationBinary']=
-
 
 #Check null values on education:
 dfWork['education'].isna().sum()   #There are 17 Nan values
@@ -866,21 +877,22 @@ dfEducation['education'][dfEducation['salary'].isna()].isna().sum()
 dfEducation = dfEducation[~((dfEducation['salary'].isna()))]
 
 # #Apply KNN function:
-# KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['salary', 'lobMotor','lobHousehold','lobWork','lobLife'],K=5,weights='distance', metric='minkowski',p=2)
-# #TODO: manhattan
-# #Check null values again:
-# dfWork.isna().sum() # There is still 1 null value as expected because the individual has both salary and education null.
-#
-# # Estimate the education value of this individual only with the variables lobMotor and lobHousehold.
-# dfEducation=dfWork[['id','lobMotor','lobHousehold','education']]
-#
-# #Apply KNN function:
-# KNClassifier(myDf=dfEducation, treatVariable='education', expVariables=['lobMotor','lobHousehold','lobWork','lobLife'], K=5,weights='distance', metric='minkowski',p=2)
-# #TODO:manhattan
-# Check different values of K!!!!!!!!!!!!!!!!!!!!
+dfWork=KNClassifier(dfWork=dfWork,myDf=dfEducation, treatVariable='education', expVariables=['salary', 'lobMotor','lobHousehold','lobWork','lobLife'],K=5,weights='distance', metric='minkowski',p=1)
+# Check null values again:
+dfWork.isna().sum() # There is still 1 null value as expected because the individual has both salary and education null.
+
+# Estimate the education value of this individual only with the variables lobMotor and lobHousehold.
+dfEducation=dfWork[['id','lobMotor','lobHousehold','lobWork','lobLife','education']]
+
+# Apply KNN function:
+dfWork=KNClassifier(dfWork=dfWork, myDf=dfEducation, treatVariable='education', expVariables=['lobMotor','lobHousehold','lobWork','lobLife'], K=5,weights='distance', metric='minkowski',p=1)
 
 # Check again nan values:
 dfWork.isna().sum()
+
+# Lets create a binary variable for education (this will be usefull to treat other posterior null values):
+dfWork['binEducation']=dfWork['education']
+dfWork['binEducation']=np.where(((dfWork['binEducation']=='1 - Basic')|(dfWork['binEducation']=='2 - High School')),0,1)
 
 ######################################################################################
 # SALARY
@@ -907,7 +919,7 @@ with sb.axes_style("white"):
     fig.suptitle('Heatmap - Non Linear Correlations (Spearman)')
 
 # 3.  Plot the distribution of salary according to other variables: to check if there are variables that follow a specific distribution with the salary.
-# To complement the point 3 (not actually necessary)
+# To complement the point 2 (not actually necessary)
 # fig=plt.figure()
 # fig.suptitle('Distribution of Salary vs Other Variables')
 # plt.subplot2grid((2,4),(0,0))
@@ -945,157 +957,122 @@ with sb.axes_style("white"):
 # plt.xlabel("lobTotal")
 # plt.tight_layout(rect=[0.5, 0, 1, 1], h_pad=0.5)
 # plt.plot()
-# The variables that might better explain salary are: LobHousehold, LobLife and lobWork. As this analysis is only conceptually based, it is not enough.
+
 # 4. Let's build a linear regression to check which variables are more significant to explain salary.
-
-# dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','children']]
-# Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
-# dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','lobWork']]
-# Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=False)
-
-# Results: 
-# 1. The variables that are statistically significant for alpha=0.05 are cmv, claims, lobMotor, lobHealth, lobLife and lobWork as the p-values<=0.05-->Reject Ho and there is statistical evidence that the estimates are statistical significant.
-# 2. Estimate a new model only with the most relevant variables (without the lobHousehold variable).
-# 3. Second estimated model: High R^2 (0.877) which means that the created regression has a low error, fits well the data (explains well the variability of the variable salary).
-
-# Let's use these variables (significant) to treat the null values of salary through a linear regression. - The one estimated secondly.
-dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','lobWork']]
-
-#TODO: passar a função
-
-# THIS DOES NOT WORK!! DO NOT KNOW WHY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# Error is on the imputed_value!!
-#Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],depVariable='salary',treatNa=True)
-myDf=dfSalary
-indepVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork']
-depVariable='salary'
-treatNa=True
-#####################################33333
-########sem ser como função
-#def Regression(myDf,indepVariables,depVariable,treatNa):
-"""
-- myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables).
-- treatVariable: variable to predict (string type).
-- expVariables: list of variables that will be used to explain the treatVariable.
-- treatNa: boolean to define if it is to predict values with the created regression.
-"""
-varList=list(myDf)  #get the list of variables
-# df_comp: dataframe without null values.
-from sklearn.linear_model import LinearRegression
-from sklearn import metrics
-df_inc=myDf[pd.isnull(myDf).any(axis=1)]        #only rows with null values
-df_comp=myDf[~myDf.index.isin(df_inc.index)]    #only rows complete
-X = df_comp[indepVariables].values.reshape(-1,len(indepVariables))
-Y = df_comp[depVariable].values.reshape(-1,1)
-regressor=LinearRegression()
-regressor.fit(X,Y) #train
-y_pred=regressor.predict(X)# for metrics
-metricsDf= pd.DataFrame({"Actual":Y.flatten(),"Predicted":y_pred.flatten()}) # for comparison
-
-df1 = metricsDf.head(50)                                                    #Let's plot a comparison for the first 50 values
-df1.plot(kind='bar',figsize=(16,10))                                        #of predicted Vs actual
-plt.grid(which='major', linestyle='-', linewidth='0.5', color='green')
-plt.grid(which='minor', linestyle=':', linewidth='0.5', color='black')
-plt.show()
-
-print('R^2:', metrics.r2_score(Y, y_pred))                                  #Let's print some metrics
-print('Mean Absolute Error:', metrics.mean_absolute_error(Y, y_pred))
-print('Mean Squared Error:', metrics.mean_squared_error(Y, y_pred))
-print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(Y, y_pred)))
-
-df_inc[depVariable]=regressor.predict(df_inc[indepVariables])               #Actual prediction
-
-for myindex in df_inc["id"]:
-    dfWork.loc[dfWork.id == myindex , depVariable] = df_inc.loc[df_inc.id==myindex,depVariable]
-
-
-
-###################################################333
-
-
-
-
-#Check null values:
+# The variables that coneptually would make more sense to explain salary are: lobHousehold, lobLife, lobWork, lobHousehold, lobHealth, firstPolicy, children and binEducation.
+# Lets also include cmv and claims first and then take them out to see the difference that it makes on the R2 value.
+dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','firstPolicy','children','binEducation']]
+Regression(myDf=dfSalary,indepVariables=['cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','firstPolicy','children','binEducation'],depVariable='salary',treatNa=False)
+dfSalary=dfWork[['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','firstPolicy','children','binEducation']]
+Regression(myDf=dfSalary,indepVariables=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork','firstPolicy','children','binEducation'],depVariable='salary',treatNa=False)
+# Results: the R^2 are really low for both estimates done before (R^2=0.36)
+# Therefore it does not make sense to decide the variables that better explain the salary through this poor regression estimated.
+# If we had gotten a regression with a high R^2, we would even consider using it to estimate the null values. For this, we would use the estimated regression to estimate the null values, putting treatNa=True on the Regression function.
+        # It would have been something like this:        
+        # dfSalary=dfWork[['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','firstPolicy','children']]
+        # dfWork=Regression(myDf=dfSalary,indepVariables=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork','firstPolicy','children'],depVariable='salary',treatNa=True)
+# As we did not get a good R2 regression, we decided to treat the nan values through the KN Regression and to make a conceptually based decision on the variables that better explain salary.
+# The variables that conceptually make sense explaining the variable salary are: LobHousehold, LobLife, lobWork, lobHousehold, lobHealth and firstPolicy, as said before (children and binEducation is binary so it cannot be used).
+dfSalary=dfWork[['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','firstPolicy']]
 dfWork.isna().sum()
+# Check if it happens the salary to be null at the same time as firstPolicy
+dfSalary[(dfSalary['salary'].isna()) & (dfSalary['firstPolicy'].isna())]
+# There are two observations in which salary and firstPolicy are null at the same time.
+# Lets not consider these 2 observations for now and treat the other observations that have null salary:
+# Lets also not consider observations with firstPolicy null as this is an explainable variable.
+dfSalary=dfSalary[~(dfSalary['firstPolicy'].isna())]
+dfSalary = dfSalary[~((dfSalary['salary'].isna()) & (dfSalary['firstPolicy'].isna()))]
+dfSalary.isna().sum()
 
-# If we want to solve with KN Regressor: It Works (I have tried)
-dfSalary=dfWork[['id','salary','cmv','claims','lobMotor','lobHealth','lobLife','lobWork']]
-KNRegressor(myDf=dfSalary, treatVariable='salary', categorical=False,expVariables=['cmv','claims','lobMotor','lobHealth','lobLife','lobWork'],K=5,metric="minkowski",p=1)  #1 for manhattan
-                                                                                                                                                                           #2 for euclidean
+dfWork=KNRegressor(dfWork=dfWork,myDf=dfSalary, treatVariable='salary',expVariables=['firstPolicy','lobHousehold','lobMotor','lobHealth','lobLife','lobWork'],K=5,weights='distance',metric="minkowski",p=1)  #1 for manhattan; 2 for euclidean
+
+#Check again Null values.
+dfWork.isna().sum()
+# As expected there are still two null values on salary. These are the one that we excluded because salary and firstPolicy were both null.
+
+# Lets treat these two observations. For this we cannot use firstPolicy as an explainable variable. Lets just use the Lob variables:
+dfSalary=dfWork[['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
+dfWork=KNRegressor(dfWork=dfWork,myDf=dfSalary, treatVariable='salary',expVariables=['lobHousehold','lobMotor','lobHealth','lobLife','lobWork'],K=5,weights='distance',metric="minkowski",p=1)  #1 for manhattan; 2 for euclidean
+
 #Check again Null values.
 #Recalculate column yearSalary.
 #Check again Null values.
-dfWork.isna().sum()
+dfWork.isna().sum() # no null values on salary
 dfWork['yearSalary']=dfWork['salary']*12
-dfWork.isna().sum()
+dfWork.isna().sum() # no null values on yearSalary
 
 #############################################################################################################
 # FIRST POLICY
 
 # Firstly, lets check which variables might better explain first policy.
-# 1. There is no variable highly linearly correlated with first policy in absolute value.
+# 1. Check linear correlations through the Pearson correlations. - already previously created heatmap.
 # There is no variable linearly correlated with firstPolicy.
 # 2. Check non linear correlations through the Spearman correlations. - already previously created heatmap.
 # There is no variable non linearly correlated with firstPolicy.
 # 3. Lets check non linear correlations visually (not necessary, just a complement to point 2.)
             
-fig=plt.figure()
-fig.suptitle('Distribution of firstPolicy vs Other Variables')
-plt.subplot2grid((2,4),(0,0))
-plt.scatter(dfWork['cmv'], dfWork['firstPolicy'], alpha=0.5)
-plt.xlabel("CMV")
-plt.ylabel("fisrtPolicy")
-
-plt.subplot2grid((2,4),(0,1))
-plt.scatter(dfWork['claims'], dfWork['firstPolicy'], alpha=0.5)
-plt.xlabel("Claims")
-
-plt.subplot2grid((2,4),(0,2))
-plt.scatter(dfWork['lobMotor'], dfWork['firstPolicy'], alpha=0.5)
-plt.xlabel("lobMotor")
-
-plt.subplot2grid((2,4),(0,3))
-plt.scatter(dfWork['lobHousehold'], dfWork['firstPolicy'], alpha=0.5)
-plt.xlabel("lobHousehold")
-
-plt.subplot2grid((2,4),(1,0))
-plt.scatter(dfWork['lobHealth'], dfWork['firstPolicy'], alpha=0.5)
-plt.xlabel("lobHealth")
-plt.ylabel("fisrtPolicy")
-
-plt.subplot2grid((2,4),(1,1))
-plt.scatter(dfWork['lobLife'], dfWork['firstPolicy'], alpha=0.5)
-plt.xlabel("lobLife")
-
-plt.subplot2grid((2,4),(1,2))
-plt.scatter(dfWork['lobWork'], dfWork['firstPolicy'], alpha=0.5)
-plt.xlabel("lobWork")
-
-plt.subplot2grid((2,4),(1,3))
-plt.scatter(dfWork['salary'], dfWork['firstPolicy'], alpha=0.5)
-plt.xlabel("salary")
-plt.tight_layout(rect=[0.5, 0, 1, 1], h_pad=0.5)
-plt.plot()
+#fig=plt.figure()
+#fig.suptitle('Distribution of firstPolicy vs Other Variables')
+#plt.subplot2grid((2,4),(0,0))
+#plt.scatter(dfWork['cmv'], dfWork['firstPolicy'], alpha=0.5)
+#plt.xlabel("CMV")
+#plt.ylabel("fisrtPolicy")
+#
+#plt.subplot2grid((2,4),(0,1))
+#plt.scatter(dfWork['claims'], dfWork['firstPolicy'], alpha=0.5)
+#plt.xlabel("Claims")
+#
+#plt.subplot2grid((2,4),(0,2))
+#plt.scatter(dfWork['lobMotor'], dfWork['firstPolicy'], alpha=0.5)
+#plt.xlabel("lobMotor")
+#
+#plt.subplot2grid((2,4),(0,3))
+#plt.scatter(dfWork['lobHousehold'], dfWork['firstPolicy'], alpha=0.5)
+#plt.xlabel("lobHousehold")
+#
+#plt.subplot2grid((2,4),(1,0))
+#plt.scatter(dfWork['lobHealth'], dfWork['firstPolicy'], alpha=0.5)
+#plt.xlabel("lobHealth")
+#plt.ylabel("fisrtPolicy")
+#
+#plt.subplot2grid((2,4),(1,1))
+#plt.scatter(dfWork['lobLife'], dfWork['firstPolicy'], alpha=0.5)
+#plt.xlabel("lobLife")
+#
+#plt.subplot2grid((2,4),(1,2))
+#plt.scatter(dfWork['lobWork'], dfWork['firstPolicy'], alpha=0.5)
+#plt.xlabel("lobWork")
+#
+#plt.subplot2grid((2,4),(1,3))
+#plt.scatter(dfWork['salary'], dfWork['firstPolicy'], alpha=0.5)
+#plt.xlabel("salary")
+#plt.tight_layout(rect=[0.5, 0, 1, 1], h_pad=0.5)
+#plt.plot()
 # Visually we can also observe what was stated before, that there is no variable non linearly correlated with first policy.
 
 # 4. Let's build a linear regression to check which variables are more significant to explain firstPolicy.
-dfFirstPolicy=dfWork[['firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
-#Regression(myDf=dfFirstPolicy, indepVariables=['salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'],depVariable='firstPolicy',treatNa=False)
+# The variables that conceptually would make more sense to explain firstPolicy are: lobHousehold, lobLife, lobWork, lobHousehold, lobHealth, salary, children and binEducation. Lets use them to build a regression:
+# Lets also include cmv and claims first and then take them out to see the difference that it makes on the R2 value.
+dfFirstPolicy=dfWork[['id','firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','children','binEducation']]
+Regression(myDf=dfFirstPolicy,indepVariables=['salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','children','binEducation'],depVariable='firstPolicy',treatNa=False)
+dfFirstPolicy=dfWork[['id','firstPolicy','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','children','binEducation']]
+Regression(myDf=dfFirstPolicy,indepVariables=['salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','children','binEducation'],depVariable='firstPolicy',treatNa=False)
+# Results: the R^2 are really low for both estimates done before (R^2=0.001 and R^2=0.002)
+# Therefore, it does not make sense to decide the variables that better explain the salary or to estimate the fisrtPolicy values through this poor regression estimated.
 
-# Results: 
-# 1. All variables are statistically significant for alpha=0.05 as the p-values<=0.05 for all variables -->Reject Ho and there is statistical evidence that the estimates are statistical significant.
-# 2. High R^2 (0.997) which means that the created regression has a low error, fits well the data (explains well the variability of the variable salary).
-# THESE RESULTS ARE WEIRD!!!!
+# Lets apply the KNRegressor technique: 
+# Conceptually we have said that the variables that might explain firstPolicy are: lobHousehold, lobLife, lobWork, lobHousehold, lobHealth and salary (children and binEducation excluded as they are binary)
+dfFirstPolicy=dfWork[['id','firstPolicy','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
+dfWork=KNRegressor(dfWork=dfWork,myDf=dfFirstPolicy, treatVariable='firstPolicy',expVariables=['salary','lobHousehold','lobMotor','lobHealth','lobLife','lobWork'],K=5,weights='distance',metric="minkowski",p=1)  #1 for manhattan; 2 for euclidean
 
-# Let's use these variables (significant) to treat the null values: DECIDE THE METHOD!
-# OPTIONS: KNN, KNREGRESSOR, REGRESSION.
-dfWork
-
+#Verify null values
+dfWork.isna().sum()
 ###############################################################################################
 #-------------------------------------------NEW VARIABLES----------------------------------------------------
 
 # lobTotal (already created)
 # yearSalary (already created)
+# binEducation (already created)
 # Ratios lobs 
 dfWork['motorRatio']=dfWork["lobMotor"]/dfWork['lobTotal']
 dfWork['householdRatio']=dfWork["lobHousehold"]/dfWork['lobTotal']
@@ -1103,8 +1080,8 @@ dfWork['healthRatio']=dfWork["lobHealth"]/dfWork['lobTotal']
 dfWork['lifeRatio']=dfWork["lobLife"]/dfWork['lobTotal']
 dfWork['workCRatio']=dfWork["lobWork"]/dfWork['lobTotal']
 
-# AmountPaidInsurance = (Claims/2)*lobTotal
-dfWork['insuranceAmountPaid']=(dfWork['claims']/2)*dfWork['lobTotal']
+# Which clients give profit and which do not:
+dfWork['profitCust']=np.where(dfWork['claims']<1,1,0)
 
 # lobTotal/salary
 dfWork['ratioSalary']=dfWork['lobTotal']/dfWork['salary']
