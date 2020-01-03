@@ -48,7 +48,11 @@ from functools import reduce # K-classifier
 #my_table= cursor.execute(query).fetchall()
 #cursor.execute("select name from sqlite_master where type='table'")
 #print(cursor.fetchall()) """
-
+#FUNCTIONS
+def set_seed(my_seed):
+    random.seed(my_seed)
+    np.random.seed(my_seed)
+    
 #Diretorias:
 file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
 #file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
@@ -1270,44 +1274,224 @@ dfWork['ratioSalary']=dfWork['lobTotal']/dfWork['salary']
 # Years has been a customer= 1998-firstPolicy
 dfWork['yearCustomer']=1998-dfWork['firstPolicy']
 
-#----------------------------------------------MULTIDIMENSIONAL OUTLIERS -------------------------------------------------#
-# from kmodes.kprototypes import KPrototypes
-# test=KPrototypes(n_clusters=1000, init='Huang')
-# cluster=test.fit_predict(X, categorical=[3,4])
+#---------------------------------------------- MULTIDIMENSIONAL OUTLIERS -------------------------------------------------#
+
+dfMultiOut=dfWork[['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
+# Min max: outliers already treated and for variables to be at the same scale.
+from sklearn.preprocessing import MinMaxScaler
+scaler = MinMaxScaler()
+multiNorm = scaler.fit_transform(dfMultiOut)
+multiNorm = pd.DataFrame(multiNorm, columns = dfMultiOut.columns)
+
+my_seed=100
+from sklearn.cluster import KMeans
 
 # Apply k-means with the k as the square root of the obs number.
-K=round(math.sqrt(10261),0)
-
-# 5 initializations k-means.
+K=int(round(math.sqrt(10261),0))
 kmeans = KMeans(n_clusters=K, 
                 random_state=0,
-                n_init = 5, 
-                max_iter = 200).fit(CA_Norm)
+                n_init = 20, 
+                max_iter = 300,
+                init='k-means++').fit(multiNorm)
 
 # Check the Clusters (Centroids).
-my_clusters=kmeans.cluster_centers_
-my_clusters
+multiClusters=kmeans.cluster_centers_
+multiClusters
+
+labelsKmeans = pd.DataFrame(kmeans.labels_)
+labelsKmeans.columns =  ['LabelsKmeans']
+labelsKmeans
+
+outClientsCluster = pd.DataFrame(pd.concat([multiNorm, labelsKmeans],axis=1), 
+                        columns=['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','LabelsKmeans'])
+
+# Hierarchical clustering:
+from sklearn.cluster import AgglomerativeClustering
+from scipy.cluster.hierarchy import dendrogram, linkage
+
+Z = linkage(multiNorm,
+            method = 'ward')
+dendrogram(Z,
+           truncate_mode='none',
+           p=40,
+           orientation = 'top',
+           leaf_rotation=45,
+           leaf_font_size=10,
+           show_contracted=True,
+           show_leaf_counts=True,color_threshold=50, above_threshold_color='k')
+
+hClustering = AgglomerativeClustering(n_clusters = 30,
+                                      affinity = 'euclidean',
+                                      linkage = 'ward')
+
+# With 30 clusters the normal behavior would be to have 300 observations in each cluster.
+multiHC = hClustering.fit(multiClusters)
+
+# clusters hcclusters aos quais cada k means clusters pertence?
+# Quero aceder às labels do k means ao mesmo tempo que acedo às labels do hc - coluna 1: kmeans; coluna 2: hc
+
+labelsHC = pd.DataFrame(multiHC.labels_)
+labelsHC.columns =  ['LabelsHC']
+labelsHC.reset_index(level=0, inplace=True)
+labelsHC=labelsHC.rename(columns={'index':'LabelsKmeans'})
+labelsHC['LabelsKmeans']=labelsHC['LabelsKmeans']+1
+
+outClientsCluster=outClientsCluster.merge(labelsHC, left_on='LabelsKmeans', right_on='LabelsKmeans')
+outClientsCluster=outClientsCluster['LabelsHC'].value_counts().sort_values()
+
+# Pair plot to check ni dimensional outliers:
+plt.figure()
+sb.pairplot(dfWork, vars=['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
+plt.show()
+
+#---------------------------------------------- CLUSTERS -------------------------------------------------#
+
+# 2 groups of variables: Value/ Engage (costumers) and Consumption/ Affinity (products)
+dfEngage = dfWork[['firstPolicy',
+                      'salary',
+                      'cmv',
+                      'yearCustomer',
+                      #'claims' # use claims only when ploting for comparing clusters
+                      ]] 
+
+dfEngageCat = dfWork[['education',
+                         'binEducation',
+                         'children',
+                         'catClaims',
+                         #'catCMV' #TODO: Implement
+                         ]]
+
+dfAffinity= dfWork[['lobMotor',
+                  'lobHousehold',
+                  'lobHealth',
+                  'lobLife',
+                  'lobWork',
+                  'lobTotal']]
+
+dfAffinityRatio=dfWork[['motorRatio',
+                      'householdRatio',
+                      'healthRatio',
+                      'lifeRatio',
+                      'workCRatio']]
+
+########################################### K-means ##########################################
+# Normalization: min-max
+engageNorm = scaler.fit_transform(dfValueEngage)
+engageNorm = pd.DataFrame(ValueEngage, columns = dfValueEngage.columns)
+
+# Dendogram:
+Z = linkage(engageNorm,
+            method = 'ward')
+dendrogram(Z,
+           truncate_mode='none',
+           p=40,
+           orientation = 'top',
+           leaf_rotation=45,
+           leaf_font_size=10,
+           show_contracted=True,
+           show_leaf_counts=True,color_threshold=50, above_threshold_color='k') # There is evidence that we should keep 2 clusters.
+
+# Elbow Graph:
+cluster_range= range(1,7)
+cluster_errors = []
+for num_clusters in cluster_range:
+    clusters = KMeans(n_clusters=num_clusters, 
+                        random_state=0,
+                        n_init = 20, 
+                        max_iter = 300,
+                        init='k-means++')
+    clusters.fit(engageNorm)
+    cluster_errors.append(clusters.inertia_)
+
+dfClusters = pd.DataFrame({ "Num_clusters": cluster_range, "Cluster_errors": cluster_errors})
+plt.figure(figsize=(1,8))
+plt.xlabel("Clusters")
+plt.ylabel("Within- Cluster Sum of Squares")
+plt.plot(dfClusters.Num_clusters,dfClusters.Cluster_errors,marker='o') # There is evidence that we should keep 2 clusters.
+
+# Define seed
+# Apply k-means
+my_seed=100
+kmeans = KMeans(n_clusters=2,
+                random_state=0,
+                n_init = 20,
+                max_iter = 300,
+                init='k-means++').fit(engageNorm)
+
+# Check the Clusters (Centroids).
+kmeansClustersEngage=kmeans.cluster_centers_
+kmeansClustersEngage
+
+labelsKmeansEngage = pd.DataFrame(kmeans.labels_)
+labelsKmeansEngage.columns =  ['LabelsKmeansEngage']
+labelsKmeansEngage
+
+
+
+clientsClusters = pd.DataFrame(pd.concat([engageNorm, labelsKmeansEngage],axis=1), 
+                        columns=['firstPolicy','salary','cmv','yearCustomer','LabelsKmeansEngage'])
 
 # Invert the transformation for interpretability.
+clientsClusters=pd.DataFrame(scaler.inverse_transform(X=clientsClusters),columns=[['firstPolicy','salary','cmv','yearCustomer']])
+
+
+
 my_clusters=pd.DataFrame(scaler.inverse_transform(X=my_clusters),columns=ConsAff.columns)
-
-# sum of square distances: 
-kmeans.inertia_
-
-# Calculate inertia for each number of clusters from 1 to 19 and create a list that will contain the inertias.
-L = []
-for i in range(1,20):
-    kmeans= KMeans(n_clusters=i, random_state=0, n_init=5, max_iter=200).fit(CA_Norm)
-    L.append(kmeans.inertia_)
-
-# Creates a plot in which x is between 1 and 19 and y is the inertia values for each cluster number. This plot will show the inertia for each number of clusters through a line chart.
-import matplotlib.pyplot as plt
-plt.plot(range(1,20),L)
+clientsClusters['firstPolicy'].hist(by=clientsClusters['LabelsKmeansEngage'])
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Hclustering = AgglomerativeClustering(n_clusters = 30,
+                                      affinity = 'euclidean',
+                                      linkage = 'ward')
+
+# With 30 clusters the normal behavior would be to have 300 observations in each cluster.
+MultiHC = Hclustering.fit(multiClusters)
+
+# clusters hcclusters aos quais cada k means clusters pertence?
+# Quero aceder às labels do k means ao mesmo tempo que acedo às labels do hc - coluna 1: kmeans; coluna 2: hc
+
+labelsHC = pd.DataFrame(MultiHC.labels_)
+labelsHC.columns =  ['LabelsHC']
+labelsHC.reset_index(level=0, inplace=True)
+labelsHC=labelsHC.rename(columns={'index':'LabelsKmeans'})
+labelsHC['LabelsKmeans']=labelsHC['LabelsKmeans']+1
+
+OutClientsCluster=OutClientsCluster.merge(labelsHC, left_on='LabelsKmeans', right_on='LabelsKmeans')
+OutClientsCluster=OutClientsCluster['LabelsHC'].value_counts().sort_values()
 
 
 
