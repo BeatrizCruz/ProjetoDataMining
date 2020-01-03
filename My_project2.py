@@ -20,6 +20,7 @@ from sklearn.neighbors import KNeighborsRegressor # To treat missing values in s
 import statsmodels.api as sm # To create a linear regression for the variable salary.
 from sklearn.linear_model import LinearRegression # to create a linear regression for the variable salary.
 from sklearn import linear_model
+from functools import reduce # K-classifier
 #""" my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
 #my_path = r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
 ##dbname = "datamining.db"
@@ -979,7 +980,7 @@ def KNClassifier(dfWork,myDf,treatVariable,expVariables,K, weights,metric,p=2):
                               verify_integrity = False)
     df_inc.columns = varList
     df_inc = df_inc.drop(columns=expVariables)
-    from functools import reduce
+
     dfWork = reduce(lambda left,right: pd.merge(left, right, on='id', how='left'), [dfWork,df_inc])
     dfWork[treatVariable+'_x']=np.where(dfWork[treatVariable+'_x'].isna(),dfWork[treatVariable+'_y'],dfWork[treatVariable+'_x'])
     dfWork=dfWork.rename(columns={treatVariable+'_x':treatVariable})
@@ -1340,11 +1341,37 @@ dfWork['yearCustomer']=1998-dfWork['firstPolicy']
 
 #----------------------------------------------MULTIDIMENSIONAL OUTLIERS -------------------------------------------------#
 # from kmodes.kprototypes import KPrototypes
-#
 # test=KPrototypes(n_clusters=1000, init='Huang')
 # cluster=test.fit_predict(X, categorical=[3,4])
 
+# Apply k-means with the k as the square root of the obs number.
+K=round(math.sqrt(10261),0)
 
+# 5 initializations k-means.
+kmeans = KMeans(n_clusters=K, 
+                random_state=0,
+                n_init = 5, 
+                max_iter = 200).fit(CA_Norm)
+
+# Check the Clusters (Centroids).
+my_clusters=kmeans.cluster_centers_
+my_clusters
+
+# Invert the transformation for interpretability.
+my_clusters=pd.DataFrame(scaler.inverse_transform(X=my_clusters),columns=ConsAff.columns)
+
+# sum of square distances: 
+kmeans.inertia_
+
+# Calculate inertia for each number of clusters from 1 to 19 and create a list that will contain the inertias.
+L = []
+for i in range(1,20):
+    kmeans= KMeans(n_clusters=i, random_state=0, n_init=5, max_iter=200).fit(CA_Norm)
+    L.append(kmeans.inertia_)
+
+# Creates a plot in which x is between 1 and 19 and y is the inertia values for each cluster number. This plot will show the inertia for each number of clusters through a line chart.
+import matplotlib.pyplot as plt
+plt.plot(range(1,20),L)
 
 
 
