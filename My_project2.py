@@ -1506,105 +1506,70 @@ dfEngageKmeans = pd.DataFrame(pd.concat([dfEngageKmeans, labelsKmeansEngage],axi
 
 # dfEngageKmeans['firstPolicy'].hist(by=dfEngageKmeans['LabelsKmeansEngage'])
 from plotly.subplots import make_subplots
+dfEngageKmeans['firstPolicy'] = pd.factorize(dfEngageKmeans['firstPolicy'])[0]
+dfEngageKmeans['salary'] = pd.factorize(dfEngageKmeans['salary'])[0]
 
-fig = make_subplots(
-    rows=1, cols=4, subplot_titles=("Plot 1", "Plot 2", "Plot 3", "Plot 4") #,"Plot 5", "Plot 6", "Plot 7", "Plot 8"
-)
 
-var_list=list(dfEngageKmeans.iloc[:,1:5].columns)
-column=1
-for var in var_list:
-    df=pd.DataFrame(dfEngageKmeans[var].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==0])
-    df.reset_index(level=0, inplace=True)
-    df=df.rename(columns={'index':str(var),var:'Number of Individuals'})
-    df=df.sort_values(by=var)
-    fig.add_trace(go.Bar(x=df[var], y=df['Number of Individuals']), row=1, col=column)
-    fig.update_xaxes(title_text=str(var), row=1, col=column)
-    fig.update_yaxes(title_text='Number of Individuals', row=1, col=column)
-    column=column+1
-fig.show()
+fig = plt.figure(figsize=(15, 12))
+
+# loop over all vars (total: 34)
+for i in range(1, dfEngageKmeans.shape[1]):
+    plt.subplot(6, 6, i)
+    f = plt.gca()
+    f.axes.get_yaxis().set_visible(False)
+    plt.hist(dfEngageKmeans.iloc[:, i], bins=30, color='#3F5D7D')
+
+plt.tight_layout()
+plt.savefig("histogram-distribution.png")
 
 
 
 
 
-fig = make_subplots(
-    rows=1, cols=4, subplot_titles=("Plot 1", "Plot 2", "Plot 3", "Plot 4") #,"Plot 5", "Plot 6", "Plot 7", "Plot 8"
-)
 
-var_list=list(dfEngageKmeans.iloc[:,1:5].columns)
-column=1
-for var in var_list:
-    df=pd.DataFrame(dfEngageKmeans[str(var)].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==0])
-    df.reset_index(level=0)
-    df=df.rename(columns={'index':str(var),str(var):'Number of Individuals'})
-    df=df.sort_values(by=str(var))
-    fig.add_trace(go.Bar(x=df[str(var)], y=df['Number of Individuals']), row=1, col=column)
-    fig.update_xaxes(title_text=str(var), row=1, col=column)
-    fig.update_yaxes(title_text='Number of Individuals', row=1, col=column)
-    column=column+1
-fig.show()
+
+
+
+
+
+
+
 
 
 
 fig = make_subplots(
-    rows=1, cols=2, subplot_titles=("Plot 1", "Plot 2") 
-)
-
-df=pd.DataFrame(dfEngageKmeans['firstPolicy'].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==0])
+    rows=1, cols=2, subplot_titles=("Plot 1", "Plot 2"))
+df=dfEngageKmeans[dfEngageKmeans['LabelsKmeansEngage']==0]
+df=pd.DataFrame(df['firstPolicy'].value_counts())
 df.reset_index(level=0, inplace=True)
 df=df.rename(columns={'index':'firstPolicy','firstPolicy':'Number of Individuals'})
 df=df.sort_values(by='firstPolicy')
-fig.add_trace(go.Bar(x=df['firstPolicy'], y=df['Number of Individuals']), row=1, col=1)
+fig.add_trace(go.Scatter(x=df['firstPolicy'], y=df['Number of Individuals'], mode='markers'), row=1, col=1)
 fig.update_xaxes(title_text='firstPolicy', row=1, col=1)
 fig.update_yaxes(title_text='Number of Individuals', row=1, col=1)
 
-#df=pd.DataFrame(dfEngageKmeans['salary'].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==0])
-#df.reset_index(level=0, inplace=True)
-#df=df.rename(columns={'index':'salary','salary':'Number of Individuals'})
-#df=df.sort_values(by='salary')
-#fig.add_trace(go.Bar(x=df['salary'], y=df['Number of Individuals']), row=1, col=2)
-#fig.update_xaxes(title_text='salary', row=1, col=2)
-#fig.update_yaxes(title_text='Number of Individuals', row=1, col=2)
 
-dfEngageKmeans.dtypes()
-
-
-df=pd.DataFrame(dfEngageKmeans['firstPolicy'].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==1])
+df=dfEngageKmeans[dfEngageKmeans['LabelsKmeansEngage']==0]
+df=pd.DataFrame(df['salary'].value_counts())
 df.reset_index(level=0, inplace=True)
-df=df.rename(columns={'index':'firstPolicy','firstPolicy':'Number of Individuals'})
-df=df.sort_values(by='firstPolicy')
-fig.add_trace(go.Bar(x=df['firstPolicy'], y=df['Number of Individuals']), row=1, col=2)
-fig.update_xaxes(title_text='firstPolicy', row=1, col=2)
+df=df.rename(columns={'index':'salary','salary':'Number of Individuals'})
+df=df.sort_values(by='salary')
+fig.add_trace(go.Scatter(x=df['salary'], y=df['Number of Individuals'], mode='markers'), row=1, col=2)
+fig.update_xaxes(title_text='salary', row=1, col=2)
 fig.update_yaxes(title_text='Number of Individuals', row=1, col=2)
+
+#df=pd.DataFrame(dfEngageKmeans['firstPolicy'].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==1])
+#df.reset_index(level=0, inplace=True)
+#df=df.rename(columns={'index':'firstPolicy','firstPolicy':'Number of Individuals'})
+#df=df.sort_values(by='firstPolicy')
+#fig.add_trace(go.Bar(x=df['firstPolicy'], y=df['Number of Individuals']), row=1, col=2)
+#fig.update_xaxes(title_text='firstPolicy', row=1, col=2)
+#fig.update_yaxes(title_text='Number of Individuals', row=1, col=2)
 
 pyo.plot(fig)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-df=pd.DataFrame(dfEngageKmeans['firstPolicy'].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==0])
-df.reset_index(level=0, inplace=True)
-df=df.rename(columns={'index':'firstPolicy','firstPolicy':'Number of Individuals'})
-df=df.sort_values(by='firstPolicy')
-data= go.Bar(x=df['firstPolicy'],y=df['Number of Individuals'])#,mode='markers')
-
-
-
-
-layout = go.Layout(title='Cluster 1',template='simple_white',
-        xaxis=dict(title='First Policy',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
-fig = go.Figure(data=data, layout=layout)
 
 
 
