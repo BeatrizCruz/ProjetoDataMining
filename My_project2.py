@@ -21,7 +21,7 @@ import statsmodels.api as sm # To create a linear regression for the variable sa
 from sklearn.linear_model import LinearRegression # to create a linear regression for the variable salary.
 from sklearn import linear_model
 from functools import reduce # K-classifier
-#""" my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
+#my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
 #my_path = r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
 ##dbname = "datamining.db"
 #
@@ -54,8 +54,8 @@ def set_seed(my_seed):
     np.random.seed(my_seed)
     
 #Diretorias:
-#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -1416,7 +1416,7 @@ plt.show()
 #---------------------------------------------- CLUSTERS -------------------------------------------------#
 
 # 2 groups of variables: Value/ Engage (costumers) and Consumption/ Affinity (products)
-dfEngage = dfWork[['firstPolicy',
+dfEngage = dfWork[[  'firstPolicy',
                       'salary',
                       'cmv',
                       'yearCustomer',
@@ -1445,8 +1445,14 @@ dfAffinityRatio=dfWork[['motorRatio',
 
 ########################################### K-means ##########################################
 # Normalization: min-max
-engageNorm = scaler.fit_transform(dfValueEngage)
-engageNorm = pd.DataFrame(ValueEngage, columns = dfValueEngage.columns)
+dfEngageKmeans=dfEngage
+engageNorm = scaler.fit_transform(dfEngageKmeans)
+engageNorm = pd.DataFrame(engageNorm, columns = dfEngageKmeans.columns)
+engageNorm = engageNorm.rename(columns={"firstPolicy": "firstPolictStd", "salary": "salaryStd", "cmv": "cmvStd", "yearCustomer":"yearCustomerStd"}, errors="raise")
+dfEngageKmeans=pd.DataFrame(pd.concat([dfEngageKmeans, engageNorm],axis=1), 
+                        columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+dfEngageKmeans=pd.DataFrame(pd.concat([dfWork['id'], dfEngageKmeans],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
 
 # Dendogram:
 Z = linkage(engageNorm,
@@ -1495,19 +1501,110 @@ labelsKmeansEngage = pd.DataFrame(kmeans.labels_)
 labelsKmeansEngage.columns =  ['LabelsKmeansEngage']
 labelsKmeansEngage
 
+dfEngageKmeans = pd.DataFrame(pd.concat([dfEngageKmeans, labelsKmeansEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'LabelsKmeansEngage'])
+
+# dfEngageKmeans['firstPolicy'].hist(by=dfEngageKmeans['LabelsKmeansEngage'])
+from plotly.subplots import make_subplots
+
+fig = make_subplots(
+    rows=1, cols=4, subplot_titles=("Plot 1", "Plot 2", "Plot 3", "Plot 4") #,"Plot 5", "Plot 6", "Plot 7", "Plot 8"
+)
+
+var_list=list(dfEngageKmeans.iloc[:,1:5].columns)
+column=1
+for var in var_list:
+    df=pd.DataFrame(dfEngageKmeans[var].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==0])
+    df.reset_index(level=0, inplace=True)
+    df=df.rename(columns={'index':str(var),var:'Number of Individuals'})
+    df=df.sort_values(by=var)
+    fig.add_trace(go.Bar(x=df[var], y=df['Number of Individuals']), row=1, col=column)
+    fig.update_xaxes(title_text=str(var), row=1, col=column)
+    fig.update_yaxes(title_text='Number of Individuals', row=1, col=column)
+    column=column+1
+fig.show()
 
 
-clientsClusters = pd.DataFrame(pd.concat([engageNorm, labelsKmeansEngage],axis=1), 
-                        columns=['firstPolicy','salary','cmv','yearCustomer','LabelsKmeansEngage'])
-
-# Invert the transformation for interpretability.
-clientsClusters=pd.DataFrame(scaler.inverse_transform(X=clientsClusters),columns=[['firstPolicy','salary','cmv','yearCustomer']])
 
 
 
-my_clusters=pd.DataFrame(scaler.inverse_transform(X=my_clusters),columns=ConsAff.columns)
-clientsClusters['firstPolicy'].hist(by=clientsClusters['LabelsKmeansEngage'])
+fig = make_subplots(
+    rows=1, cols=4, subplot_titles=("Plot 1", "Plot 2", "Plot 3", "Plot 4") #,"Plot 5", "Plot 6", "Plot 7", "Plot 8"
+)
 
+var_list=list(dfEngageKmeans.iloc[:,1:5].columns)
+column=1
+for var in var_list:
+    df=pd.DataFrame(dfEngageKmeans[str(var)].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==0])
+    df.reset_index(level=0)
+    df=df.rename(columns={'index':str(var),str(var):'Number of Individuals'})
+    df=df.sort_values(by=str(var))
+    fig.add_trace(go.Bar(x=df[str(var)], y=df['Number of Individuals']), row=1, col=column)
+    fig.update_xaxes(title_text=str(var), row=1, col=column)
+    fig.update_yaxes(title_text='Number of Individuals', row=1, col=column)
+    column=column+1
+fig.show()
+
+
+
+fig = make_subplots(
+    rows=1, cols=2, subplot_titles=("Plot 1", "Plot 2") 
+)
+
+df=pd.DataFrame(dfEngageKmeans['firstPolicy'].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==0])
+df.reset_index(level=0, inplace=True)
+df=df.rename(columns={'index':'firstPolicy','firstPolicy':'Number of Individuals'})
+df=df.sort_values(by='firstPolicy')
+fig.add_trace(go.Bar(x=df['firstPolicy'], y=df['Number of Individuals']), row=1, col=1)
+fig.update_xaxes(title_text='firstPolicy', row=1, col=1)
+fig.update_yaxes(title_text='Number of Individuals', row=1, col=1)
+
+#df=pd.DataFrame(dfEngageKmeans['salary'].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==0])
+#df.reset_index(level=0, inplace=True)
+#df=df.rename(columns={'index':'salary','salary':'Number of Individuals'})
+#df=df.sort_values(by='salary')
+#fig.add_trace(go.Bar(x=df['salary'], y=df['Number of Individuals']), row=1, col=2)
+#fig.update_xaxes(title_text='salary', row=1, col=2)
+#fig.update_yaxes(title_text='Number of Individuals', row=1, col=2)
+
+dfEngageKmeans.dtypes()
+
+
+df=pd.DataFrame(dfEngageKmeans['firstPolicy'].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==1])
+df.reset_index(level=0, inplace=True)
+df=df.rename(columns={'index':'firstPolicy','firstPolicy':'Number of Individuals'})
+df=df.sort_values(by='firstPolicy')
+fig.add_trace(go.Bar(x=df['firstPolicy'], y=df['Number of Individuals']), row=1, col=2)
+fig.update_xaxes(title_text='firstPolicy', row=1, col=2)
+fig.update_yaxes(title_text='Number of Individuals', row=1, col=2)
+
+pyo.plot(fig)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+df=pd.DataFrame(dfEngageKmeans['firstPolicy'].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==0])
+df.reset_index(level=0, inplace=True)
+df=df.rename(columns={'index':'firstPolicy','firstPolicy':'Number of Individuals'})
+df=df.sort_values(by='firstPolicy')
+data= go.Bar(x=df['firstPolicy'],y=df['Number of Individuals'])#,mode='markers')
+
+
+
+
+layout = go.Layout(title='Cluster 1',template='simple_white',
+        xaxis=dict(title='First Policy',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
 
 
 
