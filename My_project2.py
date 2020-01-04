@@ -81,6 +81,10 @@ dfOriginal=dfOriginal.rename(columns={"Brithday Year": "birthday",
                                         "Premiums in LOB: Work Compensations":"lobWork"})
 
 #--------------------STUDY OF VARIABLES INDIVIDUALLY-----------------------
+#Create columns for global flags with zeros (hack)
+dfOriginal['Others'] = np.where(dfOriginal['birthday']<0, 1,0)
+dfOriginal['Errors'] = np.where(dfOriginal['birthday']<0, 1,0)
+dfOriginal['Outliers'] = np.where(dfOriginal['birthday']<0, 1,0)
 # 1. birthday:
 
 # Plot birthday for a first visual analysis:
@@ -97,8 +101,9 @@ print(dfOriginal['birthday'].value_counts().sort_index())# After checking variab
 
 # Create a new column to indicate strange values as 1 and normal values as 0 and a column that will reference all odd values for easier access
 # There are few people alive that were born before 1900
-dfOriginal['Strange_birthday'] = np.where(dfOriginal['birthday']<1900, 1,0)
-dfOriginal['Others'] = np.where(dfOriginal['birthday']<1900, 1,0)
+dfOriginal['Strange_birthday'] = np.where(dfOriginal['birthday']<1900, 1,0)             #assign flag anomaly in birthday
+dfOriginal['Others'] = np.where(dfOriginal['birthday']<1900, 1,dfOriginal['Others'])    #assign flag do not enter in model
+dfOriginal['Errors'] = np.where(dfOriginal['birthday']<1900, 1,dfOriginal['Errors'])    #assign flag error
 dfOriginal[['id','birthday']].loc[dfOriginal['Strange_birthday'] == 1] #what are the strange values
 dfOriginal['Strange_birthday'].value_counts()   # Verify if the column was created as supposed
 
@@ -227,8 +232,10 @@ countSalary
 # Create a new column to indicate outliers as 1 and normal values as 0:
 # Explain chosen value for outliers (10000) (...)
 # Verify if the column was created as supposed.
-dfOriginal['Outliers_salary']=np.where(dfOriginal['salary']>10000, 1,0)
-dfOriginal['Others']=np.where(dfOriginal['salary']>10000, 1,dfOriginal['Others'])
+dfOriginal['Outliers_salary']=np.where(dfOriginal['salary']>10000, 1,0)                     #assign flag anomaly in salary
+dfOriginal['Others'] = np.where(dfOriginal['salary']>10000, 1,dfOriginal['Others'])         #assign flag do not enter in model
+dfOriginal['Outliers'] = np.where(dfOriginal['salary']>10000, 1,dfOriginal['Outliers'])     #assign flag outlier
+
 dfOriginal[['id','salary']].loc[dfOriginal['Outliers_salary'] == 1]
 dfOriginal['Outliers_salary'].value_counts()
 #lower than minimum wage in 2016 (530€)
@@ -379,15 +386,13 @@ pyo.plot(fig)
 # Create a variable that counts individuals by cmv value to check cmv values 
 cmvValues=dfOriginal['cmv'].value_counts().sort_index()
 # Create a boxplot to better visualize those values
-# plt.figure()
-# sb.boxplot(x=dfOriginal["cmv"])
-# plt.show()
+plt.figure()
+sb.boxplot(x=dfOriginal["cmv"])
+plt.show()
 
 # Create a new column for negative outliers that indicates outliers as 1 and other values as 0. Clients that give huge losses to the company will have value 1 in this column.
 # When creating the column put the 6 lower values that are represented on the boxplot (outliers) with value 1.
 dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,0)
-dfOriginal['Others'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,dfOriginal['Others'])
-
 # Verify if the column was created as supposed
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
@@ -404,13 +409,12 @@ cmvValues
 # When creating this column put the 3 lower values that are represented on the boxplot (outliers) with value 1.
 # Verify if the column was created as supposed
 dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,0)
-dfOriginal['Others'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOriginal['Others'])
 dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
 # Change the values of the new negative outliers to 1 in the df_OutliersLow_cmv column
 # Verify if values were changed as supposed
 dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,dfOriginal['df_OutliersLow_cmv'])
-dfOriginal['Others'] = np.where(dfOriginal['cmv']<=cmvValues.index[5],1,dfOriginal['Others'])
+
 dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 # Create a box plot without the until now identified outliers:
@@ -434,15 +438,25 @@ dfOriginal['df_OutliersLow_cmv'].value_counts()
 #sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersLow_cmv'] == 0)]) 
 #plt.show()
 #Check the ploted values in more detail:
+dfOriginal['Others'] = np.where(dfOriginal['cmv']<(-500), 1,dfOriginal['Others'])         #assign flag do not enter in model
+dfOriginal['Others'] = np.where(dfOriginal['cmv']>2000, 1,dfOriginal['Others'])         #assign flag do not enter in model
+dfOriginal['Outliers'] = np.where(dfOriginal['cmv']<(-500), 1,dfOriginal['Outliers'])       #assign flag outlier
+dfOriginal['Outliers'] = np.where(dfOriginal['cmv']>2000, 1,dfOriginal['Outliers'])       #assign flag outlier
+
+
 cmvValues = dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv']==0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index()
 cmvValues
 #There are 3 higher values that will be considered as outliers.
 
 # Change the values of the new positive outliers to 1 in the df_OutliersHigh_cmv column
 dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOriginal['df_OutliersHigh_cmv'])
+
+#Inquiries for knowing the values of the outliers
 dfOriginal[['id','cmv']].loc[dfOriginal['df_OutliersLow_cmv'] == 1 ]
 dfOriginal[['id','cmv']].loc[dfOriginal['df_OutliersHigh_cmv'] == 1]
-dfOriginal["cmv-25"]= np.where(dfOriginal['cmv']==(-25),1,0) #customers where cmv = -25  , possible aquisition cost?
+
+#customers where cmv = -25  , possible aquisition cost? Let's find out
+dfOriginal["cmv-25"]= np.where(dfOriginal['cmv']==(-25),1,0)
 temp=dfOriginal[['id','cmv',"claims",'firstPolicy','birthday','lobMotor',"lobHousehold","lobHealth","lobLife","lobWork"]].loc[dfOriginal['cmv-25'] == 1]
 dfOriginal['Others'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOriginal['Others'])
 #dfOriginal['Others'] = np.where(dfOriginal['cmv']==(-25),1,dfOriginal['Others'])
@@ -528,10 +542,23 @@ valuesClaims = dfOriginal['claims'].value_counts().sort_index()
 valuesClaims
 # There is a small group of individuals who have high values of claims rate and that is the reason the plots are so distorted.
 
-# Plot only values less than 3
+# Plot only values less than 4
 df=dfOriginal.groupby(['claims'])['claims'].count()
 df=pd.DataFrame(df, columns=['claims'])
-df=df[df.index<3]
+
+#Let's remove outliers
+plt.figure()
+sb.boxplot(x = dfOriginal["claims"])
+plt.show()
+
+
+
+# plt.figure()
+# sb.boxplot(x = dfOriginal["claims"][dfOriginal['claims'] <4])
+# plt.show()
+#df=df[df.index<3]
+dfOriginal['Outliers_claims']=np.where(dfOriginal['claims']>4, 1,0)     #signal as outliers in claims
+dfOriginal['Others']=np.where(dfOriginal['claims']>4, 1,dfOriginal['Others'])   #signal a global removable value
 #plt.figure()
 #df['claims'].sort_index().plot()
 #plt.show()
@@ -540,6 +567,7 @@ df=df[df.index<3]
 # People who have a claims rate of 1 are the ones with which the company had no profit nor losses. 
 # People who have a claims rate higher than 1 are the ones with which the company had losses.
 # Good Graph:
+df=pd.DataFrame(dfOriginal['claims'][dfOriginal['Outliers_claims'] == 0 ].value_counts().sort_index())
 df=df.rename(columns={'claims':'Individuals'})
 df.reset_index(level=0, inplace=True)
 df=df.rename(columns={'index':'claims'})
