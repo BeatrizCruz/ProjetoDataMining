@@ -1461,6 +1461,7 @@ dfClusters = pd.DataFrame({ "Num_clusters": cluster_range, "Cluster_errors": clu
 plt.figure(figsize=(1,8))
 plt.xlabel("Clusters")
 plt.ylabel("Within- Cluster Sum of Squares")
+plt.title('Elbow Graph')
 plt.plot(dfClusters.Num_clusters,dfClusters.Cluster_errors,marker='o') # There is evidence that we should keep 2 clusters.
 
 # Define seed
@@ -1484,34 +1485,141 @@ dfEngageKmeans = pd.DataFrame(pd.concat([dfEngageKmeans, labelsKmeansEngage],axi
                         columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsKmeansEngage'])
 
 # Visualization of results:
+lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+fig=plt.figure()
+fig.suptitle('Box Plots by Variable and Cluster')
+for i in lista:
+    plt.subplot2grid((1,4),(0,lista.index(i)))
+    sb.boxplot(x='labelsKmeansEngage', y=i, data=dfEngageKmeans)
+plt.tight_layout()
+plt.plot()
+# Through this visualization we could conclude that the 2 clusters differentiate a lot on the variables firstPolicy and yearCustomer. 
+# However, these 2 clusters do not differentiate in the variables salary and cmv.
 
-#plt.figure(figsize=(13,10), dpi= 80)
-#f, axes=plt.subplots(1, len(["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]))
-#k=0
-#for j in ["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]:
-#    sb.boxplot(x='labelsKmeansEngage',y=j ,  data=dfEngageKmeans,
-#               hue='labelsKmeansEngage',orient="v",ax=[k])
-#    k+=1
-#
-##for i in range(len(df['labelsKmeansEngage'].unique())-1):
-#    plt.vlines(j+.5, 10, 45, linestyles='solid', colors='gray', alpha=0.2)
-#
-## Decoration
-#plt.title('Box Plot of Highway Mileage by Vehicle Class', fontsize=22)
-#plt.show()
+lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+fig=plt.figure()
+fig.suptitle('Box Plots by Variable and Cluster')
+for i in lista:
+    plt.subplot2grid((1,4),(0,lista.index(i)))
+    sb.violinplot(x='labelsKmeansEngage', y=i, data=dfEngageKmeans, scale='width', inner='quartile')
+plt.tight_layout()
+plt.plot()
 
-names=["firstPolictStd", "salaryStd"]#,"cmvStd","yearCustomerStd"]
-fig,axes=plt.subplots(1,2)
-
-for i,t in enumerate (names):
-    sb.boxplot(y=t, x="a", data =dfEngageKmeans, orient= "v" , ax=axes[i% 2])
-plt.show()
+sns.violinplot(x='class', y='hwy', data=df, scale='width', inner='quartile')
 
 
-fig, ax=plt.subplots(num_clusters,num_var,sharex='col',sharey='row')
-for i in range(len(num_clusters)):
-    for j in range(num_var):
-        fig.add_subt
+
+
+
+
+
+
+# Lets try to make 3 clusters instead to check if with 3 clusters we can differentiate according to salary and cmv.
+kmeans = KMeans(n_clusters=3,
+                random_state=0,
+                n_init = 20,
+                max_iter = 300,
+                init='k-means++').fit(engageNorm)
+
+# Check the Clusters (Centroids).
+kmeansClustersEngageK3=kmeans.cluster_centers_
+kmeansClustersEngageK3
+
+labelsKmeansEngageK3 = pd.DataFrame(kmeans.labels_)
+labelsKmeansEngageK3.columns =  ['labelsKmeansEngageK3']
+labelsKmeansEngageK3
+
+dfEngageKmeansK3=dfEngage
+dfEngageKmeansK3=pd.DataFrame(pd.concat([dfEngageKmeansK3, engageNorm],axis=1), 
+                        columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+dfEngageKmeansK3=pd.DataFrame(pd.concat([dfWork['id'], dfEngageKmeansK3],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+dfEngageKmeansK3 = pd.DataFrame(pd.concat([dfEngageKmeansK3, labelsKmeansEngageK3],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsKmeansEngageK3'])
+
+# Visualization of results:
+lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+fig=plt.figure()
+fig.suptitle('Box Plots by Variable and Cluster')
+for i in lista:
+    plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+    sb.boxplot(x='labelsKmeansEngageK3', y=i, data=dfEngageKmeansK3)
+plt.tight_layout()
+plt.plot()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##################################################################
+variaveis=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+fig, ax = plt.subplots(figsize=(10,5), ncols=2, nrows=len(variaveis))
+
+left   =  0.125  # the left side of the subplots of the figure
+right  =  0.9    # the right side of the subplots of the figure
+bottom =  0.1    # the bottom of the subplots of the figure
+top    =  0.9    # the top of the subplots of the figure
+wspace =  .5     # the amount of width reserved for blank space between subplots
+hspace =  1.1    # the amount of height reserved for white space between subplots
+
+# This function actually adjusts the sub plots using the above paramters
+plt.subplots_adjust(
+    left    =  left,
+    bottom  =  bottom,
+    right   =  right,
+    top     =  top,
+    wspace  =  wspace,
+    hspace  =  hspace
+)
+
+# The amount of space above titles
+y_title_margin = 1.2
+
+plt.suptitle("Comparing Clusters", y = 1.09, fontsize=20)
+i=0
+for var in variaveis:
+
+    sb.catplot(dfEngageKmeans[var],col="labelsKmeansEngage", kind="count", ax=ax[i][0])
+    sb.distplot(dfEngageKmeans[var], col="labelsKmeansEngage",kde = False, ax = ax[i][1])
+    i+=1
+
+#sns.distplot(df['stand_bathrooms'],  kde = False, ax=ax[0][2])
+
+# Set all labels on the row axis of subplots for bathroom data to "bathrooms"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
