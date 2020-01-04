@@ -990,47 +990,6 @@ def KNClassifier(dfWork,myDf,treatVariable,expVariables,K, weights,metric,p=2):
     dfWork=dfWork.rename(columns={treatVariable+'_x':treatVariable})
     dfWork=dfWork.drop(columns=treatVariable+'_y')
     return dfWork
-
-# Function to treat Nan Values through KN Regression:
-def KNRegressor (dfWork, myDf,treatVariable,expVariables,K, weights, metric,p=2):
-    """
-    This function predicts a continuous variable through the KNN method (using KNeighborsRegressor). The arguments are the following:
-    - dfWork: original data frame in which we want to introduce the final estimated values
-    - myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables).
-    - treatVariable: variable to predict (string type).
-    - expVariables: list of variables that will be used to explain the treatVariable.
-    - K: number of neighbors to use.
-    - weights: to choose the weight function to use (distance, uniform, callable)- for a more detailed explanation check the KNeighborsRegressor parameters.
-    """
-    varList=list(myDf)
-    myDf[varList] = myDf[varList].apply(pd.to_numeric)
-    # df_inc: has Nan values on the treatVariable.
-    # df_comp: no Nan values on the treatVariable.
-    df_inc=myDf.loc[myDf[treatVariable].isna(),]
-    df_comp=myDf[~myDf.index.isin(df_inc.index)]
-    # Define a regressor with KNN.
-    my_regressor = KNeighborsRegressor(K,weights,metric=metric,p=p)
-    trained_model = my_regressor.fit(df_comp.loc[:,expVariables],
-                        df_comp.loc[:,treatVariable])
-    # Apply the trained model to the unknown data.
-    # Drop treatVariable column from df_inc data frame.
-    # Concat the df_inc data frame with the temp_df.
-    # Introduce the data into the dfWork data frame.
-    imputed_values = trained_model.predict(df_inc.drop(columns=[treatVariable,'id']))
-    temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = [treatVariable])
-    df_inc = df_inc.drop(columns=[treatVariable])
-    df_inc = df_inc.reset_index(drop=True)
-    df_inc = pd.concat([df_inc, temp_df],
-                              axis = 1,
-                              ignore_index = True,
-                              verify_integrity = False)
-    df_inc.columns = varList
-    df_inc = df_inc.drop(columns=expVariables)
-    dfWork = reduce(lambda left,right: pd.merge(left, right, on='id', how='left'), [dfWork,df_inc])
-    dfWork[treatVariable+'_x']=np.where(dfWork[treatVariable+'_x'].isna(),dfWork[treatVariable+'_y'],dfWork[treatVariable+'_x'])
-    dfWork=dfWork.rename(columns={treatVariable+'_x':treatVariable})
-    dfWork=dfWork.drop(columns=treatVariable+'_y')
-    return dfWork
             
 # Function to create a regression (and then if wanted to predict through it)
 def Regression(myDf,indepVariables,depVariable,treatNa):
@@ -1153,22 +1112,16 @@ dfWork['binEducation']=np.where(((dfWork['binEducation']=='1 - Basic')|(dfWork['
 # Through the heatmap, we can check that there is no variable that is highly linearly correlated with salary in absolute value. 
 dfCorr=pd.DataFrame(dfWork,columns=['firstPolicy','salary','cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
 dfCorrP=dfCorr.corr(method ='pearson')
-mask = np.zeros_like(dfCorrP)
-mask[np.triu_indices_from(mask)] = True
-with sb.axes_style("white"):
-    fig, ax = plt.subplots(figsize=(10,10))
-    ax = sb.heatmap(dfCorrP, annot=True, mask=mask, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
-    fig.suptitle('Heatmap - Linear Correlations (Pearson)')
+fig, ax = plt.subplots(figsize=(10,10))
+ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
+fig.suptitle('Heatmap - Linear Correlations (Pearson)')
 
 # 2. Non linear correlations: to check if there are non linear correlations between variables:
 # Through the heatmap, we can check that there is no variable that is highly non linearly correlated with salary in absolute value. 
 dfCorrS=dfCorr.corr(method ='spearman')
-mask = np.zeros_like(dfCorrS)
-mask[np.triu_indices_from(mask)] = True
-with sb.axes_style("white"):
-    fig, ax = plt.subplots(figsize=(10,10))
-    ax = sb.heatmap(dfCorrS, annot=True, mask=mask, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
-    fig.suptitle('Heatmap - Non Linear Correlations (Spearman)')
+fig, ax = plt.subplots(figsize=(10,10))
+ax = sb.heatmap(dfCorrS, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
+fig.suptitle('Heatmap - Non Linear Correlations (Spearman)')
 
 # 3.  Plot the distribution of salary according to other variables: to check if there are variables that follow a specific distribution with the salary.
 # To complement the point 2 (not actually necessary)
@@ -1236,7 +1189,17 @@ dfSalary=dfSalary[~(dfSalary['firstPolicy'].isna())]
 dfSalary = dfSalary[~((dfSalary['salary'].isna()) & (dfSalary['firstPolicy'].isna()))]
 dfSalary.isna().sum()
 
-dfWork=KNRegressor(dfWork=dfWork,myDf=dfSalary, treatVariable='salary',expVariables=['firstPolicy','lobHousehold','lobMotor','lobHealth','lobLife','lobWork'],K=5,weights='distance',metric="minkowski",p=1)  #1 for manhattan; 2 for euclidean
+from sklearn.impute import KNNImputer
+imputer = KNNImputer(n_neighbors=5)
+dfSalary=pd.DataFrame(imputer.fit_transform(dfSalary), columns=dfSalary.columns)
+# Check again nan values: 
+dfSalary.isna().sum()
+# Replace column in the original data frame:
+dfSalary=dfSalary[['id','salary']]
+dfSalary=dfSalary.rename(columns={'salary':'salary_x'})
+dfWork= reduce(lambda left,right: pd.merge(left, right, on='id', how='left'), [dfWork,dfSalary])
+dfWork['salary']=np.where(dfWork['salary'].isna(),dfWork['salary_x'],dfWork['salary'])
+dfWork=dfWork.drop(columns=['salary_x'])
 
 #Check again Null values.
 dfWork.isna().sum()
@@ -1244,14 +1207,24 @@ dfWork.isna().sum()
 
 # Lets treat these two observations. For this we cannot use firstPolicy as an explainable variable. Lets just use the Lob variables:
 dfSalary=dfWork[['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
-dfWork=KNRegressor(dfWork=dfWork,myDf=dfSalary, treatVariable='salary',expVariables=['lobHousehold','lobMotor','lobHealth','lobLife','lobWork'],K=5,weights='distance',metric="minkowski",p=1)  #1 for manhattan; 2 for euclidean
-
+dfSalary=pd.DataFrame(imputer.fit_transform(dfSalary), columns=dfSalary.columns)
+# Check again nan values: 
+dfSalary.isna().sum()
+# Replace column in the original data frame:
+dfSalary=dfSalary[['id','salary']]
+dfSalary=dfSalary.rename(columns={'salary':'salary_x'})
+dfWork= reduce(lambda left,right: pd.merge(left, right, on='id', how='left'), [dfWork,dfSalary])
+dfWork['salary']=np.where(dfWork['salary'].isna(),dfWork['salary_x'],dfWork['salary'])
+dfWork=dfWork.drop(columns=['salary_x'])
 #Check again Null values.
 #Recalculate column yearSalary.
 #Check again Null values.
+dfWork.isna().sum() # zero null values on salary as expected
 dfWork.isna().sum() # no null values on salary
 dfWork['yearSalary']=dfWork['salary']*12
 dfWork.isna().sum() # no null values on yearSalary
+
+#dfWork=KNRegressor(dfWork=dfWork,myDf=dfSalary, treatVariable='salary',expVariables=['lobHousehold','lobMotor','lobHealth','lobLife','lobWork'],K=5,weights='uniform',metric="minkowski",p=1)  #1 for manhattan; 2 for euclidean
 
 #############################################################################################################
 # FIRST POLICY
@@ -1315,7 +1288,18 @@ Regression(myDf=dfFirstPolicy,indepVariables=['salary','lobMotor','lobHousehold'
 # Lets apply the KNRegressor technique: 
 # Conceptually we have said that the variables that might explain firstPolicy are: lobHousehold, lobLife, lobWork, lobHousehold, lobHealth and salary (children and binEducation excluded as they are binary)
 dfFirstPolicy=dfWork[['id','firstPolicy','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
-dfWork=KNRegressor(dfWork=dfWork,myDf=dfFirstPolicy, treatVariable='firstPolicy',expVariables=['salary','lobHousehold','lobMotor','lobHealth','lobLife','lobWork'],K=5,weights='distance',metric="minkowski",p=1)  #1 for manhattan; 2 for euclidean
+dfFirstPolicy=pd.DataFrame(imputer.fit_transform(dfFirstPolicy), columns=dfFirstPolicy.columns)
+
+# Check again nan values: 
+dfFirstPolicy.isna().sum()
+
+# Replace column in the original data frame:
+dfFirstPolicy=dfFirstPolicy[['id','firstPolicy']]
+dfFirstPolicy=dfFirstPolicy.rename(columns={'firstPolicy':'firstPolicy_x'})
+dfWork = reduce(lambda left,right: pd.merge(left, right, on='id', how='left'), [dfWork,dfFirstPolicy])
+dfWork['firstPolicy']=np.where(dfWork['firstPolicy'].isna(),dfWork['firstPolicy_x'],dfWork['firstPolicy'])
+dfWork = dfWork.drop(columns=['firstPolicy_x'])
+dfWork.isna().sum()
 
 #Verify null values
 dfWork.isna().sum()
@@ -1380,6 +1364,11 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 
 Z = linkage(multiNorm,
             method = 'ward')
+
+plt.figure(figsize=(25, 10))
+plt.title('Hierarchical Clustering Dendrogram')
+plt.xlabel('sample index')
+plt.ylabel('distance')
 dendrogram(Z,
            truncate_mode='none',
            p=40,
@@ -1387,7 +1376,7 @@ dendrogram(Z,
            leaf_rotation=45,
            leaf_font_size=10,
            show_contracted=True,
-           show_leaf_counts=True,color_threshold=50, above_threshold_color='k')
+           show_leaf_counts=True,color_threshold=50, above_threshold_color='k',no_labels =True)
 
 hClustering = AgglomerativeClustering(n_clusters = 30,
                                       affinity = 'euclidean',
@@ -1413,7 +1402,9 @@ plt.figure()
 sb.pairplot(dfWork, vars=['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
 plt.show()
 
+###########################################################################################################
 #---------------------------------------------- CLUSTERS -------------------------------------------------#
+###########################################################################################################
 
 # 2 groups of variables: Value/ Engage (costumers) and Consumption/ Affinity (products)
 dfEngage = dfWork[[  'firstPolicy',
@@ -1454,19 +1445,7 @@ dfEngageKmeans=pd.DataFrame(pd.concat([dfEngageKmeans, engageNorm],axis=1),
 dfEngageKmeans=pd.DataFrame(pd.concat([dfWork['id'], dfEngageKmeans],axis=1), 
                         columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
 
-# Dendogram:
-Z = linkage(engageNorm,
-            method = 'ward')
-dendrogram(Z,
-           truncate_mode='none',
-           p=40,
-           orientation = 'top',
-           leaf_rotation=45,
-           leaf_font_size=10,
-           show_contracted=True,
-           show_leaf_counts=True,color_threshold=50, above_threshold_color='k') # There is evidence that we should keep 2 clusters.
-
-# Elbow Graph:
+# Elbow Graph: to check how many clusters we should have:
 cluster_range= range(1,7)
 cluster_errors = []
 for num_clusters in cluster_range:
@@ -1498,11 +1477,321 @@ kmeansClustersEngage=kmeans.cluster_centers_
 kmeansClustersEngage
 
 labelsKmeansEngage = pd.DataFrame(kmeans.labels_)
-labelsKmeansEngage.columns =  ['LabelsKmeansEngage']
+labelsKmeansEngage.columns =  ['labelsKmeansEngage']
 labelsKmeansEngage
 
 dfEngageKmeans = pd.DataFrame(pd.concat([dfEngageKmeans, labelsKmeansEngage],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'LabelsKmeansEngage'])
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsKmeansEngage'])
+
+# Visualization of results:
+
+#plt.figure(figsize=(13,10), dpi= 80)
+#f, axes=plt.subplots(1, len(["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]))
+#k=0
+#for j in ["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]:
+#    sb.boxplot(x='labelsKmeansEngage',y=j ,  data=dfEngageKmeans,
+#               hue='labelsKmeansEngage',orient="v",ax=[k])
+#    k+=1
+#
+##for i in range(len(df['labelsKmeansEngage'].unique())-1):
+#    plt.vlines(j+.5, 10, 45, linestyles='solid', colors='gray', alpha=0.2)
+#
+## Decoration
+#plt.title('Box Plot of Highway Mileage by Vehicle Class', fontsize=22)
+#plt.show()
+
+names=["firstPolictStd", "salaryStd"]#,"cmvStd","yearCustomerStd"]
+fig,axes=plt.subplots(1,2)
+
+for i,t in enumerate (names):
+    sb.boxplot(y=t, x="a", data =dfEngageKmeans, orient= "v" , ax=axes[i% 2])
+plt.show()
+
+
+fig, ax=plt.subplots(num_clusters,num_var,sharex='col',sharey='row')
+for i in range(len(num_clusters)):
+    for j in range(num_var):
+        fig.add_subt
+
+
+
+
+for i in ["firstPolictStd", "salaryStd"]:
+    g = sb.catplot(i, col="labelsKmeansEngage", col_wrap=4,
+                    data=dfEngageKmeans,
+                    kind="count", height=3.5, aspect=0.8, 
+                    palette='tab20')
+    g.set_xticklabels(rotation=90)
+    plt.show() 
+    
+    
+    
+    
+g = sb.catplot("firstPolicy", col="labelsKmeansEngage", col_wrap=4,
+                data=dfEngageKmeans,
+                kind="count", height=3.5, aspect=0.8, 
+                palette='tab20')
+g.set_xticklabels(rotation=90)
+plt.show()
+
+
+########################################### K-means + Hierarchical ##########################################
+dfEngageKmeansHC=dfEngage
+dfEngageKmeansHC=pd.DataFrame(pd.concat([dfEngageKmeansHC, engageNorm],axis=1), 
+                        columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+dfEngageKmeansHC=pd.DataFrame(pd.concat([dfWork['id'], dfEngageKmeansHC],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+
+# Apply k-means with the k as the square root of the obs number (k=101).
+K=int(round(math.sqrt(10261),0))
+my_seed=100
+kmeans = KMeans(n_clusters=K, 
+                random_state=0,
+                n_init = 20, 
+                max_iter = 300,
+                init='k-means++').fit(engageNorm)
+
+# Check the Clusters (Centroids).
+kmeansHCCentroidsEngage=kmeans.cluster_centers_
+kmeansHCCentroidsEngage
+
+labelsKmeansHCEngage = pd.DataFrame(kmeans.labels_)
+labelsKmeansHCEngage.columns =  ['labelsKmeansHCEngage']
+labelsKmeansHCEngage
+
+dfEngageKmeansHC = pd.DataFrame(pd.concat([dfEngageKmeansHC, labelsKmeansHCEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsKmeansHCEngage'])
+
+# Create a dendogram to check how many of the 101 clusters should be retained:
+Z = linkage(kmeansHCCentroidsEngage,
+            method = 'ward')
+plt.figure(figsize=(25, 10))
+plt.title('Hierarchical Clustering Dendrogram')
+plt.xlabel('sample index')
+plt.ylabel('distance')
+dendrogram(Z,
+           truncate_mode='none',
+           p=40,
+           orientation = 'top',
+           leaf_rotation=45,
+           leaf_font_size=10,
+           show_contracted=True,
+           show_leaf_counts=True,color_threshold=50, above_threshold_color='k',no_labels =True) # Evidence to retain 2 clusters
+
+# Apply Hierarchical Clustering to the formed centroids: 
+hClustering = AgglomerativeClustering(n_clusters = 2,
+                                      affinity = 'euclidean',
+                                      linkage = 'ward').fit(kmeansHCCentroidsEngage)
+
+labelsKmeansHCEngage2 = pd.DataFrame(hClustering.labels_)
+labelsKmeansHCEngage2.columns =  ['labelsKmeansHCEngage2']
+labelsKmeansHCEngage2.reset_index(level=0, inplace=True)
+labelsKmeansHCEngage2=labelsKmeansHCEngage2.rename(columns={'index':'labelsKmeansHCEngage'})
+labelsKmeansHCEngage2
+
+# Join the new clusters to the data frame dfEngageKmeansHC with merge through the 'LabelsKmeansHCEngage'
+dfEngageKmeansHC=dfEngageKmeansHC.merge(labelsKmeansHCEngage2, left_on='labelsKmeansHCEngage', right_on='labelsKmeansHCEngage')
+
+########################################### SOM + Hierarchical ##########################################
+dfEngageSomHC=dfEngage
+dfEngageSomHC=pd.DataFrame(pd.concat([dfEngageSomHC, engageNorm],axis=1), 
+                        columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+dfEngageSomHC=pd.DataFrame(pd.concat([dfWork['id'], dfEngageSomHC],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+
+# Apply SOM : 101 clusters 
+from sompy.sompy import SOMFactory
+names = ["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+sm = SOMFactory().build(data = engageNorm,
+               mapsize=(10,10),
+               normalization = 'var',
+               initialization='random',#'random', 'pca'
+               component_names=names,
+               lattice='hexa',#'rect','hexa'
+               training ='seq' )
+
+sm.train(n_job=4, #to be faster
+         verbose='info', # to show lines when running
+         train_rough_len=30, # first 30 steps are big (big approaches) - move 50%
+         train_finetune_len=100) # small steps - move 1%
+
+labelsSomHCEngage = pd.DataFrame(sm._bmu[0]) #101 clusters formed
+labelsSomHCEngage.columns = ['labelsSomHCEngage']
+labelsSomHCEngage
+
+dfEngageSomHC = pd.DataFrame(pd.concat([dfEngageSomHC, labelsSomHCEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsSomHCEngage'])
+
+# Get centroids:
+somHCCentroidsEngage=sm.codebook.matrix
+
+# Create a dendogram to check how many of the 101 clusters should be retained:
+Z = linkage(somHCCentroidsEngage,
+            method = 'ward')
+plt.figure(figsize=(25, 10))
+plt.title('Hierarchical Clustering Dendrogram')
+plt.xlabel('sample index')
+plt.ylabel('distance')
+dendrogram(Z,
+           truncate_mode='none',
+           p=40,
+           orientation = 'top',
+           leaf_rotation=45,
+           leaf_font_size=10,
+           show_contracted=True,
+           show_leaf_counts=True,color_threshold=50, above_threshold_color='k',no_labels =True) # Evidence to retain 3 or 4 clusters
+
+# Apply Hierarchical Clustering:
+hClustering = AgglomerativeClustering(n_clusters = 3, # Try also with 4
+                                      affinity = 'euclidean',
+                                      linkage = 'ward').fit(somHCCentroidsEngage)
+
+labelsSomHCEngage2 = pd.DataFrame(hClustering.labels_)
+labelsSomHCEngage2.columns =  ['labelsSomHCEngage2']
+labelsSomHCEngage2.reset_index(level=0, inplace=True)
+labelsSomHCEngage2=labelsSomHCEngage2.rename(columns={'index':'labelsSomHCEngage'})
+labelsSomHCEngage2
+
+# Join the new clusters to the data frame dfEngageKmeansHC with merge through the 'LabelsKmeansHCEngage'
+dfEngageSomHC=dfEngageSomHC.merge(labelsSomHCEngage2, left_on='labelsSomHCEngage', right_on='labelsSomHCEngage')
+
+########################################### EM ##########################################
+dfEngageEM=dfEngage
+dfEngageEM=pd.DataFrame(pd.concat([dfEngageEM, engageNorm],axis=1), 
+                        columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+dfEngageEM=pd.DataFrame(pd.concat([dfWork['id'], dfEngageEM],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+
+from sklearn import mixture
+# n_components= <the number of elements you found before- centroids>
+gmm = mixture.GaussianMixture(n_components = 3, # Evaluate this
+                              init_params='kmeans', # {‘kmeans’, ‘random’}, defaults to ‘kmeans’.
+                              max_iter=1000,
+                              n_init=10,
+                              verbose = 1).fit(engageNorm)
+
+labelsEmEngage = pd.DataFrame(gmm.predict(engageNorm))
+labelsEmEngage.columns = ['labelsEmEngage']
+
+dfEngageEM = pd.DataFrame(pd.concat([dfEngageEM, labelsEmEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsEmEngage'])
+#Not used yet:
+# Likelihood value
+#EM_score_samp = pd.DataFrame(gmm.score_samples(engageNorm))
+# Probabilities of belonging to each cluster.
+#EM_pred_prob = pd.DataFrame(gmm.predict_proba(engageNorm))
+
+########################################### Mean Shift ##########################################
+dfEngageMs=dfEngage
+dfEngageMs=pd.DataFrame(pd.concat([dfEngageMs, engageNorm],axis=1), 
+                        columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+dfEngageMs=pd.DataFrame(pd.concat([dfWork['id'], dfEngageMs],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+
+from sklearn.cluster import MeanShift, estimate_bandwidth
+my_bandwidth = estimate_bandwidth(engageNorm,
+                                  quantile=0.2,
+                                  n_samples=1000)
+
+ms = MeanShift(bandwidth=my_bandwidth,
+               bin_seeding=True).fit(engageNorm)
+
+labelsMsEngage = pd.DataFrame(ms.labels_) # 7 clusters created...
+labelsMsEngage.columns = ['labelsMsEngage']
+
+
+
+dfEngageMs = pd.DataFrame(pd.concat([dfEngageMs, labelsMsEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsMsEngage'])
+
+########################################### DB- Scan ##########################################
+# Esquecer isto porque não faz sentido. As densidades são muito similares.
+dfEngageDb=dfEngage
+dfEngageDb=pd.DataFrame(pd.concat([dfEngageDb, engageNorm],axis=1), 
+                        columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+dfEngageDb=pd.DataFrame(pd.concat([dfWork['id'], dfEngageDb],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+
+from sklearn.cluster import DBSCAN
+db = DBSCAN(eps= 1, #radius (euclidean distance)
+            min_samples=10).fit(engageNorm) # minimum number of points inside the radius.
+labelsDbEngage = pd.DataFrame(db.labels_)
+labelsDbEngage.columns = ['labelsDbEngage']
+dfEngageDb = pd.DataFrame(pd.concat([dfEngageDb, labelsDbEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsDbEngage'])
+
+dfEngageDb = pd.DataFrame(pd.concat([dfEngageDb, labelsDbEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsDbEngage'])
+
+########################################### K-modes ##########################################
+dfEngageCatKmodes=dfEngageCat
+dfEngageCatKmodes=pd.DataFrame(pd.concat([dfWork['id'], dfEngageCatKmodes],axis=1), 
+                        columns=['id','education','binEducation','children','catClaims'])
+from kmodes.kmodes import KModes
+
+kmodesChange = dfEngageCatKmodes[['education','binEducation','children','catClaims']].astype('str')
+
+km = KModes(n_clusters=4, init='random', n_init=50, verbose=1) # Define the number of clusters wanted
+clusters = km.fit_predict(kmodesChange)
+labelsKmodesEngage=pd.DataFrame(km.labels_)
+labelsKmodesEngage.columns = ['labelsKmodesEngage']
+
+dfEngageCatKmodes = pd.DataFrame(pd.concat([dfEngageCatKmodes, labelsKmodesEngage],axis=1), 
+                        columns=['id','education','binEducation','children','catClaims','labelsKmodesEngage'])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # dfEngageKmeans['firstPolicy'].hist(by=dfEngageKmeans['LabelsKmeansEngage'])
 from plotly.subplots import make_subplots
