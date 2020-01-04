@@ -2,14 +2,21 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7aa12060-b23a-4496-9cc4-0be9fcc8b0d6" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/temp-plot.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/My_project2.py" beforeDir="false" afterPath="$PROJECT_DIR$/My_project2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/temp-plot.html" beforeDir="false" afterPath="$PROJECT_DIR$/temp-plot.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -52,10 +59,20 @@
       <option name="presentableId" value="Default" />
       <updated>1576190914742</updated>
     </task>
+    <task id="LOCAL-00001" summary="Hello">
+      <created>1578163353902</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1578163353902</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+    <MESSAGE value="Hello" />
+    <option name="LAST_COMMIT_MESSAGE" value="Hello" />
   </component>
   <component name="WindowStateProjectService">
     <state x="361" y="70" key="#Inspections" timestamp="1577698265052">
@@ -66,6 +83,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="442" y="165" width="651" height="642" key="#xdebugger.XInspectDialog/0.0.1536.824@0.0.1536.824" timestamp="1577702113378" />
+    <state x="424" y="6" key="CommitChangelistDialog2" timestamp="1578163353187">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="424" y="6" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1578163353187" />
     <state x="591" y="207" key="FileChooserDialogImpl" timestamp="1577358507071">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
