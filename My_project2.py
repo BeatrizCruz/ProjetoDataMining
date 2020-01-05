@@ -54,8 +54,8 @@ def set_seed(my_seed):
     np.random.seed(my_seed)
     
 #Diretorias:
-file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -108,15 +108,10 @@ dfOriginal[['id','birthday']].loc[dfOriginal['Strange_birthday'] == 1] #what are
 dfOriginal['Strange_birthday'].value_counts()   # Verify if the column was created as supposed
 
 #Plot birthday variable with no strange values (where the new column equals zero):
-# plt.figure()
-# dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].hist()
-# plt.show()
-#plt.figure()
-#dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].value_counts().sort_index().plot(style=".") # ESTE!!!!!!!!!!!!!!!!!!!!!!
-#plt.show()
-#plt.figure()
-#dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].value_counts().sort_index().plot(marker="o") # ESTE!!!!!!!!!!!!!!!!!!!!!!
-#plt.show()
+plt.figure()
+dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].hist()
+plt.show()
+
 
 # Good Graph:
 import plotly.offline as pyo
@@ -132,15 +127,13 @@ layout = go.Layout(title='Birthday Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-
+####################################################
 # 2. firstPolicy
+####################################################
 
 # Plot firstPolicy for a first visual analysis:
 # plt.figure()
 # dfOriginal['firstPolicy'].value_counts().sort_index().plot() # there might be strange values on firstPolicy that are distorting the plot.
-# plt.show()
-# plt.figure()
-# dfOriginal['firstPolicy'].hist() # The plot with strange values is not perceptive
 # plt.show()
 
 #Check variable values:
@@ -150,18 +143,15 @@ dfOriginal['firstPolicy'].value_counts().sort_index() # there is a strange value
 # Explain the choice of 2016: (...)
 # Verify if the column was created as supposed
 dfOriginal['strange_firstPolicy']=np.where(dfOriginal['firstPolicy']>2016, 1,0)
-dfOriginal['Others']=np.where(dfOriginal['firstPolicy']>2016, 1,dfOriginal['Others']) #Others equals no outliers
-dfOriginal[['id','firstPolicy']].loc[dfOriginal['strange_firstPolicy'] == 1] #what are the strange values
+dfOriginal['Others']=np.where(dfOriginal['firstPolicy']>2016, 1,dfOriginal['Others'])       #assign flag do not enter in model
+dfOriginal['Errors'] = np.where(dfOriginal['firstPolicy']>2016, 1,dfOriginal['Errors'])     #assign flag error
+
+dfOriginal[['id','firstPolicy']].loc[dfOriginal['strange_firstPolicy'] == 1]                #what are the strange values
+
 dfOriginal['strange_firstPolicy'].value_counts()
 
-dfOriginal['YearsWus']=1998-dfOriginal['firstPolicy']
+
 #Plot firstPolicy variable with no strange values (where the created column equals zero):
-# plt.figure()
-# dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].hist()
-# plt.show()
-#plt.figure()
-#dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].value_counts().sort_index().plot(marker='o') #ESTE!!!!!!!!!!!!!!!!!!!!!
-#plt.show()
 
 # Good Graph:
 df=pd.DataFrame(dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].value_counts())
@@ -174,6 +164,8 @@ layout = go.Layout(title='First Policy Variable',template='simple_white',
         xaxis=dict(title='Year',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
+# TODO: change this below to variable creation
+dfOriginal['YearsWus']=1998-dfOriginal['firstPolicy']
 
 df=pd.DataFrame(dfOriginal['YearsWus'][dfOriginal['strange_firstPolicy']==0].value_counts())
 df.reset_index(level=0, inplace=True)
@@ -197,13 +189,6 @@ counteducation=dfOriginal['education'].value_counts().sort_index()
 counteducation
 
 # Plot education variable:
-#plt.figure()                                                                                                
-#plt.bar(np.arange(len(counteducation.index)),counteducation)
-#plt.xticks(np.arange(len(counteducation.index)),counteducation.index)
-#plt.show()
-# There is a considerable number of individuals with high education (BSc/MSc and PhD). 
-# The number of individuals having PhD is not that high. We will consider later if it makes sense to join the categories BSc/MSc and PhD in a unique category.
-
 # Good Graph:
 df=pd.DataFrame(dfOriginal['education'].value_counts())
 df.reset_index(level=0, inplace=True)
@@ -215,16 +200,20 @@ layout = go.Layout(title='Education Variable',template='simple_white',
         xaxis=dict(title='Category',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
+# There is a considerable number of individuals with high education (BSc/MSc and PhD).
+# The number of individuals having PhD is not that high. We will consider later if it makes sense to join the categories BSc/MSc and PhD in a unique category.
 
-# 4. salary
-# To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value as done with the previous cases, we decided to make the cumulative to be used for plotting.
+###############################################
+# 4. SALARY
+###############################################
+
+# To study this variable as it has different values that are not easily repeated through individuals,
+# instead of counting by value as done with the previous cases, we decided to make the cumulative to be used for plotting.
 # Plot salary for a first visual analysis:
 # plt.figure()
-# dfOriginal['salary'].value_counts().sort_index().plot(style=".") # there might be strange values on salary that are distorting the plot.
+# dfOriginal['salary'].value_counts().sort_index().plot(style=".")
 # plt.show()
-# plt.figure()
-# dfOriginal['salary'].hist() # The plot with the strange value is not perceptive.
-# plt.show()
+# there might be strange values on salary that are distorting the plot.
 
 # Check variable values and create a variable for that:
 countSalary = dfOriginal['salary'].value_counts().sort_index() # there are 2 out of the box values: 34490, 55215
@@ -239,6 +228,7 @@ dfOriginal['Outliers'] = np.where(dfOriginal['salary']>10000, 1,dfOriginal['Outl
 dfOriginal[['id','salary']].loc[dfOriginal['Outliers_salary'] == 1]
 dfOriginal['Outliers_salary'].value_counts()
 #lower than minimum wage in 2016 (530€)
+# Some values used during the report
 dfOriginal[dfOriginal["salary"]<530].count().max()        #minimum wage 2016
 dfOriginal[dfOriginal["salary"]<970].count().max()        #average wage 2016
 dfOriginal[dfOriginal["salary"]<293].count().max()        #minimum wage 1998
@@ -247,9 +237,7 @@ dfOriginal[dfOriginal["salary"]<565].count().max()        #average wage 1998
 #Plot the salary values and the cumulative values of salary
 countSalaryCum = countSalary.cumsum()
 countSalaryCum
-#plt.figure()
-#countSalaryCum.plot()
-#plt.show()
+
 
 # Plot salary non outliers values (where the created column equals zero):
 # plt.figure()
@@ -283,14 +271,6 @@ layout = go.Layout(title='Salary Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-# plt.figure()    #as histogram
-# dfOriginal['salary'][dfOriginal['Outliers_salary']==0].sort_index().plot(kind="hist")
-# plt.show()
-
-# Plot the cumulative salary non outliers values (where the created column equals zero):
-#plt.figure()
-#dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().cumsum().plot(style='.')
-#plt.show()
 
 # Good plot:
 df=pd.DataFrame(dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().cumsum())
@@ -303,27 +283,15 @@ layout = go.Layout(title='Cumulative Salary Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-# Check with log dist: as the usual behavior of a salary variable is a distribution with a heavy tail on the left side, usually it is applied a log transformation on the distribution in order to transform it to a normal distribution.
-# count by log salary value
-# cumulative of log salary
-dfOriginal['logSalary'] = np.log(dfOriginal['salary'])
-countLogSalary=dfOriginal['logSalary'].value_counts().sort_index()
-countLogSalaryCum= countLogSalary.cumsum()
+# Check with log dist: as the usual behavior of a salary variable is a distribution with a heavy tail on the left side,
+# usually it is applied a log transformation on the distribution in order to transform it to a normal distribution.
 
-# Plot both log salary and cumulative log salary
-# plt.figure()
-# countLogSalary.plot()
-# plt.show()
-# plt.figure()
-# countLogSalaryCum.plot()
-# plt.show()
-
-# Log distributon: not applicable as original distribution is already normal (it does not follow the usual behavior).
+# Log distributon: not applicable as original distribution is already almost normal (it does not follow the usual behavior).
 # Drop created column as it will not be used
-dfOriginal=dfOriginal.drop(['logSalary'], axis=1)
 
-# 5. livingArea (categorical variable)
-
+################################################################
+# 5. LIVING AREA (categorical variable)
+################################################################
 # Create a variable to count the individuals per category:
 countlivingArea=dfOriginal['livingArea'].value_counts().sort_index()
 countlivingArea
@@ -347,7 +315,9 @@ layout = go.Layout(title='Living Area Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-# 6. children
+##############################################################
+# 6. CHILDREN
+##############################################################
 
 # Create a variable to count the individuals per category:
 countchildren=dfOriginal['children'].value_counts().sort_index()
@@ -372,7 +342,9 @@ layout = go.Layout(title='Children Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-# 7. cmv 
+###################################################
+# 7. cmv
+###################################################
 # To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value, we decided to make the cumulative to plot, as done with the salary variable.
 
 #Plot cmv for a first visual analysis:
