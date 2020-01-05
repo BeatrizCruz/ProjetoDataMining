@@ -164,19 +164,8 @@ layout = go.Layout(title='First Policy Variable',template='simple_white',
         xaxis=dict(title='Year',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
-# TODO: change this below to variable creation
-dfOriginal['YearsWus']=2016-dfOriginal['firstPolicy']
 
-df=pd.DataFrame(dfOriginal['YearsWus'][dfOriginal['strange_firstPolicy']==0].value_counts())
-df.reset_index(level=0, inplace=True)
-df=df.rename(columns={'index':'Years'})
-df=df.sort_values(by='Years')
 
-data= go.Bar(x=df['Years'],y=df['YearsWus'])#,mode='markers')
-layout = go.Layout(title='Years Since First Policy',template='simple_white',
-        xaxis=dict(title='Years',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
-fig = go.Figure(data=data, layout=layout)
-pyo.plot(fig)
 
 
 
@@ -438,19 +427,7 @@ temp3=dfOriginal[['firstPolicy','lobMotor',"lobHousehold","lobHealth","lobLife",
 # Verify if values were changed as supposed
 dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
-#TODO: levar para a frente e multiplicar pelos anos... parece não fazer muito sentido...
-##### Plot CMV with years with us
-df=dfOriginal[['YearsWus','cmv']][(dfOriginal['strange_firstPolicy']==0) &
-                                   (dfOriginal['df_OutliersLow_cmv'] == 0 )&
-                                   (dfOriginal['df_OutliersHigh_cmv'] == 0)]#.value_counts())
-df.reset_index(level=0, inplace=True)
-df=df.sort_values(by='YearsWus')
 
-data= go.Scatter(x=df['YearsWus'],y=df['cmv'],mode='markers')
-layout = go.Layout(title='Years Since First Policy',template='simple_white',
-        xaxis=dict(title='YearsWus',showgrid=True),yaxis=dict(title='cmv',showgrid=True))
-fig = go.Figure(data=data, layout=layout)
-pyo.plot(fig)
 ##### Create a box plot without the until now identified outliers:
 #plt.figure()
 #sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)])
@@ -485,26 +462,7 @@ fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
 
-#TODO: take forward to variable creation
-#create cmv corrected
-dfOriginal['CMV_Mean_corrected']=(dfOriginal['cmv']+25)
 
-
-##### create categorical values of cmv corrected
-dfOriginal['catCMV_Mean_corrected']=np.where(dfOriginal['cmv']<-25,'losses',None)
-dfOriginal['catCMV_Mean_corrected']=np.where(dfOriginal['cmv']>-25,'profitable',dfOriginal['catCMV_Mean_corrected'])
-dfOriginal['catCMV_Mean_corrected']=np.where(dfOriginal['cmv']==-25,'neutrals',dfOriginal['catCMV_Mean_corrected'])
-
-df=pd.DataFrame(dfOriginal['catCMV_Mean_corrected'].value_counts().sort_index())
-df.reset_index(level=0, inplace=True)
-df=df.rename(columns={'index':'catCMV_Mean_corrected','catCMV_Mean_corrected':'Individuals'})
-
-
-data= go.Bar(x=df['catCMV_Mean_corrected'],y=df['Individuals'])
-layout = go.Layout(title='Customer Monetary Value Mean Corrected Variable',template='simple_white',
-        xaxis=dict(title='CMV Value',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
-fig = go.Figure(data=data, layout=layout)
-pyo.plot(fig)
 
 
 ############################################
@@ -527,17 +485,22 @@ df=dfOriginal.groupby(['claims'])['claims'].count()
 df=pd.DataFrame(df, columns=['claims'])
 
 #Let's remove outliers
-plt.figure()
-sb.boxplot(x = dfOriginal["claims"])
-plt.show()
-
+# plt.figure()
+# sb.boxplot(x = dfOriginal["claims"])
+# plt.show()
+# plt.figure()
+# sb.violinplot(x = dfOriginal["claims"])
+# plt.show()
 
 
 # plt.figure()
 # sb.boxplot(x = dfOriginal["claims"][dfOriginal['claims'] <4])
 # plt.show()
+# plt.figure()
+# sb.violinplot(x = dfOriginal["claims"][dfOriginal['claims'] <4])
+# plt.show()
 #df=df[df.index<3]
-#TODO: take this forward for multiple analysis
+
 dfOriginal['Outliers_claims']=np.where(dfOriginal['claims']>4, 1,0)                 #signal as outliers in claims
 dfOriginal['Others']=np.where(dfOriginal['claims']>4, 1,dfOriginal['Others'])       #signal a global removable value
 dfOriginal['Outliers'] = np.where(dfOriginal['claims']>4, 1,dfOriginal['Outliers']) #assign flag outlier
@@ -627,9 +590,12 @@ dfOriginal['catClaims'].value_counts()
 # Check variable values:
 valueslobMotor = dfOriginal['lobMotor'].value_counts().sort_index()
 valueslobMotor
-plt.figure()
-sb.boxplot(x=dfOriginal["lobMotor"])
-plt.show()
+# plt.figure()
+# sb.boxplot(x=dfOriginal["lobMotor"])
+# plt.show()
+# plt.figure()
+# sb.violinplot(x=dfOriginal["lobMotor"])
+# plt.show()
 
 # Lets look for the fence high value of the box plot to define a from which value the lobMotor premium can be considered as an outlier.
 q1=dfOriginal["lobMotor"].quantile(0.25)
@@ -653,6 +619,7 @@ dfOriginal['Outliers_lobMot'].value_counts()
 # plt.figure()
 # sb.boxplot(x = dfOriginal['lobMotor'][dfOriginal['Outliers_lobMot']==0])
 # plt.show()
+
 
 ##### Good Scatter
 df=pd.DataFrame(dfOriginal['lobMotor'][dfOriginal['Outliers_lobMot'] == 0].value_counts().sort_index())
@@ -690,9 +657,12 @@ valueslobHousehold = dfOriginal['lobHousehold'].value_counts().sort_index()
 valueslobHousehold
 
 # Box plot 
-plt.figure()
-sb.boxplot(x=dfOriginal["lobHousehold"])
-plt.show()
+# plt.figure()
+# sb.boxplot(x=dfOriginal["lobHousehold"])
+# plt.show()
+# plt.figure()
+# sb.violinplot(x=dfOriginal["lobHousehold"])
+# plt.show()
 
 #Lets define 3000 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
@@ -813,6 +783,9 @@ dfOriginal['CancelLife'].value_counts()
 # plt.figure()
 # sb.boxplot(x = dfOriginal['lobLife'])
 # plt.show()
+# plt.figure()
+# sb.violinplot(x = dfOriginal['lobLife'])
+# plt.show()
 # We decided not to consider outliers on this variable as there are no extreme individuals that influence the distribution (no individuals that highlight over the others).
 # We can observe that more people invest less on life premiums.
 # Transformar em Logaritmo? (ver mais tarde)
@@ -847,11 +820,14 @@ pyo.plot(fig)
 
 # Check variable values:
 valueslobWork  = dfOriginal['lobWork'].value_counts().sort_index()
-valueslobWork 
+valueslobWork
 
 #Box plot
 plt.figure()
 sb.boxplot(x = dfOriginal['lobWork'])
+plt.show()
+plt.figure()
+sb.violinplot(x = dfOriginal['lobWork'],inner="quartile")
 plt.show()
 #Lets define 400 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
@@ -890,19 +866,23 @@ layout = go.Layout(title='lobWork Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-#####################################################################
-#Outliers
-####################################################################
+#################resume of confirmed canceled contracts in the last year############
+dfOriginal['Cancel'].value_counts()
+
+#######################################################################################################3
+#Outliers & Errors
+######################################################################################################
 
 dfOriginal['Outliers'].value_counts()
 dfOriginal['Errors'].value_counts()
-dfOriginal['Cancel'].value_counts()
-
+df=dfOriginal[["Outliers_salary","df_OutliersLow_cmv","df_OutliersHigh_cmv","Outliers_claims",
+                "Outliers_lobMot","Outliers_lobHousehold","Outliers_lobHealth"]].loc[dfOriginal["Outliers"]==1]
+#TODO: do the same for errors , report on errors
 # There is a high number of individuals with low work premiums values.
 # Transformar em Logaritmo? (ver mais tarde)
 
 #-----------------CHECK INCOHERENCES------------------#
-
+# TODO: create a column for incoherences to verify if errors and outliers coincide with incoherences
 #Check if birthday is higher than First policy's year: 
 agesList=[0,16,18]
 countList=[]
@@ -1330,7 +1310,7 @@ dfWork.isna().sum() # no null values on yearSalary
 #dfWork=KNRegressor(dfWork=dfWork,myDf=dfSalary, treatVariable='salary',expVariables=['lobHousehold','lobMotor','lobHealth','lobLife','lobWork'],K=5,weights='uniform',metric="minkowski",p=1)  #1 for manhattan; 2 for euclidean
 
 #############################################################################################################
-# FIRST POLICY
+# FIRST POLICY Impute Nulls
 
 # Firstly, lets check which variables might better explain first policy.
 # 1. Check linear correlations through the Pearson correlations. - already previously created heatmap.
@@ -1418,17 +1398,66 @@ dfWork['firstPolicy']=round(dfWork['firstPolicy'], 0)
 # binEducation (already created)
 # catClaims Variable (already created)
 # Ratios lobs 
-dfWork['motorRatio']=dfWork["lobMotor"]/dfWork['lobTotal']
-dfWork['householdRatio']=dfWork["lobHousehold"]/dfWork['lobTotal']
-dfWork['healthRatio']=dfWork["lobHealth"]/dfWork['lobTotal']
-dfWork['lifeRatio']=dfWork["lobLife"]/dfWork['lobTotal']
-dfWork['workCRatio']=dfWork["lobWork"]/dfWork['lobTotal']
+dfWork['motorRatioLOB']=dfWork["lobMotor"]/dfWork['lobTotal']
+dfWork['householdRatioLOB']=dfWork["lobHousehold"]/dfWork['lobTotal']
+dfWork['healthRatioLOB']=dfWork["lobHealth"]/dfWork['lobTotal']
+dfWork['lifeRatioLOB']=dfWork["lobLife"]/dfWork['lobTotal']
+dfWork['workCRatioLOB']=dfWork["lobWork"]/dfWork['lobTotal']
 
 # lobTotal/salary
-dfWork['ratioSalary']=dfWork['lobTotal']/dfWork['salary']
+dfWork['ratioSalaryLOB']=dfWork['lobTotal']/dfWork['salary']
 
-# Years has been a customer= 1998-firstPolicy
-dfWork['yearCustomer']=1998-dfWork['firstPolicy']
+# Years has been a customer= 1998-firstPolicy compare with 2016
+dfWork['YearsWus1998']=1998-dfWork['firstPolicy']
+dfWork['YearsWus2016']=2016-dfWork['firstPolicy']
+
+dfOriginal['CMV_Mean_corrected']=(dfOriginal['cmv']+25)
+##### create categorical values of cmv corrected
+dfWorkl['catCMV_Mean_corrected']=np.where(dfWork['cmv']<-25,'losses',None)
+dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']>-25,'profitable',dfWork['catCMV_Mean_corrected'])
+dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']==-25,'neutrals',dfOWork['catCMV_Mean_corrected'])
+TODO: canceled  0,1,2,...
+#TODO: Plot new variables: cancel, YearsWus1998, YearsWus2016,
+
+df=pd.DataFrame(dfWork['YearsWus1998'].value_counts())
+df.reset_index(level=0, inplace=True)
+df=df.rename(columns={'index':'Years'})
+df=df.sort_values(by='Years')
+
+data= go.Bar(x=df['Years'],y=df['YearsWus1998'])#,mode='markers')
+layout = go.Layout(title='Years Since First Policy',template='simple_white',
+        xaxis=dict(title='Years',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+
+#TODO: levar para a frente e multiplicar pelos anos... parece não fazer muito sentido...
+##### Plot CMV with years with us
+df=dfWork[['YearsWus1998','cmv']][(dfOriginal['strange_firstPolicy']==0) &
+                                   (dfOriginal['df_OutliersLow_cmv'] == 0 )&
+                                   (dfOriginal['df_OutliersHigh_cmv'] == 0)]#.value_counts())
+df.reset_index(level=0, inplace=True)
+df=df.sort_values(by='YearsWus1998')
+
+data= go.Scatter(x=df['YearsWus1998'],y=df['cmv'],mode='markers')
+layout = go.Layout(title='Years Since First Policy',template='simple_white',
+        xaxis=dict(title='YearsWus',showgrid=True),yaxis=dict(title='cmv',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+
+#plot catCMVcorrected
+df=pd.DataFrame(dfOriginal['catCMV_Mean_corrected'].value_counts().sort_index())
+df.reset_index(level=0, inplace=True)
+df=df.rename(columns={'index':'catCMV_Mean_corrected','catCMV_Mean_corrected':'Individuals'})
+
+
+data= go.Bar(x=df['catCMV_Mean_corrected'],y=df['Individuals'])
+layout = go.Layout(title='Customer Monetary Value Mean Corrected Variable',template='simple_white',
+        xaxis=dict(title='CMV Value',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+
+
+
 
 #---------------------------------------------- MULTIDIMENSIONAL OUTLIERS -------------------------------------------------#
 
@@ -1685,7 +1714,7 @@ fig=plt.figure()
 fig.suptitle('Box Plots by Variable and Cluster')
 for i in lista:
     plt.subplot2grid((1,4),(0,lista.index(i)))
-    sb.violinplot(x='labelsKmeansEngageK3', y=i, data=dfEngageKmeansK3, scale='width', inner='quartile')
+    sb.violinplot(x='labelsKmeansEngageK3', y=i, data=dfEngageKmeansK3, scale='width', inner='quartile',)
 plt.tight_layout()
 plt.plot()
 
