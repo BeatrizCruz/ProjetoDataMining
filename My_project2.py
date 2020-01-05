@@ -1512,7 +1512,9 @@ labelsKmeansEngage
 dfEngageKmeans = pd.DataFrame(pd.concat([dfEngageKmeans, labelsKmeansEngage],axis=1), 
                         columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsKmeansEngage'])
 
-# Visualization of results:
+####### Visualization of results:
+
+# Box Plots:
 lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
 fig=plt.figure()
 fig.suptitle('Box Plots by Variable and Cluster')
@@ -1524,6 +1526,7 @@ plt.plot()
 # Through this visualization we could conclude that the 2 clusters differentiate a lot on the variables firstPolicy and yearCustomer. 
 # However, these 2 clusters do not differentiate in the variables salary and cmv.
 
+# Violin Plots:
 lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
 fig=plt.figure()
 fig.suptitle('Box Plots by Variable and Cluster')
@@ -1533,13 +1536,39 @@ for i in lista:
 plt.tight_layout()
 plt.plot()
 
-sns.violinplot(x='class', y='hwy', data=df, scale='width', inner='quartile')
+# Joy Plots:
+import joypy
+plt.figure(figsize=(16,10), dpi= 80)
+fig, axes = joypy.joyplot(dfEngageKmeans, column=['labelsKmeansEngage'], by=lista, figsize=(14,10))
+
+# Resulta:
+plt.figure(figsize=(16,10), dpi= 80)
+for i in lista:
+    fig, axes = joypy.joyplot(dfEngageKmeans, column=i, by='labelsKmeansEngage', figsize=(14,10))
+plt.plot()
+
+# Resulta:
+plt.figure(figsize=(16,10), dpi= 80)
+fig, axes = joypy.joyplot(dfEngageKmeans, column=lista, by='labelsKmeansEngage', figsize=(14,10))
+plt.plot()
+
+import pyjoyplot as pjp
+lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+fig=plt.figure()
+fig.suptitle('Joy Graph')
+
+plt.subplot2grid((1,4),(0,lista.index(i)))
+pjp.plot(data=dfEngageKmeans,x='labelsKmeansEngage', y=lista,hue=lista)
+plt.tight_layout()
+plt.plot()
 
 
+plt.figure(figsize=(16,10), dpi= 80)
+fig, axes = joypy.joyplot(dfEngageKmeans, by=lista, figsize=(14,10))
+plt.plot()
 
 
-
-
+fig, axes = joypy.joyplot(mpg, column=['hwy', 'cty'], by="class", ylim='own', figsize=(14,10))
 
 
 # Lets try to make 3 clusters instead to check if with 3 clusters we can differentiate according to salary and cmv.
@@ -1575,6 +1604,15 @@ for i in lista:
 plt.tight_layout()
 plt.plot()
 
+# Violin Figure:
+lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+fig=plt.figure()
+fig.suptitle('Box Plots by Variable and Cluster')
+for i in lista:
+    plt.subplot2grid((1,4),(0,lista.index(i)))
+    sb.violinplot(x='labelsKmeansEngageK3', y=i, data=dfEngageKmeansK3, scale='width', inner='quartile')
+plt.tight_layout()
+plt.plot()
 
 
 
