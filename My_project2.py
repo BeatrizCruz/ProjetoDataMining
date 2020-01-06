@@ -2165,7 +2165,7 @@ dfAffinityRatio=dfWork[['lobTotal',
 dfCorr=pd.DataFrame(dfWork,columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB'])
 dfCorrP=dfCorr.corr(method ='pearson')
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
-fig.suptitle('Heatmap - Linear Correlations (Pearson)')
+plt.title('Heatmap - Linear Correlations (Pearson)')
 # Non highly correlated variables
 
 # Check correlations between variables in dfAffinity:
