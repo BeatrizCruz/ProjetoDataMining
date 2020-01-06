@@ -59,8 +59,8 @@ def set_seed(my_seed):
     np.random.seed(my_seed)
 my_seed=100
 #Diretorias:
-#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -1427,7 +1427,7 @@ dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']>-25,'profitable',dfWork['
 dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']==-25,'neutrals',dfWork['catCMV_Mean_corrected'])
 #check cancel o see if categorical cancel is a thing
 df=pd.DataFrame(dfWork[["CancelTotal","lobMotor","lobHousehold","lobHealth","lobLife","lobWork"]][dfWork['CancelTotal'] > 0 ])
-TODO: canceled  0,1,2,...
+#TODO: canceled  0,1,2,...
 #TODO: Plot new variables: cancel, YearsWus1998, YearsWus2016,
 
 df=pd.DataFrame(dfWork['YearsWus1998'].value_counts())
@@ -1456,7 +1456,7 @@ fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
 #plot catCMVcorrected
-df=pd.DataFrame(dfOriginal['catCMV_Mean_corrected'].value_counts().sort_index())
+df=pd.DataFrame(dfWork['catCMV_Mean_corrected'].value_counts().sort_index())
 df.reset_index(level=0, inplace=True)
 df=df.rename(columns={'index':'catCMV_Mean_corrected','catCMV_Mean_corrected':'Individuals'})
 
@@ -1468,18 +1468,17 @@ fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
 ####################################################################################################################
-#Compare Variables
+#Compare Variables: 
 
 
 #---------------------------------------------- MULTIDIMENSIONAL OUTLIERS -------------------------------------------------#
-
-dfMultiOut=dfWork[['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
+dfMultiOut=dfWork[['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB','YearsWus1998','CMV_Mean_corrected','ratioSalaryLOB']]
 # Min max: outliers already treated and for variables to be at the same scale.
 from sklearn.preprocessing import MinMaxScaler
 scaler = MinMaxScaler()
 multiNorm = scaler.fit_transform(dfMultiOut)
 multiNorm = pd.DataFrame(multiNorm, columns = dfMultiOut.columns)
-
+multiNorm.isna().sum()
 my_seed=100
 from sklearn.cluster import KMeans
 
@@ -1503,14 +1502,28 @@ outClientsCluster = pd.DataFrame(pd.concat([multiNorm, labelsKmeans],axis=1),
                         columns=['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','LabelsKmeans'])
 
 # Hierarchical clustering:
+# Apply Hierarchical clustering with 30 clusters over the 100 clusters created by the k - means
 from sklearn.cluster import AgglomerativeClustering
-from scipy.cluster.hierarchy import dendrogram, linkage
+hClustering = AgglomerativeClustering(n_clusters = 30,
+                                      affinity = 'euclidean',
+                                      linkage = 'ward')
 
-Z = linkage(multiNorm,
-            method = 'ward')
+# With 30 clusters the normal behavior would be to have 300 observations in each cluster.
+multiHC = hClustering.fit(multiClusters)
 
+labelsHC = pd.DataFrame(multiHC.labels_)
+labelsHC.columns =  ['LabelsHC']
+labelsHC.reset_index(level=0, inplace=True)
+labelsHC=labelsHC.rename(columns={'index':'LabelsKmeans'})
+
+outClientsCluster=outClientsCluster.merge(labelsHC, left_on='LabelsKmeans', right_on='LabelsKmeans')
+outClientsCluster['LabelsHC'].value_counts().sort_values()
+
+# Dendogram to check when the observations of the smallest clusters get together. If they join in a cluster near the end there is a higher evidence that these might be outliers.
+Z = linkage(multiClusters,
+                method = 'ward')
 plt.figure(figsize=(25, 10))
-plt.title('Hierarchical Clustering Dendrogram')
+plt.title('Hierarchical Clustering Dendrogram (over k-means)')
 plt.xlabel('sample index')
 plt.ylabel('distance')
 dendrogram(Z,
@@ -1522,28 +1535,67 @@ dendrogram(Z,
            show_contracted=True,
            show_leaf_counts=True,color_threshold=50, above_threshold_color='k',no_labels =True)
 
-hClustering = AgglomerativeClustering(n_clusters = 30,
+######### On k=10 there is a late individual that joins a cluster. Lets check kmeans+ hc with nHC=10.
+dfMultiOut=dfWork[['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB','YearsWus1998','CMV_Mean_corrected','ratioSalaryLOB']]
+# Min max: outliers already treated and for variables to be at the same scale.
+from sklearn.preprocessing import MinMaxScaler
+scaler = MinMaxScaler()
+multiNorm = scaler.fit_transform(dfMultiOut)
+multiNorm = pd.DataFrame(multiNorm, columns = dfMultiOut.columns)
+multiNorm.isna().sum()
+my_seed=100
+from sklearn.cluster import KMeans
+
+# Apply k-means with the k as the square root of the obs number.
+K=int(round(math.sqrt(10261),0))
+kmeans = KMeans(n_clusters=K, 
+                random_state=0,
+                n_init = 20, 
+                max_iter = 300,
+                init='k-means++').fit(multiNorm)
+
+# Check the Clusters (Centroids).
+multiClusters=kmeans.cluster_centers_
+multiClusters
+
+labelsKmeans = pd.DataFrame(kmeans.labels_)
+labelsKmeans.columns =  ['LabelsKmeans']
+labelsKmeans
+
+outClientsCluster = pd.DataFrame(pd.concat([multiNorm, labelsKmeans],axis=1), 
+                        columns=['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','LabelsKmeans'])
+
+# Hierarchical clustering:
+# Apply Hierarchical clustering with 30 clusters over the 100 clusters created by the k - means
+from sklearn.cluster import AgglomerativeClustering
+hClustering = AgglomerativeClustering(n_clusters = 9,
                                       affinity = 'euclidean',
                                       linkage = 'ward')
 
 # With 30 clusters the normal behavior would be to have 300 observations in each cluster.
 multiHC = hClustering.fit(multiClusters)
 
-# clusters hcclusters aos quais cada k means clusters pertence?
-# Quero aceder às labels do k means ao mesmo tempo que acedo às labels do hc - coluna 1: kmeans; coluna 2: hc
-
 labelsHC = pd.DataFrame(multiHC.labels_)
 labelsHC.columns =  ['LabelsHC']
 labelsHC.reset_index(level=0, inplace=True)
 labelsHC=labelsHC.rename(columns={'index':'LabelsKmeans'})
-labelsHC['LabelsKmeans']=labelsHC['LabelsKmeans']+1
 
 outClientsCluster=outClientsCluster.merge(labelsHC, left_on='LabelsKmeans', right_on='LabelsKmeans')
-outClientsCluster=outClientsCluster['LabelsHC'].value_counts().sort_values()
+outClientsCluster['LabelsHC'].value_counts().sort_values()
+
+
+
+
+
+
+plt.figure()
+sb.pairplot(dfWork, vars=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork','lobTotal'])
+plt.show()
+
 
 # Pair plot to check ni dimensional outliers:
 plt.figure()
-sb.pairplot(dfWork, vars=['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
+sb.pairplot(dfWork, vars=['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB','YearsWus1998','CMV_Mean_corrected','ratioSalaryLOB'])
 plt.show()
 
 ###########################################################################################################
