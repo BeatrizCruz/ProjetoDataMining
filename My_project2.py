@@ -884,18 +884,19 @@ pyo.plot(fig)
 dfOriginal['CancelTotal'].value_counts()
 
 #######################################################################################################3
-#Outliers & Errors
+#Outliers
 ######################################################################################################
 
 dfOriginal['Outliers'].value_counts()
-dfOriginal['Errors'].value_counts()
+
 dfOutliers=dfOriginal[["Outliers_salary","df_OutliersLow_cmv","df_OutliersHigh_cmv","Outliers_claims",
-                "Outliers_lobMot","Outliers_lobHousehold","Outliers_lobHealth","Outliers_lobWork","Outliers"]].loc[dfOriginal["Outliers"]>0]
+                "Outliers_lobMot","Outliers_lobHousehold","Outliers_lobHealth","Outliers_lobWork","Outliers_lobLife",
+                ]].loc[dfOriginal["Outliers"]>0]
+#TODO: Export to excel dfOutliers
 
 dfErrors=dfOriginal.loc[dfOriginal["Errors"]==1]
-#TODO: do the same for errors , report on errors
-# There is a high number of individuals with low work premiums values.
-# Transformar em Logaritmo? (ver mais tarde)
+
+
 
 #-----------------CHECK INCOHERENCES------------------#
 # TODO: create a column for incoherences to verify if errors and outliers coincide with incoherences
@@ -913,7 +914,8 @@ countList
 # Create age column that calculates current ages of customers (useful to check the next incoherence).
 # Check if there are people with less than 16 years old (including) who have children 
 dfOriginal['age']= 2016-dfOriginal['birthday']
-dfOriginal['children'][dfOriginal['age']<=16].value_counts()
+dfOriginal['age1998']= 1998-dfOriginal['birthday']
+dfOriginal['children'][dfOriginal['age1998']<=16].value_counts()
 # There are 31 people who are younger or equal to 16 years old and that have children and 16 younger or equal to 16 years old and that do not have children.
 # At this age, in normal situations, there should be zero people with children. Even if there were some cases in these situations, 31 is a huge number.
 
@@ -921,24 +923,34 @@ dfOriginal['children'][dfOriginal['age']<=16].value_counts()
 # Check if people with age <16 years old have high school education. This would not make sense: in normal circumstances, people with less than 16 years old have not completed the high school education yet.
 # Check if people with age <20 years old have Bsc/Msc education. This would not make sense: in normal circumstances, people with less than 20 years old have not completed the Bsc/ Msc education yet.
 # Check if people with age <25 years old have Phd education. This would not make sense: in normal circumstances, people with less than 25 years old have not completed the Phd education yet.
+dfOriginal['education'][dfOriginal['age1998']<9].value_counts()
+dfOriginal[dfOriginal['age1998']<9] # There are no people with less than 9 years old.
+dfOriginal['education'][dfOriginal['age1998']<12].value_counts() #There are 8 people who have a Phd with age less than 25 years old, which does not make sense.
+dfOriginal['education'][dfOriginal['age1998']<16].value_counts() # People with less than 16 years old only have basic education (12 people), which makes sense.
+dfOriginal['education'][dfOriginal['age1998']<20].value_counts() # People with less than 20 years old only have basic education (262 people) and high school education (81 people).
+dfOriginal['education'][dfOriginal['age1998']<22].value_counts() #There are 8 people who have a Phd with age less than 25 years old, which does not make sense.
+dfOriginal['education'][dfOriginal['age1998']<24].value_counts() #There are 8 people who have a Phd with age less than 25 years old, which does not make sense.
+
 dfOriginal['education'][dfOriginal['age']<9].value_counts()
 dfOriginal[dfOriginal['age']<9] # There are no people with less than 9 years old.
+dfOriginal['education'][dfOriginal['age']<12].value_counts() #There are 8 people who have a Phd with age less than 25 years old, which does not make sense.
 dfOriginal['education'][dfOriginal['age']<16].value_counts() # People with less than 16 years old only have basic education (12 people), which makes sense.
 dfOriginal['education'][dfOriginal['age']<20].value_counts() # People with less than 20 years old only have basic education (262 people) and high school education (81 people).
-dfOriginal['education'][dfOriginal['age']<25].value_counts() #There are 8 people who have a Phd with age less than 25 years old, which does not make sense.
+dfOriginal['education'][dfOriginal['age']<22].value_counts() #There are 8 people who have a Phd with age less than 25 years old, which does not make sense.
+dfOriginal['education'][dfOriginal['age']<24].value_counts()
 
 # Check if people with less than 16 years old have a salary>0
 dfOriginal['salary'][(dfOriginal['age']<16) & (dfOriginal['salary']>0)].count() #there are 12 people with less than 16 years old and that have a salary, which does not make sense. At these ages the expected salary value was expected to be zero, which means that we were expecting the output of this code line to be zero.
-
+dfOriginal['salary'][(dfOriginal['age1998']<16) & (dfOriginal['salary']>0)].count()
 # Check if people with less than 16 years old have a motor premium. This would not make sense as people with these ages do not have driving license.
 dfOriginal['lobMotor'][dfOriginal['age']<16].count() # There are 12 people with less than 16 years old that have a motor premium, which does not make sense.
-
+dfOriginal['lobMotor'][dfOriginal['age1998']<16].count()
 # Check if people with less than 18 years old have a household premium (we defined the age 18 years old as the minimum age for a person to get a house).
 dfOriginal['lobHousehold'][dfOriginal['age']<18].count() # There are 116 people younger than 18 years old who have a household premium, which does not make sense.
-
+dfOriginal['lobHousehold'][dfOriginal['age1998']<18].count()
 # Check if people with less than 16 years old have a work compensation premium, which does not make sense. The minimum age to start working is 16 years old.
 dfOriginal['lobWork'][dfOriginal['age']<16].count() # There are 12 people younger than 16 years old that have a work compensation premium.
-
+dfOriginal['lobWork'][dfOriginal['age1998']<16].count()
 # Final Decision: drop birthday and age columns - they do not make any sense when considering other variables in the data set.
 
 # Create a column for year salary (useful to check the next incoherence).
@@ -954,13 +966,21 @@ dfOriginal['id'][dfOriginal['yearSalary']*0.5<dfOriginal['lobTotal']].count() # 
 dfOriginal['id'][dfOriginal['yearSalary']<dfOriginal['lobTotal']].count() # There is one person that has a salary lower than the lobTotal, which does not make sense.
 # We decided to add this customer to an incoherence column.
 dfOriginal['incoherences']=np.where(dfOriginal['yearSalary']<dfOriginal['lobTotal'],1,0)
-dfOriginal['Others']=np.where(dfOriginal['yearSalary']<dfOriginal['lobTotal'],1,dfOriginal['Others'])
+
+###############################################################################################3
+#Errors
+##############################################################################################3
+
+dfOriginal['Errors'].value_counts()
+dfErrors=dfOriginal.loc[dfOriginal["Errors"]==1]
+dfOriginal["firstPolicy"].loc[dfOriginal['id']==9295]=None
+
 
 #---------------CREATE A DATA FRAME TO WORK ON (WITH NO INCOHERENCES AND NO OUTLIERS)------------------------
 # Take outliers, strange values and incoherences out.
 # Drop columns that are not needed: because have all values zero and other reasons
 dfWork=dfOriginal[dfOriginal['Others']==0]
-dfWork=dfWork.drop(columns=['age', 'birthday','incoherences','Strange_birthday','Others','strange_firstPolicy','Outliers_salary','df_OutliersLow_cmv','df_OutliersHigh_cmv','Outliers_lobMot','Outliers_lobHousehold','Outliers_lobHealth','Outliers_lobWork'])
+dfWork=dfWork.drop(columns=['age', 'age1998','birthday','incoherences','Strange_birthday','Others','strange_firstPolicy','Outliers_salary','df_OutliersLow_cmv','df_OutliersHigh_cmv','Outliers_lobMot','Outliers_lobHousehold','Outliers_lobHealth','Outliers_lobWork'])
 
 #----------------------------------MISSING VALUES----------------------------
 
@@ -1434,7 +1454,7 @@ dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']>-25,'profitable',dfWork['
 dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']==-25,'neutrals',dfWork['catCMV_Mean_corrected'])
 #check cancel o see if categorical cancel is a thing
 df=pd.DataFrame(dfWork[["CancelTotal","lobMotor","lobHousehold","lobHealth","lobLife","lobWork"]][dfWork['CancelTotal'] > 0 ])
-#TODO: canceled  0,1,2,...
+
 #TODO: Plot new variables: cancel, YearsWus1998, YearsWus2016,
 
 df=pd.DataFrame(dfWork['YearsWus1998'].value_counts())
