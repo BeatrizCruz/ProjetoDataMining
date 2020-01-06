@@ -59,8 +59,8 @@ def set_seed(my_seed):
     np.random.seed(my_seed)
 my_seed=100
 #Diretorias:
-file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -1163,9 +1163,9 @@ dfWork['children'].isna().sum()     #There are 21 Nan values
 # plt.figure()
 # sb.pairplot(dfWork2, vars=['lobMotor','lobHealth','lobLife','lobWork','lobTotal','yearSalary'], hue='children')
 # plt.show()
-# The variable salary explains the variable children.
-# The variable lobMotor explains the variable children.
-# Lets use the variables lobmotor and salary to explain the variable children and to treat the Nan values through the KNN:
+#The variable salary explains the variable children.
+#The variable lobMotor explains the variable children.
+#Lets use the variables lobmotor and salary to explain the variable children and to treat the Nan values through the KNN:
 
 # dfChildren: to treat Children Nan values
 dfChildren=dfWork[['id','salary','lobMotor','lobHealth','children']]
@@ -1178,7 +1178,9 @@ dfChildren['children'][dfChildren['lobMotor'].isna()].isna().sum()
 dfChildren = dfChildren[~((dfChildren['salary'].isna())|(dfChildren['lobMotor'].isna()))]
 
 # Apply the KNN Function:
-dfWork=KNClassifier(dfWork=dfWork,myDf=dfChildren, treatVariable='children', expVariables=['salary','lobMotor','lobHealth'],K=5,weights='distance', metric='minkowski',p=1)
+dfWork=KNClassifier(dfWork=dfWork,myDf=dfChildren, treatVariable='children',
+                    expVariables=['salary','lobMotor','lobHealth'],
+                    K=5,weights='distance', metric='minkowski',p=1)
 # We decided to use the manhattan distance because it considers the absolute distance in each variable.
 
 #Check null values again:
@@ -1328,7 +1330,7 @@ dfWork.isna().sum()
 
 # Lets treat these two observations. For this we cannot use firstPolicy as an explainable variable. Lets just use the Lob variables:
 dfSalary=dfWork[['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
-dfSalary=pd.DataFrame(imputer.fit_transform(dfSalary), columns=dfSalary.columns)
+dfSalary=pd.DataFrame(imputer.fit_transform(dfSalary), columns=dfSalary.columns.remove('id'))
 # Check again nan values: 
 dfSalary.isna().sum()
 # Replace column in the original data frame:
@@ -1409,6 +1411,7 @@ Regression(myDf=dfFirstPolicy,indepVariables=['salary','lobMotor','lobHousehold'
 # Lets apply the KNRegressor technique: 
 # Conceptually we have said that the variables that might explain firstPolicy are: lobHousehold, lobLife, lobWork, lobHousehold, lobHealth and salary (children and binEducation excluded as they are binary)
 dfFirstPolicy=dfWork[['id','firstPolicy','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
+
 dfFirstPolicy=pd.DataFrame(imputer.fit_transform(dfFirstPolicy), columns=dfFirstPolicy.columns)
 
 # Check again nan values: 
