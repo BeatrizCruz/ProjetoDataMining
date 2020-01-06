@@ -86,10 +86,10 @@ dfOriginal=dfOriginal.rename(columns={"Brithday Year": "birthday",
                                         "Premiums in LOB: Work Compensations":"lobWork"})
 
 #--------------------STUDY OF VARIABLES INDIVIDUALLY-----------------------
-#Create columns for global flags with zeros (hack)
-dfOriginal['Others'] = np.where(dfOriginal['birthday']<0, 1,0)
-dfOriginal['Errors'] = np.where(dfOriginal['birthday']<0, 1,0)
-dfOriginal['Outliers'] = np.where(dfOriginal['birthday']<0, 1,0)
+#Create columns for global flags with zeros
+dfOriginal['Others'] = 0
+dfOriginal['Errors'] = 0
+dfOriginal['Outliers'] = 0
 # 1. birthday:
 
 # Plot birthday for a first visual analysis:
@@ -405,9 +405,11 @@ dfOriginal['df_OutliersLow_cmv'].value_counts()
 #plt.show()
 #Check the ploted values in more detail:
 dfOriginal['Others'] = np.where(dfOriginal['cmv']<(-500), 1,dfOriginal['Others'])         #assign flag do not enter in model
-dfOriginal['Others'] = np.where(dfOriginal['cmv']>2000, 1,dfOriginal['Others'])         #assign flag do not enter in model
-dfOriginal['Outliers'] = np.where(dfOriginal['cmv']<(-500), 1,dfOriginal['Outliers'])       #assign flag outlier
-dfOriginal['Outliers'] = np.where(dfOriginal['cmv']>2000, 1,dfOriginal['Outliers'])       #assign flag outlier
+dfOriginal['Others'] = np.where(dfOriginal['cmv']>2000, 1,dfOriginal['Others'])   #assign flag do not enter in model
+dfOriginal['df_OutliersLow_cmv'] = np.where(dfOriginal['cmv']<(-500), 1,0)
+dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>2000, 1,0)
+dfOriginal['Outliers'] = np.where(dfOriginal['cmv']<(-500), 2,dfOriginal['Outliers'])       #assign flag outlier
+dfOriginal['Outliers'] = np.where(dfOriginal['cmv']>2000, 3,dfOriginal['Outliers'])       #assign flag outlier
 
 
 cmvValues = dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv']==0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index()
@@ -415,7 +417,7 @@ cmvValues
 #There are 3 higher values that will be considered as outliers.
 
 # Change the values of the new positive outliers to 1 in the df_OutliersHigh_cmv column
-dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOriginal['df_OutliersHigh_cmv'])
+#dfOriginal['df_OutliersHigh_cmv'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOriginal['df_OutliersHigh_cmv'])
 
 #Inquiries for knowing the values of the outliers
 dfOriginal[['id','cmv']].loc[dfOriginal['df_OutliersLow_cmv'] == 1 ]
@@ -508,7 +510,7 @@ df=pd.DataFrame(df, columns=['claims'])
 
 dfOriginal['Outliers_claims']=np.where(dfOriginal['claims']>4, 1,0)                 #signal as outliers in claims
 dfOriginal['Others']=np.where(dfOriginal['claims']>4, 1,dfOriginal['Others'])       #signal a global removable value
-dfOriginal['Outliers'] = np.where(dfOriginal['claims']>4, 1,dfOriginal['Outliers']) #assign flag outlier
+dfOriginal['Outliers'] = np.where(dfOriginal['claims']>4, 4,dfOriginal['Outliers']) #assign flag outlier
 dfOriginal[['id','claims']].loc[dfOriginal['Outliers_claims'] == 1 ]
 #plt.figure()
 #df['claims'].sort_index().plot()
@@ -611,7 +613,7 @@ fence_high
 # Create a column that indicates if an individual is outlier or not (if it is, the column value will be 1)
 dfOriginal['Outliers_lobMot']=np.where(dfOriginal['lobMotor']>750,1,0)
 dfOriginal['Others']=np.where(dfOriginal['lobMotor']>750,1,dfOriginal['Others'])            #assign flag do not enter in model
-dfOriginal['Outliers'] = np.where(dfOriginal['lobMotor']>750, 1,dfOriginal['Outliers'])     #assign flag outlier
+dfOriginal['Outliers'] = np.where(dfOriginal['lobMotor']>750, 5,dfOriginal['Outliers'])     #assign flag outlier
 #TODO: Talk about cancelled
 dfOriginal["TotalInsurance"]=np.where(dfOriginal["lobMotor"]>0,1,0)                         #CountInsurancesPaid
 dfOriginal['CancelTotal'] = np.where(dfOriginal['lobMotor']<0, 1,0)                         #assign flag Cancelled
@@ -674,7 +676,7 @@ valueslobHousehold
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobHousehold']=np.where(dfOriginal['lobHousehold']>3000,1,0)
 dfOriginal['Others']=np.where(dfOriginal['lobHousehold']>3000,1,dfOriginal['Others'])
-dfOriginal['Outliers'] = np.where(dfOriginal['lobHousehold']>3000, 1,dfOriginal['Outliers'])
+dfOriginal['Outliers'] = np.where(dfOriginal['lobHousehold']>3000, 6,dfOriginal['Outliers'])
 dfOriginal["TotalInsurance"]=np.where(dfOriginal["lobHousehold"]>0,dfOriginal["TotalInsurance"]+1,dfOriginal["TotalInsurance"])                         #CountInsurancesPaid
 dfOriginal['CancelTotal'] = np.where(dfOriginal['lobHousehold']<0,dfOriginal['CancelTotal']+1,dfOriginal['CancelTotal'])                         #assign flag Cancelled
 dfOriginal['CancelHouse'] = np.where(dfOriginal['lobHousehold']<0, 1,0)
@@ -731,7 +733,7 @@ plt.show()
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobHealth']=np.where(dfOriginal['lobHealth']>550,1,0)
 dfOriginal['Others']=np.where(dfOriginal['lobHealth']>550,1,dfOriginal['Others'])
-dfOriginal['Outliers'] = np.where(dfOriginal['lobHealth']>550, 1,dfOriginal['Outliers'])
+dfOriginal['Outliers'] = np.where(dfOriginal['lobHealth']>550, 7,dfOriginal['Outliers'])
 dfOriginal["TotalInsurance"]=np.where(dfOriginal["lobHealth"]>0,dfOriginal["TotalInsurance"]+1,dfOriginal["TotalInsurance"])                         #CountInsurancesPaid
 dfOriginal['CancelTotal'] = np.where(dfOriginal['lobHealth']<0,dfOriginal['CancelTotal']+1,dfOriginal['CancelTotal'])
 dfOriginal['CancelHealth'] = np.where(dfOriginal['lobHealth']<0, 1,0)
@@ -841,7 +843,7 @@ plt.show()
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobWork']=np.where(dfOriginal['lobWork']>400,1,0)
 dfOriginal['Others']=np.where(dfOriginal['lobWork']>400,1,dfOriginal['Others'])
-dfOriginal['Outliers'] = np.where(dfOriginal['lobWork']>400, 1,dfOriginal['Outliers'])
+dfOriginal['Outliers'] = np.where(dfOriginal['lobWork']>400, 8,dfOriginal['Outliers'])
 dfOriginal["TotalInsurance"]=np.where(dfOriginal["lobWork"]>0,dfOriginal["TotalInsurance"]+1,dfOriginal["TotalInsurance"])                         #CountInsurancesPaid
 dfOriginal['CancelTotal'] = np.where(dfOriginal['lobWork']<0,dfOriginal['CancelTotal']+1,dfOriginal['CancelTotal'])
 dfOriginal['CancelWork'] = np.where(dfOriginal['lobWork']<0, 1,0)
@@ -884,8 +886,10 @@ dfOriginal['CancelTotal'].value_counts()
 
 dfOriginal['Outliers'].value_counts()
 dfOriginal['Errors'].value_counts()
-df=dfOriginal[["Outliers_salary","df_OutliersLow_cmv","df_OutliersHigh_cmv","Outliers_claims",
-                "Outliers_lobMot","Outliers_lobHousehold","Outliers_lobHealth"]].loc[dfOriginal["Outliers"]==1]
+dfOutliers=dfOriginal[["Outliers_salary","df_OutliersLow_cmv","df_OutliersHigh_cmv","Outliers_claims",
+                "Outliers_lobMot","Outliers_lobHousehold","Outliers_lobHealth","Outliers_lobWork","Outliers"]].loc[dfOriginal["Outliers"]>0]
+
+dfErrors=dfOriginal.loc[dfOriginal["Errors"]==1]
 #TODO: do the same for errors , report on errors
 # There is a high number of individuals with low work premiums values.
 # Transformar em Logaritmo? (ver mais tarde)
