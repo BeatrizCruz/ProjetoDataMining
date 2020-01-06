@@ -59,8 +59,8 @@ def set_seed(my_seed):
     np.random.seed(my_seed)
 my_seed=100
 #Diretorias:
-file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -113,15 +113,10 @@ dfOriginal[['id','birthday']].loc[dfOriginal['Strange_birthday'] == 1] #what are
 dfOriginal['Strange_birthday'].value_counts()   # Verify if the column was created as supposed
 
 #Plot birthday variable with no strange values (where the new column equals zero):
-# plt.figure()
-# dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].hist()
-# plt.show()
-#plt.figure()
-#dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].value_counts().sort_index().plot(style=".") # ESTE!!!!!!!!!!!!!!!!!!!!!!
-#plt.show()
-#plt.figure()
-#dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].value_counts().sort_index().plot(marker="o") # ESTE!!!!!!!!!!!!!!!!!!!!!!
-#plt.show()
+plt.figure()
+dfOriginal['birthday'][dfOriginal['Strange_birthday']==0].hist()
+plt.show()
+
 
 # Good Graph:
 import plotly.offline as pyo
@@ -137,15 +132,13 @@ layout = go.Layout(title='Birthday Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-
+####################################################
 # 2. firstPolicy
+####################################################
 
 # Plot firstPolicy for a first visual analysis:
 # plt.figure()
 # dfOriginal['firstPolicy'].value_counts().sort_index().plot() # there might be strange values on firstPolicy that are distorting the plot.
-# plt.show()
-# plt.figure()
-# dfOriginal['firstPolicy'].hist() # The plot with strange values is not perceptive
 # plt.show()
 
 #Check variable values:
@@ -155,18 +148,15 @@ dfOriginal['firstPolicy'].value_counts().sort_index() # there is a strange value
 # Explain the choice of 2016: (...)
 # Verify if the column was created as supposed
 dfOriginal['strange_firstPolicy']=np.where(dfOriginal['firstPolicy']>2016, 1,0)
-dfOriginal['Others']=np.where(dfOriginal['firstPolicy']>2016, 1,dfOriginal['Others']) #Others equals no outliers
-dfOriginal[['id','firstPolicy']].loc[dfOriginal['strange_firstPolicy'] == 1] #what are the strange values
+dfOriginal['Others']=np.where(dfOriginal['firstPolicy']>2016, 1,dfOriginal['Others'])       #assign flag do not enter in model
+dfOriginal['Errors'] = np.where(dfOriginal['firstPolicy']>2016, 1,dfOriginal['Errors'])     #assign flag error
+
+dfOriginal[['id','firstPolicy']].loc[dfOriginal['strange_firstPolicy'] == 1]                #what are the strange values
+
 dfOriginal['strange_firstPolicy'].value_counts()
 
-dfOriginal['YearsWus']=1998-dfOriginal['firstPolicy']
+
 #Plot firstPolicy variable with no strange values (where the created column equals zero):
-# plt.figure()
-# dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].hist()
-# plt.show()
-#plt.figure()
-#dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].value_counts().sort_index().plot(marker='o') #ESTE!!!!!!!!!!!!!!!!!!!!!
-#plt.show()
 
 # Good Graph:
 df=pd.DataFrame(dfOriginal['firstPolicy'][dfOriginal['strange_firstPolicy']==0].value_counts())
@@ -180,16 +170,7 @@ layout = go.Layout(title='First Policy Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-df=pd.DataFrame(dfOriginal['YearsWus'][dfOriginal['strange_firstPolicy']==0].value_counts())
-df.reset_index(level=0, inplace=True)
-df=df.rename(columns={'index':'Years'})
-df=df.sort_values(by='Years')
 
-data= go.Bar(x=df['Years'],y=df['YearsWus'])#,mode='markers')
-layout = go.Layout(title='Years Since First Policy',template='simple_white',
-        xaxis=dict(title='Years',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
-fig = go.Figure(data=data, layout=layout)
-pyo.plot(fig)
 
 
 
@@ -202,13 +183,6 @@ counteducation=dfOriginal['education'].value_counts().sort_index()
 counteducation
 
 # Plot education variable:
-#plt.figure()                                                                                                
-#plt.bar(np.arange(len(counteducation.index)),counteducation)
-#plt.xticks(np.arange(len(counteducation.index)),counteducation.index)
-#plt.show()
-# There is a considerable number of individuals with high education (BSc/MSc and PhD). 
-# The number of individuals having PhD is not that high. We will consider later if it makes sense to join the categories BSc/MSc and PhD in a unique category.
-
 # Good Graph:
 df=pd.DataFrame(dfOriginal['education'].value_counts())
 df.reset_index(level=0, inplace=True)
@@ -220,16 +194,20 @@ layout = go.Layout(title='Education Variable',template='simple_white',
         xaxis=dict(title='Category',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
+# There is a considerable number of individuals with high education (BSc/MSc and PhD).
+# The number of individuals having PhD is not that high. We will consider later if it makes sense to join the categories BSc/MSc and PhD in a unique category.
 
-# 4. salary
-# To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value as done with the previous cases, we decided to make the cumulative to be used for plotting.
+###############################################
+# 4. SALARY
+###############################################
+
+# To study this variable as it has different values that are not easily repeated through individuals,
+# instead of counting by value as done with the previous cases, we decided to make the cumulative to be used for plotting.
 # Plot salary for a first visual analysis:
 # plt.figure()
-# dfOriginal['salary'].value_counts().sort_index().plot(style=".") # there might be strange values on salary that are distorting the plot.
+# dfOriginal['salary'].value_counts().sort_index().plot(style=".")
 # plt.show()
-# plt.figure()
-# dfOriginal['salary'].hist() # The plot with the strange value is not perceptive.
-# plt.show()
+# there might be strange values on salary that are distorting the plot.
 
 # Check variable values and create a variable for that:
 countSalary = dfOriginal['salary'].value_counts().sort_index() # there are 2 out of the box values: 34490, 55215
@@ -244,6 +222,7 @@ dfOriginal['Outliers'] = np.where(dfOriginal['salary']>10000, 1,dfOriginal['Outl
 dfOriginal[['id','salary']].loc[dfOriginal['Outliers_salary'] == 1]
 dfOriginal['Outliers_salary'].value_counts()
 #lower than minimum wage in 2016 (530€)
+# Some values used during the report
 dfOriginal[dfOriginal["salary"]<530].count().max()        #minimum wage 2016
 dfOriginal[dfOriginal["salary"]<970].count().max()        #average wage 2016
 dfOriginal[dfOriginal["salary"]<293].count().max()        #minimum wage 1998
@@ -252,9 +231,7 @@ dfOriginal[dfOriginal["salary"]<565].count().max()        #average wage 1998
 #Plot the salary values and the cumulative values of salary
 countSalaryCum = countSalary.cumsum()
 countSalaryCum
-#plt.figure()
-#countSalaryCum.plot()
-#plt.show()
+
 
 # Plot salary non outliers values (where the created column equals zero):
 # plt.figure()
@@ -288,14 +265,6 @@ layout = go.Layout(title='Salary Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-# plt.figure()    #as histogram
-# dfOriginal['salary'][dfOriginal['Outliers_salary']==0].sort_index().plot(kind="hist")
-# plt.show()
-
-# Plot the cumulative salary non outliers values (where the created column equals zero):
-#plt.figure()
-#dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().cumsum().plot(style='.')
-#plt.show()
 
 # Good plot:
 df=pd.DataFrame(dfOriginal['salary'][dfOriginal['Outliers_salary']==0].value_counts().sort_index().cumsum())
@@ -308,27 +277,15 @@ layout = go.Layout(title='Cumulative Salary Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-# Check with log dist: as the usual behavior of a salary variable is a distribution with a heavy tail on the left side, usually it is applied a log transformation on the distribution in order to transform it to a normal distribution.
-# count by log salary value
-# cumulative of log salary
-dfOriginal['logSalary'] = np.log(dfOriginal['salary'])
-countLogSalary=dfOriginal['logSalary'].value_counts().sort_index()
-countLogSalaryCum= countLogSalary.cumsum()
+# Check with log dist: as the usual behavior of a salary variable is a distribution with a heavy tail on the left side,
+# usually it is applied a log transformation on the distribution in order to transform it to a normal distribution.
 
-# Plot both log salary and cumulative log salary
-# plt.figure()
-# countLogSalary.plot()
-# plt.show()
-# plt.figure()
-# countLogSalaryCum.plot()
-# plt.show()
-
-# Log distributon: not applicable as original distribution is already normal (it does not follow the usual behavior).
+# Log distributon: not applicable as original distribution is already almost normal (it does not follow the usual behavior).
 # Drop created column as it will not be used
-dfOriginal=dfOriginal.drop(['logSalary'], axis=1)
 
-# 5. livingArea (categorical variable)
-
+################################################################
+# 5. LIVING AREA (categorical variable)
+################################################################
 # Create a variable to count the individuals per category:
 countlivingArea=dfOriginal['livingArea'].value_counts().sort_index()
 countlivingArea
@@ -352,7 +309,9 @@ layout = go.Layout(title='Living Area Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-# 6. children
+##############################################################
+# 6. CHILDREN
+##############################################################
 
 # Create a variable to count the individuals per category:
 countchildren=dfOriginal['children'].value_counts().sort_index()
@@ -377,23 +336,25 @@ layout = go.Layout(title='Children Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-# 7. cmv 
-# To study this variable as it has different values that are not easily repeated through individuals, instead of counting by value, we decided to make the cumulative to plot, as done with the salary variable.
+###################################################
+# 7. cmv
+###################################################
+
+# To study this variable as it has different values that are not easily repeated through individuals,
+# instead of counting by value, we decided to make the cumulative to plot, as done with the salary variable.
 
 #Plot cmv for a first visual analysis:
-# plt.figure()
-# dfOriginal['cmv'].value_counts().sort_index().plot() # there might be strange values on cmv that are distorting the plot.
-# plt.show()
-# plt.figure()
-# dfOriginal['cmv'].hist() # The plot with the strange value is not perceptive
-# plt.show()
+plt.figure()
+dfOriginal['cmv'].value_counts().sort_index().plot() # there might be strange values on cmv that are distorting the plot.
+plt.show()
+# The plot with the strange value is not perceptive
 
 # Create a variable that counts individuals by cmv value to check cmv values 
 cmvValues=dfOriginal['cmv'].value_counts().sort_index()
 # Create a boxplot to better visualize those values
-plt.figure()
-sb.boxplot(x=dfOriginal["cmv"])
-plt.show()
+# plt.figure()
+# sb.boxplot(x=dfOriginal["cmv"])
+# plt.show()
 
 # Create a new column for negative outliers that indicates outliers as 1 and other values as 0. Clients that give huge losses to the company will have value 1 in this column.
 # When creating the column put the 6 lower values that are represented on the boxplot (outliers) with value 1.
@@ -462,7 +423,7 @@ dfOriginal[['id','cmv']].loc[dfOriginal['df_OutliersHigh_cmv'] == 1]
 
 #customers where cmv = -25  , possible aquisition cost? Let's find out
 dfOriginal["cmv-25"]= np.where(dfOriginal['cmv']==(-25),1,0)
-temp=dfOriginal[['id','cmv',"claims",'firstPolicy','birthday','lobMotor',"lobHousehold","lobHealth","lobLife","lobWork"]].loc[dfOriginal['cmv-25'] == 1]
+temp=dfOriginal[['id','cmv',"claims",'firstPolicy','birthday','lobMotor',"lobHousehold","lobHealth","lobLife","lobWork"]].loc[dfOriginal['cmv-25'] == 1] #Let's look at cmv -25
 dfOriginal['Others'] = np.where(dfOriginal['cmv']>=cmvValues.index[-3],1,dfOriginal['Others'])
 #dfOriginal['Others'] = np.where(dfOriginal['cmv']==(-25),1,dfOriginal['Others'])
 temp2=dfOriginal[['firstPolicy','lobMotor',"lobHousehold","lobHealth","lobLife","lobWork",'claims','cmv']][dfOriginal['claims']==1]
@@ -471,30 +432,18 @@ temp3=dfOriginal[['firstPolicy','lobMotor',"lobHousehold","lobHealth","lobLife",
 # Verify if values were changed as supposed
 dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
-#CMV with years with us
-df=dfOriginal[['YearsWus','cmv']][(dfOriginal['strange_firstPolicy']==0) &
-                                  (dfOriginal['df_OutliersLow_cmv'] == 0 )&
-                                  (dfOriginal['df_OutliersHigh_cmv'] == 0)]#.value_counts())
-df.reset_index(level=0, inplace=True)
-#df=df.rename(columns={'index':'Years'})
-df=df.sort_values(by='YearsWus')
 
-data= go.Scatter(x=df['cmv'],y=df['YearsWus'],mode='markers')
-layout = go.Layout(title='Years Since First Policy',template='simple_white',
-        xaxis=dict(title='CMV',showgrid=True),yaxis=dict(title='Years With Us',showgrid=True))
-fig = go.Figure(data=data, layout=layout)
-pyo.plot(fig)
-# Create a box plot without the until now identified outliers:
+##### Create a box plot without the until now identified outliers:
 #plt.figure()
 #sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)])
 #plt.show()
 
-#Plot with no outliers:
+##### Plot with no outliers:
 #plt.figure()
 #dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index().plot(style='.') 
 #plt.show()
 
-# Good Graph:
+##### Good Graph:
 df=pd.DataFrame(dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index())
 df.reset_index(level=0, inplace=True)
 df=df.rename(columns={'index':'cmv','cmv':'Individuals'})
@@ -505,7 +454,7 @@ layout = go.Layout(title='Customer Monetary Value Variable',template='simple_whi
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-#Same graph with no cmv=-25:
+#####Same graph with no cmv=-25:
 df=pd.DataFrame(dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index())
 df.reset_index(level=0, inplace=True)
 df=df.rename(columns={'index':'cmv','cmv':'Individuals'})
@@ -517,24 +466,13 @@ layout = go.Layout(title='Customer Monetary Value Variable',template='simple_whi
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-#create categorical values of cmv
-dfOriginal['catCMV_Mean_corrected']=np.where(dfOriginal['cmv']<-25,'losses',None)
-dfOriginal['catCMV_Mean_corrected']=np.where(dfOriginal['cmv']>-25,'profitable',dfOriginal['catCMV_Mean_corrected'])
-dfOriginal['catCMV_Mean_corrected']=np.where(dfOriginal['cmv']==-25,'neutrals',dfOriginal['catCMV_Mean_corrected'])
-
-df=pd.DataFrame(dfOriginal['catCMV_Mean_corrected'].value_counts().sort_index())
-df.reset_index(level=0, inplace=True)
-df=df.rename(columns={'index':'catCMV_Mean_corrected','catCMV_Mean_corrected':'Individuals'})
 
 
-data= go.Bar(x=df['catCMV_Mean_corrected'],y=df['Individuals'])
-layout = go.Layout(title='Customer Monetary Value Mean Corrected Variable',template='simple_white',
-        xaxis=dict(title='CMV Value',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
-fig = go.Figure(data=data, layout=layout)
-pyo.plot(fig)
 
+
+############################################
 # 8. claims
-
+#############################################
 #plt.figure()
 #dfOriginal['claims'].value_counts().sort_index().plot() # there might be strange values on the claims that are distorting the plot.
 #plt.show()
@@ -552,18 +490,26 @@ df=dfOriginal.groupby(['claims'])['claims'].count()
 df=pd.DataFrame(df, columns=['claims'])
 
 #Let's remove outliers
-plt.figure()
-sb.boxplot(x = dfOriginal["claims"])
-plt.show()
-
+# plt.figure()
+# sb.boxplot(x = dfOriginal["claims"])
+# plt.show()
+# plt.figure()
+# sb.violinplot(x = dfOriginal["claims"])
+# plt.show()
 
 
 # plt.figure()
 # sb.boxplot(x = dfOriginal["claims"][dfOriginal['claims'] <4])
 # plt.show()
+# plt.figure()
+# sb.violinplot(x = dfOriginal["claims"][dfOriginal['claims'] <4])
+# plt.show()
 #df=df[df.index<3]
-dfOriginal['Outliers_claims']=np.where(dfOriginal['claims']>4, 1,0)     #signal as outliers in claims
-dfOriginal['Others']=np.where(dfOriginal['claims']>4, 1,dfOriginal['Others'])   #signal a global removable value
+
+dfOriginal['Outliers_claims']=np.where(dfOriginal['claims']>4, 1,0)                 #signal as outliers in claims
+dfOriginal['Others']=np.where(dfOriginal['claims']>4, 1,dfOriginal['Others'])       #signal a global removable value
+dfOriginal['Outliers'] = np.where(dfOriginal['claims']>4, 1,dfOriginal['Outliers']) #assign flag outlier
+dfOriginal[['id','claims']].loc[dfOriginal['Outliers_claims'] == 1 ]
 #plt.figure()
 #df['claims'].sort_index().plot()
 #plt.show()
@@ -571,8 +517,24 @@ dfOriginal['Others']=np.where(dfOriginal['claims']>4, 1,dfOriginal['Others'])   
 # People who have a claims rate between 0 and 1 (excluding) are the ones with which the company had profit. This means that the amount paid by the company was less than the premiums paid by the clients.
 # People who have a claims rate of 1 are the ones with which the company had no profit nor losses. 
 # People who have a claims rate higher than 1 are the ones with which the company had losses.
-# Good Graph:
-df=pd.DataFrame(dfOriginal['claims'][dfOriginal['Outliers_claims'] == 0 ].value_counts().sort_index())
+#When premiums equals 0,claims=0
+##### Good Graph:
+df=pd.DataFrame(dfOriginal['claims'][(dfOriginal['Outliers_claims'] == 0)].value_counts().sort_index())
+#there are still people with claims 1 when we take out CMV =-25
+df=df.rename(columns={'claims':'Individuals'})
+df.reset_index(level=0, inplace=True)
+df=df.rename(columns={'index':'claims'})
+
+data= go.Scatter(x=df['claims'],y=df['Individuals'],mode='markers')
+layout = go.Layout(title='Claims Variable',template='simple_white',
+        xaxis=dict(title='Claims Value',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+
+
+##### Without cmv=-25 Good Graph:
+df=pd.DataFrame(dfOriginal['claims'][(dfOriginal['Outliers_claims'] == 0) & (dfOriginal['cmv'] != -25)].value_counts().sort_index())
+#there are still people with claims 1 when we take out CMV =-25
 df=df.rename(columns={'claims':'Individuals'})
 df.reset_index(level=0, inplace=True)
 df=df.rename(columns={'index':'claims'})
@@ -592,6 +554,10 @@ df.reset_index(level=0, inplace=True)
 df=df.rename(columns={'index':'claims'})
 
 df['Individuals'].sort_index().sum() #there are 8056 individuals that have a claims rate lower than 1
+
+#let's look at people with claims =0
+temp4=dfOriginal[['firstPolicy','lobMotor',"lobHousehold","lobHealth","lobLife","lobWork",'claims','cmv']][dfOriginal['claims']==0]
+
 #Plot of the results
 #plt.figure()
 #df['claims'].sort_index().plot(style='.')
@@ -606,6 +572,7 @@ layout = go.Layout(title='Claims Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
+#TODO: do this later after summing LOBS and correcting LOBS
 # catClaims Variable
 # Lets distinguish between individuals that give losses (losses), individuals that give profit (profits), individuals that do not give profits nor losses (neutrals) and individuals with which the company did not spend anything (investigate). 
 # The individuals that have a column value of 'investigate' need to be investigated later as we do not have any information about their premium values on this variable. We only know that the amount paid by the company is zero. We will need to study the premium value with the premium variables studied furtherahead.
@@ -614,9 +581,9 @@ dfOriginal['catClaims']=np.where((dfOriginal['claims']>0)&(dfOriginal['claims']<
 dfOriginal['catClaims']=np.where((dfOriginal['claims']==1),'neutrals',dfOriginal['catClaims'])
 #Check if the new column was created as wanted
 dfOriginal['catClaims'].value_counts()
-
+#############################################
 # 9. lobMotor
-
+#############################################
 # Plot lobMotor for a first visual analysis:
 # plt.figure()
 # dfOriginal['lobMotor'].value_counts().sort_index().plot()
@@ -631,16 +598,25 @@ valueslobMotor
 # plt.figure()
 # sb.boxplot(x=dfOriginal["lobMotor"])
 # plt.show()
+# plt.figure()
+# sb.violinplot(x=dfOriginal["lobMotor"])
+# plt.show()
 
 # Lets look for the fence high value of the box plot to define a from which value the lobMotor premium can be considered as an outlier.
 q1=dfOriginal["lobMotor"].quantile(0.25)
 q3=dfOriginal["lobMotor"].quantile(0.75)
 iqr=q3-q1 #Interquartile range
 fence_high=q3+1.5*iqr
-
+fence_high
 # Create a column that indicates if an individual is outlier or not (if it is, the column value will be 1)
-dfOriginal['Outliers_lobMot']=np.where(dfOriginal['lobMotor']>fence_high,1,0)
-dfOriginal['Others']=np.where(dfOriginal['lobMotor']>fence_high,1,dfOriginal['Others'])
+dfOriginal['Outliers_lobMot']=np.where(dfOriginal['lobMotor']>750,1,0)
+dfOriginal['Others']=np.where(dfOriginal['lobMotor']>750,1,dfOriginal['Others'])            #assign flag do not enter in model
+dfOriginal['Outliers'] = np.where(dfOriginal['lobMotor']>750, 1,dfOriginal['Outliers'])     #assign flag outlier
+#TODO: Talk about cancelled
+dfOriginal['Cancel'] = np.where(dfOriginal['lobMotor']<0, 1,0)                              #assign flag Cancelled
+dfOriginal['CancelMotor'] = np.where(dfOriginal['lobMotor']<0, 1,0)                         #in this particular case, it's equal to cancelled
+                                                                                            #but let's keep things consistent
+dfOriginal['Cancel'].value_counts()
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobMot'].value_counts()
 
@@ -649,7 +625,8 @@ dfOriginal['Outliers_lobMot'].value_counts()
 # sb.boxplot(x = dfOriginal['lobMotor'][dfOriginal['Outliers_lobMot']==0])
 # plt.show()
 
-#Good Graph
+
+##### Good Scatter
 df=pd.DataFrame(dfOriginal['lobMotor'][dfOriginal['Outliers_lobMot'] == 0].value_counts().sort_index())
 df.reset_index(level=0, inplace=True)
 df=df.rename(columns={'index':'lobMotor','lobMotor':'Individuals'})
@@ -660,8 +637,20 @@ layout = go.Layout(title='lobMotor Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-# 10. lobHousehold
+##### With Histogram
+df=pd.DataFrame(dfOriginal['lobMotor'][dfOriginal['Outliers_lobMot'] == 0].value_counts().sort_index())
+df.reset_index(level=0, inplace=True)
+df=df.rename(columns={'index':'lobMotor','lobMotor':'Individuals'})
 
+data= go.Histogram(x=df['lobMotor'],y=df['Individuals'])#,mode='markers')
+layout = go.Layout(title='lobMotor Variable',template='simple_white',
+        xaxis=dict(title='lobMotor Value',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+
+##########################################
+# 10. lobHousehold
+##########################################
 # Plot lobHousehold for a first visual analysis:
 #plt.figure()
 #dfOriginal['lobHousehold'].value_counts().sort_index().plot()
@@ -676,11 +665,18 @@ valueslobHousehold
 # plt.figure()
 # sb.boxplot(x=dfOriginal["lobHousehold"])
 # plt.show()
+# plt.figure()
+# sb.violinplot(x=dfOriginal["lobHousehold"])
+# plt.show()
 
 #Lets define 3000 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobHousehold']=np.where(dfOriginal['lobHousehold']>3000,1,0)
 dfOriginal['Others']=np.where(dfOriginal['lobHousehold']>3000,1,dfOriginal['Others'])
+dfOriginal['Outliers'] = np.where(dfOriginal['lobHousehold']>3000, 1,dfOriginal['Outliers'])
+dfOriginal['Cancel'] = np.where(dfOriginal['lobHousehold']<0, 1,dfOriginal['Cancel'])
+dfOriginal['CancelHouse'] = np.where(dfOriginal['lobHousehold']<0, 1,0)
+dfOriginal['CancelHouse'].value_counts()
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobHousehold'].value_counts()
 #plt.figure()
@@ -702,10 +698,17 @@ layout = go.Layout(title='LobHousehold Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
+data= go.Histogram(x=df['lobHousehold'],y=df['Individuals'])#,mode='markers')
+layout = go.Layout(title='LobHousehold Variable',template='simple_white',
+        xaxis=dict(title='LobHousehold Value',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+
 # Transformar em Logaritmo? (ver mais tarde)
 
+###############################################
 # 11. lobHealth 
-
+#############################################33
 # plt.figure()
 # dfOriginal['lobHealth'].value_counts().sort_index().plot()
 # plt.show()
@@ -718,31 +721,35 @@ valueslobHealth  = dfOriginal['lobHealth'].value_counts().sort_index()
 valueslobHealth 
 
 #Box plot
-# plt.figure()
-# sb.boxplot(x = dfOriginal['lobHealth'])
-# plt.show()
+plt.figure()
+sb.boxplot(x = dfOriginal['lobHealth'])
+plt.show()
 
 #Lets define 550 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobHealth']=np.where(dfOriginal['lobHealth']>550,1,0)
 dfOriginal['Others']=np.where(dfOriginal['lobHealth']>550,1,dfOriginal['Others'])
+dfOriginal['Outliers'] = np.where(dfOriginal['lobHealth']>550, 1,dfOriginal['Outliers'])
+dfOriginal['Cancel'] = np.where(dfOriginal['lobHealth']<0, 1,dfOriginal['Cancel'])
+dfOriginal['CancelHealth'] = np.where(dfOriginal['lobHealth']<0, 1,0)
+dfOriginal['CancelHealth'].value_counts()
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobHealth'].value_counts()
 
 #Box plot without outliers
-# plt.figure()
-# sb.boxplot(x = dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0])
-# plt.show()
+plt.figure()
+sb.boxplot(x = dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0])
+plt.show()
 # plt.figure()
 # dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth']==0].value_counts().sort_index().plot()
 # plt.show()
 
-# We can observe that health premiums follows an approximatelly normal distribution, which makes sense. 
+# We can observe that health premiums follows an approximatelly normal distribution, with long tails.
 # On one hand, the health premiums are not as expensive as, for example, the house hold premiums, so more people have access to it. 
 # On the other hand, people consider health a primary preocupation and need. 
 # There are more people that invest a medium value on health premiums. Then, there are people who invest less (poorer people) and people who invest more (richer people)
 
-# Good Graph
+##### Good Graphs
 df=pd.DataFrame(dfOriginal['lobHealth'][dfOriginal['Outliers_lobHealth'] == 0].value_counts().sort_index())
 df.reset_index(level=0, inplace=True)
 df=df.rename(columns={'index':'lobHealth','lobHealth':'Individuals'})
@@ -752,9 +759,16 @@ layout = go.Layout(title='lobHealth Variable',template='simple_white',
         xaxis=dict(title='lobHealth Value',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
+##### Good Histogram
 
+data= go.Histogram(x=df['lobHealth'],y=df['Individuals'])#,mode='markers')
+layout = go.Layout(title='lobHealth Variable',template='simple_white',
+        xaxis=dict(title='lobHealth Value',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+################################################
 # 12. lobLife 
-
+################################################
 # plt.figure()
 # dfOriginal['lobLife'].value_counts().sort_index().plot()
 # plt.show()
@@ -766,9 +780,16 @@ pyo.plot(fig)
 valueslobLife  = dfOriginal['lobLife'].value_counts().sort_index()
 valueslobLife 
 
+
+dfOriginal['Cancel'] = np.where(dfOriginal['lobLife']<0, 1,dfOriginal['Cancel'])
+dfOriginal['CancelLife'] = np.where(dfOriginal['lobLife']<0, 1,0)
+dfOriginal['CancelLife'].value_counts()
 # Box plot
 # plt.figure()
 # sb.boxplot(x = dfOriginal['lobLife'])
+# plt.show()
+# plt.figure()
+# sb.violinplot(x = dfOriginal['lobLife'])
 # plt.show()
 # We decided not to consider outliers on this variable as there are no extreme individuals that influence the distribution (no individuals that highlight over the others).
 # We can observe that more people invest less on life premiums.
@@ -785,7 +806,16 @@ layout = go.Layout(title='lobLife Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-# 13. lobWork  
+data= go.Histogram(x=df['lobLife'],y=df['Individuals'])#,mode='markers')
+layout = go.Layout(title='lobLife Variable',template='simple_white',
+        xaxis=dict(title='lobLife Value',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+
+
+########################################
+# 13. lobWork
+#######################################
 # plt.figure()
 # dfOriginal['lobWork'].value_counts().sort_index().plot()
 # plt.show()
@@ -795,16 +825,24 @@ pyo.plot(fig)
 
 # Check variable values:
 valueslobWork  = dfOriginal['lobWork'].value_counts().sort_index()
-valueslobWork 
+valueslobWork
 
 #Box plot
-# plt.figure()
-# sb.boxplot(x = dfOriginal['lobWork'])
-# plt.show()
+plt.figure()
+sb.boxplot(x = dfOriginal['lobWork'])
+plt.show()
+plt.figure()
+sb.violinplot(x = dfOriginal['lobWork'],inner="quartile")
+plt.show()
 #Lets define 400 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
 dfOriginal['Outliers_lobWork']=np.where(dfOriginal['lobWork']>400,1,0)
 dfOriginal['Others']=np.where(dfOriginal['lobWork']>400,1,dfOriginal['Others'])
+dfOriginal['Outliers'] = np.where(dfOriginal['lobWork']>400, 1,dfOriginal['Outliers'])
+dfOriginal['Cancel'] = np.where(dfOriginal['lobWork']<0, 1,dfOriginal['Cancel'])
+dfOriginal['CancelWork'] = np.where(dfOriginal['lobWork']<0, 1,0)
+dfOriginal['CancelWork'].value_counts()
+
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobWork'].value_counts()
 
@@ -816,7 +854,7 @@ dfOriginal['Outliers_lobWork'].value_counts()
 # dfOriginal['lobWork'][dfOriginal['Outliers_lobWork']==0].value_counts().sort_index().plot()
 # plt.show()
 
-# Good Graph:
+# Good Graphs:
 df=pd.DataFrame(dfOriginal['lobWork'][dfOriginal['Outliers_lobWork'] == 0].value_counts().sort_index())
 df.reset_index(level=0, inplace=True)
 df=df.rename(columns={'index':'lobWork','lobWork':'Individuals'})
@@ -827,12 +865,29 @@ layout = go.Layout(title='lobWork Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
+data= go.Histogram(x=df['lobWork'],y=df['Individuals'])#,mode='markers')
+layout = go.Layout(title='lobWork Variable',template='simple_white',
+        xaxis=dict(title='lobWork Value',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
 
-# There is a high number of indiviaduals with low work premiums values.
+#################resume of confirmed canceled contracts in the last year############
+dfOriginal['Cancel'].value_counts()
+
+#######################################################################################################3
+#Outliers & Errors
+######################################################################################################
+
+dfOriginal['Outliers'].value_counts()
+dfOriginal['Errors'].value_counts()
+df=dfOriginal[["Outliers_salary","df_OutliersLow_cmv","df_OutliersHigh_cmv","Outliers_claims",
+                "Outliers_lobMot","Outliers_lobHousehold","Outliers_lobHealth"]].loc[dfOriginal["Outliers"]==1]
+#TODO: do the same for errors , report on errors
+# There is a high number of individuals with low work premiums values.
 # Transformar em Logaritmo? (ver mais tarde)
 
 #-----------------CHECK INCOHERENCES------------------#
-
+# TODO: create a column for incoherences to verify if errors and outliers coincide with incoherences
 #Check if birthday is higher than First policy's year: 
 agesList=[0,16,18]
 countList=[]
@@ -842,7 +897,7 @@ for j in agesList:
         if dfOriginal.loc[i,'firstPolicy']-dfOriginal.loc[i,'birthday']<j: count_inc+=1
     countList.append(count_inc)
 countList
-#There are 1997 people that have a firt policy before even being born. This does not make any sense.
+#There are 1997 people that have a first policy before even being born. This does not make any sense.
 
 # Create age column that calculates current ages of customers (useful to check the next incoherence).
 # Check if there are people with less than 16 years old (including) who have children 
@@ -1260,7 +1315,7 @@ dfWork.isna().sum() # no null values on yearSalary
 #dfWork=KNRegressor(dfWork=dfWork,myDf=dfSalary, treatVariable='salary',expVariables=['lobHousehold','lobMotor','lobHealth','lobLife','lobWork'],K=5,weights='uniform',metric="minkowski",p=1)  #1 for manhattan; 2 for euclidean
 
 #############################################################################################################
-# FIRST POLICY
+# FIRST POLICY Impute Nulls
 
 # Firstly, lets check which variables might better explain first policy.
 # 1. Check linear correlations through the Pearson correlations. - already previously created heatmap.
@@ -1348,17 +1403,66 @@ dfWork['firstPolicy']=round(dfWork['firstPolicy'], 0)
 # binEducation (already created)
 # catClaims Variable (already created)
 # Ratios lobs 
-dfWork['motorRatio']=dfWork["lobMotor"]/dfWork['lobTotal']
-dfWork['householdRatio']=dfWork["lobHousehold"]/dfWork['lobTotal']
-dfWork['healthRatio']=dfWork["lobHealth"]/dfWork['lobTotal']
-dfWork['lifeRatio']=dfWork["lobLife"]/dfWork['lobTotal']
-dfWork['workCRatio']=dfWork["lobWork"]/dfWork['lobTotal']
+dfWork['motorRatioLOB']=dfWork["lobMotor"]/dfWork['lobTotal']
+dfWork['householdRatioLOB']=dfWork["lobHousehold"]/dfWork['lobTotal']
+dfWork['healthRatioLOB']=dfWork["lobHealth"]/dfWork['lobTotal']
+dfWork['lifeRatioLOB']=dfWork["lobLife"]/dfWork['lobTotal']
+dfWork['workCRatioLOB']=dfWork["lobWork"]/dfWork['lobTotal']
 
 # lobTotal/salary
-dfWork['ratioSalary']=dfWork['lobTotal']/dfWork['salary']
+dfWork['ratioSalaryLOB']=dfWork['lobTotal']/dfWork['salary']
 
-# Years has been a customer= 1998-firstPolicy
-dfWork['yearCustomer']=1998-dfWork['firstPolicy']
+# Years has been a customer= 1998-firstPolicy compare with 2016
+dfWork['YearsWus1998']=1998-dfWork['firstPolicy']
+dfWork['YearsWus2016']=2016-dfWork['firstPolicy']
+
+dfOriginal['CMV_Mean_corrected']=(dfOriginal['cmv']+25)
+##### create categorical values of cmv corrected
+dfWorkl['catCMV_Mean_corrected']=np.where(dfWork['cmv']<-25,'losses',None)
+dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']>-25,'profitable',dfWork['catCMV_Mean_corrected'])
+dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']==-25,'neutrals',dfOWork['catCMV_Mean_corrected'])
+TODO: canceled  0,1,2,...
+#TODO: Plot new variables: cancel, YearsWus1998, YearsWus2016,
+
+df=pd.DataFrame(dfWork['YearsWus1998'].value_counts())
+df.reset_index(level=0, inplace=True)
+df=df.rename(columns={'index':'Years'})
+df=df.sort_values(by='Years')
+
+data= go.Bar(x=df['Years'],y=df['YearsWus1998'])#,mode='markers')
+layout = go.Layout(title='Years Since First Policy',template='simple_white',
+        xaxis=dict(title='Years',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+
+#TODO: levar para a frente e multiplicar pelos anos... parece não fazer muito sentido...
+##### Plot CMV with years with us
+df=dfWork[['YearsWus1998','cmv']][(dfOriginal['strange_firstPolicy']==0) &
+                                   (dfOriginal['df_OutliersLow_cmv'] == 0 )&
+                                   (dfOriginal['df_OutliersHigh_cmv'] == 0)]#.value_counts())
+df.reset_index(level=0, inplace=True)
+df=df.sort_values(by='YearsWus1998')
+
+data= go.Scatter(x=df['YearsWus1998'],y=df['cmv'],mode='markers')
+layout = go.Layout(title='Years Since First Policy',template='simple_white',
+        xaxis=dict(title='YearsWus',showgrid=True),yaxis=dict(title='cmv',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+
+#plot catCMVcorrected
+df=pd.DataFrame(dfOriginal['catCMV_Mean_corrected'].value_counts().sort_index())
+df.reset_index(level=0, inplace=True)
+df=df.rename(columns={'index':'catCMV_Mean_corrected','catCMV_Mean_corrected':'Individuals'})
+
+
+data= go.Bar(x=df['catCMV_Mean_corrected'],y=df['Individuals'])
+layout = go.Layout(title='Customer Monetary Value Mean Corrected Variable',template='simple_white',
+        xaxis=dict(title='CMV Value',showgrid=True),yaxis=dict(title='Number of Individuals',showgrid=True))
+fig = go.Figure(data=data, layout=layout)
+pyo.plot(fig)
+
+
+
 
 #---------------------------------------------- MULTIDIMENSIONAL OUTLIERS -------------------------------------------------#
 
@@ -2090,6 +2194,18 @@ dfEngageCatKmodes=Kmodes_funct(n=3,dfKmodesChange=kmodesChange,dfKmodes=dfEngage
 
 
 
+<<<<<<< HEAD
+=======
+# Violin Figure:
+lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+fig=plt.figure()
+fig.suptitle('Box Plots by Variable and Cluster')
+for i in lista:
+    plt.subplot2grid((1,4),(0,lista.index(i)))
+    sb.violinplot(x='labelsKmeansEngageK3', y=i, data=dfEngageKmeansK3, scale='width', inner='quartile',)
+plt.tight_layout()
+plt.plot()
+>>>>>>> 9d38440ed74ffcdc2cfd56f87084179a7ae158a1
 
 
 
