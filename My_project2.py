@@ -1411,11 +1411,11 @@ dfWork['firstPolicy']=round(dfWork['firstPolicy'], 0)
 # binEducation (already created)
 # catClaims Variable (already created)
 # Ratios lobs 
-dfWork['motorRatioLOB']=dfWork["lobMotor"]/dfWork['lobTotal']
-dfWork['householdRatioLOB']=dfWork["lobHousehold"]/dfWork['lobTotal']
-dfWork['healthRatioLOB']=dfWork["lobHealth"]/dfWork['lobTotal']
-dfWork['lifeRatioLOB']=dfWork["lobLife"]/dfWork['lobTotal']
-dfWork['workCRatioLOB']=dfWork["lobWork"]/dfWork['lobTotal']
+dfWork['motorRatioLOB']=np.where(dfWork['lobTotal']==0,0,dfWork["lobMotor"]/dfWork['lobTotal'])
+dfWork['householdRatioLOB']=np.where(dfWork['lobTotal']==0,0,dfWork["lobHousehold"]/dfWork['lobTotal'])
+dfWork['healthRatioLOB']=np.where(dfWork['lobTotal']==0,0,dfWork["lobHealth"]/dfWork['lobTotal'])
+dfWork['lifeRatioLOB']=np.where(dfWork['lobTotal']==0,0,dfWork["lobLife"]/dfWork['lobTotal'])
+dfWork['workCRatioLOB']=np.where(dfWork['lobTotal']==0,0,dfWork["lobWork"]/dfWork['lobTotal'])
 
 # lobTotal/salary
 dfWork['ratioSalaryLOB']=dfWork['lobTotal']/dfWork['salary']
@@ -1424,7 +1424,7 @@ dfWork['ratioSalaryLOB']=dfWork['lobTotal']/dfWork['salary']
 dfWork['YearsWus1998']=1998-dfWork['firstPolicy']
 dfWork['YearsWus2016']=2016-dfWork['firstPolicy']
 
-dfOriginal['CMV_Mean_corrected']=(dfOriginal['cmv']+25)
+dfWork['CMV_Mean_corrected']=(dfWork['cmv']+25)
 ##### create categorical values of cmv corrected
 dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']<-25,'losses',None)
 dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']>-25,'profitable',dfWork['catCMV_Mean_corrected'])
