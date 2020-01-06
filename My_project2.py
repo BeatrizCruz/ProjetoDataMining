@@ -1309,7 +1309,9 @@ dfSalary = dfSalary[~((dfSalary['salary'].isna()) & (dfSalary['firstPolicy'].isn
 dfSalary.isna().sum()
 
 from sklearn.impute import KNNImputer
-imputer = KNNImputer(n_neighbors=5)
+imputer = KNNImputer(n_neighbors=5, weights="distance")
+
+
 dfSalary=pd.DataFrame(imputer.fit_transform(dfSalary), columns=dfSalary.columns)
 # Check again nan values: 
 dfSalary.isna().sum()
