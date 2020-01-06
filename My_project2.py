@@ -60,7 +60,7 @@ def set_seed(my_seed):
 my_seed=100
 #Diretorias:
 file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -674,9 +674,9 @@ valueslobHousehold
 
 #Lets define 3000 from which individuals are considered outliers
 # Create a column that indicates individuals that are outliers and individuals that are not (the column values will be 1 if the individuals are considered outliers)
-dfOriginal['Outliers_lobHousehold']=np.where(dfOriginal['lobHousehold']>3000,1,0)
-dfOriginal['Others']=np.where(dfOriginal['lobHousehold']>3000,1,dfOriginal['Others'])
-dfOriginal['Outliers'] = np.where(dfOriginal['lobHousehold']>3000, 6,dfOriginal['Outliers'])
+dfOriginal['Outliers_lobHousehold']=np.where(dfOriginal['lobHousehold']>2000,1,0)
+dfOriginal['Others']=np.where(dfOriginal['lobHousehold']>2000,1,dfOriginal['Others'])
+dfOriginal['Outliers'] = np.where(dfOriginal['lobHousehold']>2000, 6,dfOriginal['Outliers'])
 dfOriginal["TotalInsurance"]=np.where(dfOriginal["lobHousehold"]>0,dfOriginal["TotalInsurance"]+1,dfOriginal["TotalInsurance"])                         #CountInsurancesPaid
 dfOriginal['CancelTotal'] = np.where(dfOriginal['lobHousehold']<0,dfOriginal['CancelTotal']+1,dfOriginal['CancelTotal'])                         #assign flag Cancelled
 dfOriginal['CancelHouse'] = np.where(dfOriginal['lobHousehold']<0, 1,0)
@@ -785,6 +785,9 @@ pyo.plot(fig)
 valueslobLife  = dfOriginal['lobLife'].value_counts().sort_index()
 valueslobLife
 
+dfOriginal['Outliers_lobLife']=np.where(dfOriginal['lobLife']>375,1,0)
+dfOriginal['Others']=np.where(dfOriginal['lobLife']>375,1,dfOriginal['Others'])
+dfOriginal['Outliers'] = np.where(dfOriginal['lobLife']>375, 9,dfOriginal['Outliers'])
 dfOriginal["TotalInsurance"]=np.where(dfOriginal["lobLife"]>0,dfOriginal["TotalInsurance"]+1,dfOriginal["TotalInsurance"])                         #CountInsurancesPaid
 dfOriginal['CancelTotal'] = np.where(dfOriginal['lobLife']<0,dfOriginal['CancelTotal']+1,dfOriginal['CancelTotal'])
 dfOriginal['CancelLife'] = np.where(dfOriginal['lobLife']<0, 1,0)
@@ -1485,6 +1488,7 @@ multiNorm = pd.DataFrame(multiNorm, columns = dfMultiOut.columns)
 multiNorm.isna().sum()
 my_seed=100
 from sklearn.cluster import KMeans
+from scipy.cluster.hierarchy import dendrogram,linkage
 
 # Apply k-means with the k as the square root of the obs number.
 K=int(round(math.sqrt(10261),0))
@@ -1563,16 +1567,16 @@ multiClusters=kmeans.cluster_centers_
 multiClusters
 
 labelsKmeans = pd.DataFrame(kmeans.labels_)
-labelsKmeans.columns =  ['LabelsKmeans']
+labelsKmeans.columns =  ['labelsKmeans']
 labelsKmeans
 
 outClientsCluster = pd.DataFrame(pd.concat([multiNorm, labelsKmeans],axis=1), 
-                        columns=['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','LabelsKmeans'])
+                        columns=['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','labelsKmeans'])
 
 # Hierarchical clustering:
 # Apply Hierarchical clustering with 30 clusters over the 100 clusters created by the k - means
 from sklearn.cluster import AgglomerativeClustering
-hClustering = AgglomerativeClustering(n_clusters = 9,
+hClustering = AgglomerativeClustering(n_clusters = 10,
                                       affinity = 'euclidean',
                                       linkage = 'ward')
 
@@ -1580,12 +1584,12 @@ hClustering = AgglomerativeClustering(n_clusters = 9,
 multiHC = hClustering.fit(multiClusters)
 
 labelsHC = pd.DataFrame(multiHC.labels_)
-labelsHC.columns =  ['LabelsHC']
+labelsHC.columns =  ['labelsHC']
 labelsHC.reset_index(level=0, inplace=True)
-labelsHC=labelsHC.rename(columns={'index':'LabelsKmeans'})
+labelsHC=labelsHC.rename(columns={'index':'labelsKmeans'})
 
-outClientsCluster=outClientsCluster.merge(labelsHC, left_on='LabelsKmeans', right_on='LabelsKmeans')
-outClientsCluster['LabelsHC'].value_counts().sort_values()
+outClientsCluster=outClientsCluster.merge(labelsHC, left_on='labelsKmeans', right_on='labelsKmeans')
+outClientsCluster['labelsHC'].value_counts().sort_values()
 
 
 
