@@ -60,7 +60,7 @@ def set_seed(my_seed):
 my_seed=100
 #Diretorias:
 file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -1592,10 +1592,6 @@ outClientsCluster=outClientsCluster.merge(labelsHC, left_on='labelsKmeans', righ
 outClientsCluster['labelsHC'].value_counts().sort_values()
 
 
-
-
-
-
 plt.figure()
 sb.pairplot(dfWork, vars=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork','lobTotal'])
 plt.show()
@@ -1646,7 +1642,7 @@ def kmeans_funct(dfKmeans, dfNorm, n, returndf=False):
     fig2.suptitle('Violin Plots by Variable and Cluster (K-means')
     for i in lista:
         plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
-        sb.violinplot(x='labelsKmeans', y=i, data=dfKmeans, scale='width', inner='quartile')
+        sb.violinplot(x='labelsKmeans', y=i, data=dfKmeans, scale='width')
         plt.xlabel('Cluster Number')
         plt.title(str(i))
         plt.ylabel('')
@@ -1754,7 +1750,7 @@ def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
     fig.suptitle('Box Plots by Variable and Cluster (K-means + Hierarchical)')
     for i in lista:
         plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
-        sb.violinplot(x='labelsKmeansHC2', y=i, data=dfKmeansHC, scale='width', inner='quartile')
+        sb.violinplot(x='labelsKmeansHC2', y=i, data=dfKmeansHC, scale='width')
         plt.xlabel('Cluster Number')
         plt.title(str(i))
         plt.ylabel('')
@@ -1875,7 +1871,7 @@ def SomHC_funct(dfNorm,dfSomHC,names,nHC,returndf):
     fig.suptitle('Box Plots by Variable and Cluster (K-means + Hierarchical)')
     for i in lista:
         plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
-        sb.violinplot(x='labelsSomHC2', y=i, data=dfSomHC, scale='width', inner='quartile')
+        sb.violinplot(x='labelsSomHC2', y=i, data=dfSomHC, scale='width')
         plt.xlabel('Cluster Number')
         plt.title(str(i))
         plt.ylabel('')
@@ -1955,7 +1951,7 @@ def EM_funct(n, dfNorm, dfEM,returndf=False):
     fig2.suptitle('Violin Plots by Variable and Cluster (EM)')
     for i in lista:
         plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
-        sb.violinplot(x='labelsEm', y=i, data=dfEM, scale='width', inner='quartile')
+        sb.violinplot(x='labelsEm', y=i, data=dfEM, scale='width')
         plt.xlabel('Cluster Number')
         plt.title(str(i))
         plt.ylabel('')
@@ -2039,7 +2035,7 @@ def MeanShift_funct(dfNorm,dfMeanShift,returndf=False):
     fig2.suptitle('Violin Plots by Variable and Cluster (Mean Shift)')
     for i in lista:
         plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
-        sb.violinplot(x='labelsMs', y=i, data=dfMeanShift, scale='width', inner='quartile')
+        sb.violinplot(x='labelsMs', y=i, data=dfMeanShift, scale='width')
         plt.xlabel('Cluster Number')
         plt.title(str(i))
         plt.ylabel('')
@@ -2079,7 +2075,7 @@ def DBScan_funct(dfNorm, dfDB,returndf=False):
     fig2.suptitle('Violin Plots by Variable and Cluster (DB-Scan)')
     for i in lista:
         plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
-        sb.violinplot(x='labelsDB', y=i, data=dfDB, scale='width', inner='quartile')
+        sb.violinplot(x='labelsDB', y=i, data=dfDB, scale='width')
         plt.xlabel('Cluster Number')
         plt.title(str(i))
         plt.ylabel('')
@@ -2112,17 +2108,18 @@ def Kmodes_funct(n,dfKmodesChange,dfKmodes,returndf=False):
 ###########################################################################################################
 
 # 2 groups of variables: Value/ Engage (costumers) and Consumption/ Affinity (products)
-dfEngage = dfWork[[  'firstPolicy',
+dfEngage = dfWork[[  'YearsWus1998',
                       'salary',
-                      'cmv',
-                      'yearCustomer',
+                      'CMV_Mean_corrected',
+                      'ratioSalaryLOB'
                       #'claims' # use claims only when ploting for comparing clusters
                       ]] 
 
-dfEngageCat = dfWork[['education',
-                         'binEducation',
-                         'children',
-                         'catClaims',
+dfEngageCat = dfWork[['catClaims',
+                      'binEducation',
+                      'children',
+                      'CancelTotal',
+                      'TotalInsurance'
                          #'catCMV' #TODO: Implement
                          ]]
 
@@ -2132,16 +2129,44 @@ dfAffinity= dfWork[['lobMotor',
                   'lobLife',
                   'lobWork']]
 
-dfAffinityRatio=dfWork[['motorRatio',
-                      'householdRatio',
-                      'healthRatio',
-                      'lifeRatio',
-                      'workCRatio']]
+dfAffinityRatio=dfWork[['lobTotal',
+                      'motorRatioLOB',
+                      'householdRatioLOB',
+                      'healthRatioLOB',
+                      'lifeRatioLOB',
+                      'workCRatioLOB']]
+#################################################################################################################
+#PEARSON CORRELATIONS: to check correlation between variables on each variable group.
+#################################################################################################################
+
+# Check correlations between variables in dfEngage:
+dfCorr=pd.DataFrame(dfWork,columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB'])
+dfCorrP=dfCorr.corr(method ='pearson')
+fig, ax = plt.subplots(figsize=(10,10))
+ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
+fig.suptitle('Heatmap - Linear Correlations (Pearson)')
+# Non highly correlated variables
+
+# Check correlations between variables in dfAffinity:
+dfCorr=pd.DataFrame(dfWork,columns=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
+dfCorrP=dfCorr.corr(method ='pearson')
+fig, ax = plt.subplots(figsize=(10,10))
+ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
+fig.suptitle('Heatmap - Linear Correlations (Pearson)')
+# Non highly correlated variables
+
+# Check correlations between variables in dfAffinityRatio:
+dfCorr=pd.DataFrame(dfWork,columns=['lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
+dfCorrP=dfCorr.corr(method ='pearson')
+fig, ax = plt.subplots(figsize=(10,10))
+ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
+fig.suptitle('Heatmap - Linear Correlations (Pearson)')
+# There is a correlation between householdRatioLOB and lobTotal 
+# Multicolinearity if we keep all ratio LOB variables in the same group of variables.
+# Decision: drop householdRatioLOB from dfAffinityRatio.
 
 ##############################################################################################
 # Apply Clusters: dfEngage
-##############################################################################################
-
 ########################################### K-means ##########################################
 # Normalization: min-max
 from sklearn.cluster import KMeans
@@ -2149,11 +2174,11 @@ from sklearn.preprocessing import StandardScaler
 dfEngageKmeans=dfEngage
 engageNorm = scaler.fit_transform(dfEngageKmeans)
 engageNorm = pd.DataFrame(engageNorm, columns = dfEngageKmeans.columns)
-engageNorm = engageNorm.rename(columns={"firstPolicy": "firstPolictStd", "salary": "salaryStd", "cmv": "cmvStd", "yearCustomer":"yearCustomerStd"}, errors="raise")
+engageNorm = engageNorm.rename(columns={'YearsWus1998':'YearsWus1998Std','salary':'salaryStd','CMV_Mean_corrected':'CMV_Mean_correctedStd','ratioSalaryLOB':'ratioSalaryLOBStd'}, errors="raise")
 dfEngageKmeans=pd.DataFrame(pd.concat([dfEngageKmeans, engageNorm],axis=1), 
-                        columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+                        columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
 dfEngageKmeans=pd.DataFrame(pd.concat([dfWork['id'], dfEngageKmeans],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+                        columns=['id','YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
 
 # Elbow Graph: to check how many clusters we should have:
 cluster_range= range(1,7)
@@ -2169,7 +2194,7 @@ for num_clusters in cluster_range:
 
 dfClusters = pd.DataFrame({ "Num_clusters": cluster_range, "Cluster_errors": cluster_errors})
 plt.figure(figsize=(1,8))
-plt.xlabel("Clusters")
+plt.xlabel("Cluster Number")
 plt.ylabel("Within- Cluster Sum of Squares")
 plt.title('Elbow Graph')
 plt.plot(dfClusters.Num_clusters,dfClusters.Cluster_errors,marker='o') # There is evidence that we should keep 2 clusters.
@@ -2947,7 +2972,7 @@ fig=plt.figure()
 fig.suptitle('Violin Plots by Variable and Cluster (K-means')
 for i in lista:
     plt.subplot2grid((1,4),(0,lista.index(i)))
-    sb.violinplot(x='labelsKmeansEngage', y=i, data=dfEngageKmeans, scale='width', inner='quartile')
+    sb.violinplot(x='labelsKmeansEngage', y=i, data=dfEngageKmeans, scale='width')
     plt.xlabel('Cluster Number')
     plt.title(str(i))
     plt.ylabel('')
@@ -3034,7 +3059,7 @@ fig=plt.figure()
 fig.suptitle('Box Plots by Variable and Cluster (K-means + Hierarchical)')
 for i in lista:
     plt.subplot2grid((1,4),(0,lista.index(i)))
-    sb.violinplot(x='labelsKmeansHCEngage2', y=i, data=dfEngageKmeansHC, scale='width', inner='quartile')
+    sb.violinplot(x='labelsKmeansHCEngage2', y=i, data=dfEngageKmeansHC, scale='width')
     plt.xlabel('Cluster Number')
     plt.title(str(i))
     plt.ylabel('')
