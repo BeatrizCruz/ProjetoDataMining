@@ -2078,6 +2078,10 @@ dfAffinityRatio=dfWork[['motorRatio',
                       'lifeRatio',
                       'workCRatio']]
 
+##############################################################################################
+# Apply Clusters: dfEngage
+##############################################################################################
+
 ########################################### K-means ##########################################
 # Normalization: min-max
 from sklearn.cluster import KMeans
@@ -2190,20 +2194,6 @@ dfEngageCatKmodes=Kmodes_funct(n=3,dfKmodesChange=kmodesChange,dfKmodes=dfEngage
 
 
 
-
-
-<<<<<<< HEAD
-=======
-# Violin Figure:
-lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
-fig=plt.figure()
-fig.suptitle('Box Plots by Variable and Cluster')
-for i in lista:
-    plt.subplot2grid((1,4),(0,lista.index(i)))
-    sb.violinplot(x='labelsKmeansEngageK3', y=i, data=dfEngageKmeansK3, scale='width', inner='quartile',)
-plt.tight_layout()
-plt.plot()
->>>>>>> 9d38440ed74ffcdc2cfd56f87084179a7ae158a1
 
 
 
