@@ -1550,7 +1550,7 @@ plt.show()
 def kmeans_funct(dfKmeans, dfNorm, n, returndf=False):
     """df is a data frame with all the variables we want to use to apply the k-means"""
     # Apply k-means
-    kmeans = KMeans(n_clusters=n, # tried here with 3 clusters
+    kmeans = KMeans(n_clusters=n,
                     random_state=0,
                     n_init = 20,
                     max_iter = 300,
@@ -1590,7 +1590,6 @@ def kmeans_funct(dfKmeans, dfNorm, n, returndf=False):
     silhouette_avg = silhouette_score(dfNorm, kmeans.labels_) 
     print("For number of cluster (k) =", n,
               "The average silhouette_score is :", silhouette_avg)
-    
     # Compute the silhouette scores for each sample
     sample_silhouette_values = silhouette_samples(dfNorm, kmeans.labels_)
     cluster_labels = kmeans.labels_
@@ -1611,20 +1610,16 @@ def kmeans_funct(dfKmeans, dfNorm, n, returndf=False):
                               facecolor=color,
                               edgecolor=color, 
                               alpha=0.7)
-        
         # Label the silhouette plots with their cluster numbers at the middle
         ax.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
-        
         # Compute the new y_lower for next plot
         y_lower = y_upper + 10  # 10 for the 0 samples
         ax.set_title("Silhouette Plot")
         ax.set_xlabel("The Silhouette Coefficient Values")
         ax.set_ylabel("Cluster Label")
-        
         # The vertical line for average silhouette score of all the values
         ax.axvline(x=silhouette_avg, color="red", linestyle="--")
     plt.show()
-    
     if (returndf==True):
         return dfKmeans 
 #####################################    
@@ -1637,14 +1632,14 @@ def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
                     max_iter = 300,
                     init='k-means++').fit(dfNorm)
     
-    # Check the Clusters (Centroids).
+    # Centroids:
     kmeansHCCentroidsEngage=kmeans.cluster_centers_
-    
     labelsKmeansHC = pd.DataFrame(kmeans.labels_)
     labelsKmeansHC.columns =  ['labelsKmeansHC']
     
     dfKmeansHC = pd.DataFrame(pd.concat([dfKmeansHC, labelsKmeansHC],axis=1))
-    # Create a dendogram to check how many of the 101 clusters should be retained:
+    
+    # Create a dendogram to check how many of the nkmeans clusters should be retained:
     Z = linkage(kmeansHCCentroidsEngage,
                 method = 'ward')
     plt.figure(figsize=(25, 10))
@@ -1670,7 +1665,7 @@ def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
     labelsKmeansHC2.reset_index(level=0, inplace=True)
     labelsKmeansHC2=labelsKmeansHC2.rename(columns={'index':'labelsKmeansHC'})
     
-    # Join the new clusters to the data frame dfEngageKmeansHC with merge through the 'LabelsKmeansHCEngage'
+    # Join the new clusters to the data frame dfKmeansHC with merge through the 'LabelsKmeansHC'
     dfKmeansHC=dfKmeansHC.merge(labelsKmeansHC2, left_on='labelsKmeansHC', right_on='labelsKmeansHC')
     
     # Box Plots:
@@ -1703,7 +1698,6 @@ def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
     silhouette_avg = silhouette_score(dfNorm,dfKmeansHC['labelsKmeansHC2']) 
     print("For number of cluster (k) =", nHC,
               "The average silhouette_score is :", silhouette_avg)
-    
     # Compute the silhouette scores for each sample
     sample_silhouette_values = silhouette_samples(dfNorm,dfKmeansHC['labelsKmeansHC2'])
     cluster_labels = dfKmeansHC['labelsKmeansHC2']
@@ -1759,14 +1753,14 @@ def SomHC_funct(dfNorm,dfSomHC,names,nHC,returndf):
              train_rough_len=30, # first 30 steps are big (big approaches) - move 50%
              train_finetune_len=100) # small steps - move 1%
     
-    labelsSomHC = pd.DataFrame(sm._bmu[0]) #101 clusters formed
+    labelsSomHC = pd.DataFrame(sm._bmu[0]) 
     labelsSomHC.columns = ['labelsSomHC']
     
     dfSomHC = pd.DataFrame(pd.concat([dfSomHC, labelsSomHC],axis=1))    
     # Get centroids:
     somHCCentroidsEngage=sm.codebook.matrix
     
-    # Create a dendogram to check how many of the 101 clusters should be retained:
+    # Create a dendogram to check how many of the formed clusters should be retained:
     Z = linkage(somHCCentroidsEngage,
                 method = 'ward')
     plt.figure(figsize=(25, 10))
@@ -1792,7 +1786,7 @@ def SomHC_funct(dfNorm,dfSomHC,names,nHC,returndf):
     labelsSomHC2.reset_index(level=0, inplace=True)
     labelsSomHC2=labelsSomHC2.rename(columns={'index':'labelsSomHC'})
     
-    # Join the new clusters to the data frame dfEngageKmeansHC with merge through the 'LabelsKmeansHCEngage'
+    # Join the new clusters to the data frame dfKmeansHC with merge through the 'LabelsKmeansHC'
     dfSomHC=dfSomHC.merge(labelsSomHC2, left_on='labelsSomHC', right_on='labelsSomHC')
  
     # Box Plots:
@@ -1825,7 +1819,6 @@ def SomHC_funct(dfNorm,dfSomHC,names,nHC,returndf):
     silhouette_avg = silhouette_score(dfNorm,dfSomHC['labelsSomHC2']) 
     print("For number of cluster (k) =", nHC,
               "The average silhouette_score is :", silhouette_avg)
-    
     # Compute the silhouette scores for each sample
     sample_silhouette_values = silhouette_samples(dfNorm,dfSomHC['labelsSomHC2'])
     cluster_labels = dfSomHC['labelsSomHC2']
@@ -1866,10 +1859,8 @@ def SomHC_funct(dfNorm,dfSomHC,names,nHC,returndf):
 #####################################    
 # EM
 #####################################  
-dfNorm=engageNorm  
-dfEM=dfEngageEM
 def EM_funct(n, dfNorm, dfEM,returndf=False):
-    gmm = mixture.GaussianMixture(n_components = n, # Evaluate this
+    gmm = mixture.GaussianMixture(n_components = n, 
                                   init_params='kmeans', # {‘kmeans’, ‘random’}, defaults to ‘kmeans’.
                                   max_iter=1000,
                                   n_init=10,
