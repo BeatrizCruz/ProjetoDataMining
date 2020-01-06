@@ -22,8 +22,8 @@ from sklearn.linear_model import LinearRegression # to create a linear regressio
 from sklearn import linear_model
 from functools import reduce # K-classifier
 # For the silhouette:
-from sklearn.metrics import silhouette_samples 
-from sklearn.metrics import silhouette_score 
+from sklearn.metrics import silhouette_samples
+from sklearn.metrics import silhouette_score
 import matplotlib.cm as cm
 
 #my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
@@ -49,7 +49,7 @@ import matplotlib.cm as cm
 #query="select * from lob limit(10);"
 #
 #query="select * from engage limit(10);"
-# 
+#
 #my_table= cursor.execute(query).fetchall()
 #cursor.execute("select name from sqlite_master where type='table'")
 #print(cursor.fetchall()) """
@@ -227,7 +227,7 @@ dfOriginal[dfOriginal["salary"]<530].count().max()        #minimum wage 2016
 dfOriginal[dfOriginal["salary"]<970].count().max()        #average wage 2016
 dfOriginal[dfOriginal["salary"]<293].count().max()        #minimum wage 1998
 dfOriginal[dfOriginal["salary"]<565].count().max()        #average wage 1998
-# Create a variable with the cumulative salary values 
+# Create a variable with the cumulative salary values
 #Plot the salary values and the cumulative values of salary
 countSalaryCum = countSalary.cumsum()
 countSalaryCum
@@ -349,7 +349,7 @@ dfOriginal['cmv'].value_counts().sort_index().plot() # there might be strange va
 plt.show()
 # The plot with the strange value is not perceptive
 
-# Create a variable that counts individuals by cmv value to check cmv values 
+# Create a variable that counts individuals by cmv value to check cmv values
 cmvValues=dfOriginal['cmv'].value_counts().sort_index()
 # Create a boxplot to better visualize those values
 # plt.figure()
@@ -401,7 +401,7 @@ dfOriginal['df_OutliersLow_cmv'].value_counts()
 
 # Create a box plot without the until now identified outliers:
 #plt.figure()
-#sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersLow_cmv'] == 0)]) 
+#sb.boxplot(x = dfOriginal["cmv"][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersLow_cmv'] == 0)])
 #plt.show()
 #Check the ploted values in more detail:
 dfOriginal['Others'] = np.where(dfOriginal['cmv']<(-500), 1,dfOriginal['Others'])         #assign flag do not enter in model
@@ -440,7 +440,7 @@ dfOriginal['df_OutliersHigh_cmv'].value_counts()
 
 ##### Plot with no outliers:
 #plt.figure()
-#dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index().plot(style='.') 
+#dfOriginal['cmv'][(dfOriginal['df_OutliersLow_cmv'] == 0) & (dfOriginal['df_OutliersHigh_cmv'] == 0)].value_counts().sort_index().plot(style='.')
 #plt.show()
 
 ##### Good Graph:
@@ -515,7 +515,7 @@ dfOriginal[['id','claims']].loc[dfOriginal['Outliers_claims'] == 1 ]
 #plt.show()
 # People who have a claims rate of 0 are the ones with which the company did not spend anything.
 # People who have a claims rate between 0 and 1 (excluding) are the ones with which the company had profit. This means that the amount paid by the company was less than the premiums paid by the clients.
-# People who have a claims rate of 1 are the ones with which the company had no profit nor losses. 
+# People who have a claims rate of 1 are the ones with which the company had no profit nor losses.
 # People who have a claims rate higher than 1 are the ones with which the company had losses.
 #When premiums equals 0,claims=0
 ##### Good Graph:
@@ -574,7 +574,7 @@ pyo.plot(fig)
 
 #TODO: do this later after summing LOBS and correcting LOBS
 # catClaims Variable
-# Lets distinguish between individuals that give losses (losses), individuals that give profit (profits), individuals that do not give profits nor losses (neutrals) and individuals with which the company did not spend anything (investigate). 
+# Lets distinguish between individuals that give losses (losses), individuals that give profit (profits), individuals that do not give profits nor losses (neutrals) and individuals with which the company did not spend anything (investigate).
 # The individuals that have a column value of 'investigate' need to be investigated later as we do not have any information about their premium values on this variable. We only know that the amount paid by the company is zero. We will need to study the premium value with the premium variables studied furtherahead.
 dfOriginal['catClaims']=np.where(dfOriginal['claims']==0,'investigate','losses')
 dfOriginal['catClaims']=np.where((dfOriginal['claims']>0)&(dfOriginal['claims']<1),'profits',dfOriginal['catClaims'])
@@ -613,10 +613,11 @@ dfOriginal['Outliers_lobMot']=np.where(dfOriginal['lobMotor']>750,1,0)
 dfOriginal['Others']=np.where(dfOriginal['lobMotor']>750,1,dfOriginal['Others'])            #assign flag do not enter in model
 dfOriginal['Outliers'] = np.where(dfOriginal['lobMotor']>750, 1,dfOriginal['Outliers'])     #assign flag outlier
 #TODO: Talk about cancelled
-dfOriginal['Cancel'] = np.where(dfOriginal['lobMotor']<0, 1,0)                              #assign flag Cancelled
+dfOriginal["TotalInsurance"]=np.where(dfOriginal["lobMotor"]>0,1,0)                         #CountInsurancesPaid
+dfOriginal['CancelTotal'] = np.where(dfOriginal['lobMotor']<0, 1,0)                         #assign flag Cancelled
 dfOriginal['CancelMotor'] = np.where(dfOriginal['lobMotor']<0, 1,0)                         #in this particular case, it's equal to cancelled
                                                                                             #but let's keep things consistent
-dfOriginal['Cancel'].value_counts()
+dfOriginal['CancelTotal'].value_counts()
 # Verify if column was created correctly:
 dfOriginal['Outliers_lobMot'].value_counts()
 
@@ -661,7 +662,7 @@ pyo.plot(fig)
 valueslobHousehold = dfOriginal['lobHousehold'].value_counts().sort_index()
 valueslobHousehold
 
-# Box plot 
+# Box plot
 # plt.figure()
 # sb.boxplot(x=dfOriginal["lobHousehold"])
 # plt.show()
@@ -674,7 +675,8 @@ valueslobHousehold
 dfOriginal['Outliers_lobHousehold']=np.where(dfOriginal['lobHousehold']>3000,1,0)
 dfOriginal['Others']=np.where(dfOriginal['lobHousehold']>3000,1,dfOriginal['Others'])
 dfOriginal['Outliers'] = np.where(dfOriginal['lobHousehold']>3000, 1,dfOriginal['Outliers'])
-dfOriginal['Cancel'] = np.where(dfOriginal['lobHousehold']<0, 1,dfOriginal['Cancel'])
+dfOriginal["TotalInsurance"]=np.where(dfOriginal["lobHousehold"]>0,dfOriginal["TotalInsurance"]+1,dfOriginal["TotalInsurance"])                         #CountInsurancesPaid
+dfOriginal['CancelTotal'] = np.where(dfOriginal['lobHousehold']<0,dfOriginal['CancelTotal']+1,dfOriginal['CancelTotal'])                         #assign flag Cancelled
 dfOriginal['CancelHouse'] = np.where(dfOriginal['lobHousehold']<0, 1,0)
 dfOriginal['CancelHouse'].value_counts()
 # Verify if column was created correctly:
@@ -707,7 +709,7 @@ pyo.plot(fig)
 # Transformar em Logaritmo? (ver mais tarde)
 
 ###############################################
-# 11. lobHealth 
+# 11. lobHealth
 #############################################33
 # plt.figure()
 # dfOriginal['lobHealth'].value_counts().sort_index().plot()
@@ -718,7 +720,7 @@ pyo.plot(fig)
 
 # Check variable values:
 valueslobHealth  = dfOriginal['lobHealth'].value_counts().sort_index()
-valueslobHealth 
+valueslobHealth
 
 #Box plot
 plt.figure()
@@ -730,7 +732,8 @@ plt.show()
 dfOriginal['Outliers_lobHealth']=np.where(dfOriginal['lobHealth']>550,1,0)
 dfOriginal['Others']=np.where(dfOriginal['lobHealth']>550,1,dfOriginal['Others'])
 dfOriginal['Outliers'] = np.where(dfOriginal['lobHealth']>550, 1,dfOriginal['Outliers'])
-dfOriginal['Cancel'] = np.where(dfOriginal['lobHealth']<0, 1,dfOriginal['Cancel'])
+dfOriginal["TotalInsurance"]=np.where(dfOriginal["lobHealth"]>0,dfOriginal["TotalInsurance"]+1,dfOriginal["TotalInsurance"])                         #CountInsurancesPaid
+dfOriginal['CancelTotal'] = np.where(dfOriginal['lobHealth']<0,dfOriginal['CancelTotal']+1,dfOriginal['CancelTotal'])
 dfOriginal['CancelHealth'] = np.where(dfOriginal['lobHealth']<0, 1,0)
 dfOriginal['CancelHealth'].value_counts()
 # Verify if column was created correctly:
@@ -745,8 +748,8 @@ plt.show()
 # plt.show()
 
 # We can observe that health premiums follows an approximatelly normal distribution, with long tails.
-# On one hand, the health premiums are not as expensive as, for example, the house hold premiums, so more people have access to it. 
-# On the other hand, people consider health a primary preocupation and need. 
+# On one hand, the health premiums are not as expensive as, for example, the house hold premiums, so more people have access to it.
+# On the other hand, people consider health a primary preocupation and need.
 # There are more people that invest a medium value on health premiums. Then, there are people who invest less (poorer people) and people who invest more (richer people)
 
 ##### Good Graphs
@@ -767,7 +770,7 @@ layout = go.Layout(title='lobHealth Variable',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 ################################################
-# 12. lobLife 
+# 12. lobLife
 ################################################
 # plt.figure()
 # dfOriginal['lobLife'].value_counts().sort_index().plot()
@@ -778,10 +781,10 @@ pyo.plot(fig)
 
 # Check variable values:
 valueslobLife  = dfOriginal['lobLife'].value_counts().sort_index()
-valueslobLife 
+valueslobLife
 
-
-dfOriginal['Cancel'] = np.where(dfOriginal['lobLife']<0, 1,dfOriginal['Cancel'])
+dfOriginal["TotalInsurance"]=np.where(dfOriginal["lobLife"]>0,dfOriginal["TotalInsurance"]+1,dfOriginal["TotalInsurance"])                         #CountInsurancesPaid
+dfOriginal['CancelTotal'] = np.where(dfOriginal['lobLife']<0,dfOriginal['CancelTotal']+1,dfOriginal['CancelTotal'])
 dfOriginal['CancelLife'] = np.where(dfOriginal['lobLife']<0, 1,0)
 dfOriginal['CancelLife'].value_counts()
 # Box plot
@@ -839,7 +842,8 @@ plt.show()
 dfOriginal['Outliers_lobWork']=np.where(dfOriginal['lobWork']>400,1,0)
 dfOriginal['Others']=np.where(dfOriginal['lobWork']>400,1,dfOriginal['Others'])
 dfOriginal['Outliers'] = np.where(dfOriginal['lobWork']>400, 1,dfOriginal['Outliers'])
-dfOriginal['Cancel'] = np.where(dfOriginal['lobWork']<0, 1,dfOriginal['Cancel'])
+dfOriginal["TotalInsurance"]=np.where(dfOriginal["lobWork"]>0,dfOriginal["TotalInsurance"]+1,dfOriginal["TotalInsurance"])                         #CountInsurancesPaid
+dfOriginal['CancelTotal'] = np.where(dfOriginal['lobWork']<0,dfOriginal['CancelTotal']+1,dfOriginal['CancelTotal'])
 dfOriginal['CancelWork'] = np.where(dfOriginal['lobWork']<0, 1,0)
 dfOriginal['CancelWork'].value_counts()
 
@@ -872,7 +876,7 @@ fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
 #################resume of confirmed canceled contracts in the last year############
-dfOriginal['Cancel'].value_counts()
+dfOriginal['CancelTotal'].value_counts()
 
 #######################################################################################################3
 #Outliers & Errors
@@ -1418,9 +1422,11 @@ dfWork['YearsWus2016']=2016-dfWork['firstPolicy']
 
 dfOriginal['CMV_Mean_corrected']=(dfOriginal['cmv']+25)
 ##### create categorical values of cmv corrected
-dfWorkl['catCMV_Mean_corrected']=np.where(dfWork['cmv']<-25,'losses',None)
+dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']<-25,'losses',None)
 dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']>-25,'profitable',dfWork['catCMV_Mean_corrected'])
-dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']==-25,'neutrals',dfOWork['catCMV_Mean_corrected'])
+dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']==-25,'neutrals',dfWork['catCMV_Mean_corrected'])
+#check cancel o see if categorical cancel is a thing
+df=pd.DataFrame(dfWork[["CancelTotal","lobMotor","lobHousehold","lobHealth","lobLife","lobWork"]][dfWork['CancelTotal'] > 0 ])
 TODO: canceled  0,1,2,...
 #TODO: Plot new variables: cancel, YearsWus1998, YearsWus2016,
 
@@ -1461,7 +1467,8 @@ layout = go.Layout(title='Customer Monetary Value Mean Corrected Variable',templ
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-
+####################################################################################################################
+#Compare Variables
 
 
 #---------------------------------------------- MULTIDIMENSIONAL OUTLIERS -------------------------------------------------#
@@ -2150,7 +2157,7 @@ dfEngageEM=pd.DataFrame(pd.concat([dfWork['id'], dfEngageEM],axis=1),
                         columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
 
 dfEngageEM=EM_funct(dfNorm=engageNorm, dfEM=dfEngageEM, n=3,returndf=True)
-
+EM_funct()
 #Not used yet:
 # Likelihood value
 #EM_score_samp = pd.DataFrame(gmm.score_samples(engageNorm))
