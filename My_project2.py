@@ -21,6 +21,11 @@ import statsmodels.api as sm # To create a linear regression for the variable sa
 from sklearn.linear_model import LinearRegression # to create a linear regression for the variable salary.
 from sklearn import linear_model
 from functools import reduce # K-classifier
+# For the silhouette:
+from sklearn.metrics import silhouette_samples 
+from sklearn.metrics import silhouette_score 
+import matplotlib.cm as cm
+
 #my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
 #my_path = r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
 ##dbname = "datamining.db"
@@ -52,7 +57,7 @@ from functools import reduce # K-classifier
 def set_seed(my_seed):
     random.seed(my_seed)
     np.random.seed(my_seed)
-    
+my_seed=100
 #Diretorias:
 file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
 #file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
@@ -1433,6 +1438,516 @@ plt.show()
 ###########################################################################################################
 #---------------------------------------------- CLUSTERS -------------------------------------------------#
 ###########################################################################################################
+#---------------------------------------------- FUNCTIONS ------------------------------------------------#
+
+#####################################    
+# K-MEANS
+#####################################
+def kmeans_funct(dfKmeans, dfNorm, n, returndf=False):
+    """df is a data frame with all the variables we want to use to apply the k-means"""
+    # Apply k-means
+    kmeans = KMeans(n_clusters=n, # tried here with 3 clusters
+                    random_state=0,
+                    n_init = 20,
+                    max_iter = 300,
+                    init='k-means++').fit(dfNorm)
+    labelsKmeans = pd.DataFrame(kmeans.labels_)
+    labelsKmeans.columns =  ['labelsKmeans']
+    dfKmeans = pd.DataFrame(pd.concat([dfKmeans, labelsKmeans],axis=1))
+    print('Inertia: ' + str(kmeans.inertia_))
+    
+    # Box Plots:
+    lista=list(dfNorm.columns)
+    fig=plt.figure()
+    fig.suptitle('Box Plots by Variable and Cluster (K-means)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.boxplot(x='labelsKmeans', y=i, data=dfKmeans)
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    # Violin Plots:
+    lista=list(dfNorm.columns)
+    fig2=plt.figure()
+    fig2.suptitle('Violin Plots by Variable and Cluster (K-means')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.violinplot(x='labelsKmeans', y=i, data=dfKmeans, scale='width', inner='quartile')
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    #Silhouette Graph:
+    silhouette_avg = silhouette_score(dfNorm, kmeans.labels_) 
+    print("For number of cluster (k) =", n,
+              "The average silhouette_score is :", silhouette_avg)
+    
+    # Compute the silhouette scores for each sample
+    sample_silhouette_values = silhouette_samples(dfNorm, kmeans.labels_)
+    cluster_labels = kmeans.labels_
+    y_lower = 100
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_ylim([0, dfNorm.shape[0] + (n + 1) * 10]) 
+    
+    for i in range(n):
+        ith_cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
+        ith_cluster_silhouette_values.sort()    
+        size_cluster_i=ith_cluster_silhouette_values. shape[0]
+        y_upper = y_lower + size_cluster_i    
+        color = cm.nipy_spectral(float(i) / n)
+        ax.fill_betweenx(np.arange(y_lower, y_upper),
+                              0, ith_cluster_silhouette_values,
+                              facecolor=color,
+                              edgecolor=color, 
+                              alpha=0.7)
+        
+        # Label the silhouette plots with their cluster numbers at the middle
+        ax.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
+        
+        # Compute the new y_lower for next plot
+        y_lower = y_upper + 10  # 10 for the 0 samples
+        ax.set_title("Silhouette Plot")
+        ax.set_xlabel("The Silhouette Coefficient Values")
+        ax.set_ylabel("Cluster Label")
+        
+        # The vertical line for average silhouette score of all the values
+        ax.axvline(x=silhouette_avg, color="red", linestyle="--")
+    plt.show()
+    
+    if (returndf==True):
+        return dfKmeans 
+#####################################    
+# K-means+ Hierarchical:
+#####################################
+def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
+    kmeans = KMeans(n_clusters=nkmeans, 
+                    random_state=0,
+                    n_init = 20, 
+                    max_iter = 300,
+                    init='k-means++').fit(dfNorm)
+    
+    # Check the Clusters (Centroids).
+    kmeansHCCentroidsEngage=kmeans.cluster_centers_
+    
+    labelsKmeansHC = pd.DataFrame(kmeans.labels_)
+    labelsKmeansHC.columns =  ['labelsKmeansHC']
+    
+    dfKmeansHC = pd.DataFrame(pd.concat([dfKmeansHC, labelsKmeansHC],axis=1))
+    # Create a dendogram to check how many of the 101 clusters should be retained:
+    Z = linkage(kmeansHCCentroidsEngage,
+                method = 'ward')
+    plt.figure(figsize=(25, 10))
+    plt.title('Hierarchical Clustering Dendrogram (over k-means)')
+    plt.xlabel('sample index')
+    plt.ylabel('distance')
+    dendrogram(Z,
+               truncate_mode='none',
+               p=40,
+               orientation = 'top',
+               leaf_rotation=45,
+               leaf_font_size=10,
+               show_contracted=True,
+               show_leaf_counts=True,color_threshold=50, above_threshold_color='k',no_labels =True) # Evidence to retain 2, 3 or 4 clusters
+    
+    # Apply Hierarchical Clustering to the formed centroids: 
+    hClustering = AgglomerativeClustering(n_clusters = nHC, 
+                                          affinity = 'euclidean',
+                                          linkage = 'ward').fit(kmeansHCCentroidsEngage)
+    
+    labelsKmeansHC2 = pd.DataFrame(hClustering.labels_)
+    labelsKmeansHC2.columns =  ['labelsKmeansHC2']
+    labelsKmeansHC2.reset_index(level=0, inplace=True)
+    labelsKmeansHC2=labelsKmeansHC2.rename(columns={'index':'labelsKmeansHC'})
+    
+    # Join the new clusters to the data frame dfEngageKmeansHC with merge through the 'LabelsKmeansHCEngage'
+    dfKmeansHC=dfKmeansHC.merge(labelsKmeansHC2, left_on='labelsKmeansHC', right_on='labelsKmeansHC')
+    
+    # Box Plots:
+    lista=list(dfNorm.columns)
+    fig=plt.figure()
+    fig.suptitle('Box Plots by Variable and Cluster (K-means + Hierarchical)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.boxplot(x='labelsKmeansHC2', y=i, data=dfKmeansHC)
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    # Violin Plots:
+    lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+    fig=plt.figure()
+    fig.suptitle('Box Plots by Variable and Cluster (K-means + Hierarchical)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.violinplot(x='labelsKmeansHC2', y=i, data=dfKmeansHC, scale='width', inner='quartile')
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    # Silhouette Graph:   
+    silhouette_avg = silhouette_score(dfNorm,dfKmeansHC['labelsKmeansHC2']) 
+    print("For number of cluster (k) =", nHC,
+              "The average silhouette_score is :", silhouette_avg)
+    
+    # Compute the silhouette scores for each sample
+    sample_silhouette_values = silhouette_samples(dfNorm,dfKmeansHC['labelsKmeansHC2'])
+    cluster_labels = dfKmeansHC['labelsKmeansHC2']
+    y_lower = 100
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_ylim([0, dfNorm.shape[0] + (nHC + 1) * 10]) 
+    
+    for i in range(nHC):
+        ith_cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
+        ith_cluster_silhouette_values.sort()    
+        size_cluster_i=ith_cluster_silhouette_values. shape[0]
+        y_upper = y_lower + size_cluster_i    
+        color = cm.nipy_spectral(float(i) / nHC)
+        ax.fill_betweenx(np.arange(y_lower, y_upper),
+                              0, ith_cluster_silhouette_values,
+                              facecolor=color,
+                              edgecolor=color, 
+                              alpha=0.7)
+        
+        # Label the silhouette plots with their cluster numbers at the middle
+        ax.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
+        
+        # Compute the new y_lower for next plot
+        y_lower = y_upper + 10  # 10 for the 0 samples
+        ax.set_title("Silhouette Plot")
+        ax.set_xlabel("The Silhouette Coefficient Values")
+        ax.set_ylabel("Cluster Label")
+        
+        # The vertical line for average silhouette score of all the values
+        ax.axvline(x=silhouette_avg, color="red", linestyle="--")
+    plt.show()
+    
+    if (returndf==True):
+        return dfKmeansHC 
+
+#####################################    
+#SOM + Hierarchical:
+#####################################
+def SomHC_funct(dfNorm,dfSomHC,names,nHC,returndf):
+    from sompy.sompy import SOMFactory
+    sm = SOMFactory().build(data = dfNorm,
+                   mapsize=(10,10),
+                   normalization = 'var',
+                   initialization='random',#'random', 'pca'
+                   component_names=names,
+                   lattice='hexa',#'rect','hexa'
+                   training ='seq' )
+    
+    sm.train(n_job=4, #to be faster
+             verbose='info', # to show lines when running
+             train_rough_len=30, # first 30 steps are big (big approaches) - move 50%
+             train_finetune_len=100) # small steps - move 1%
+    
+    labelsSomHC = pd.DataFrame(sm._bmu[0]) #101 clusters formed
+    labelsSomHC.columns = ['labelsSomHC']
+    
+    dfSomHC = pd.DataFrame(pd.concat([dfSomHC, labelsSomHC],axis=1))    
+    # Get centroids:
+    somHCCentroidsEngage=sm.codebook.matrix
+    
+    # Create a dendogram to check how many of the 101 clusters should be retained:
+    Z = linkage(somHCCentroidsEngage,
+                method = 'ward')
+    plt.figure(figsize=(25, 10))
+    plt.title('Hierarchical Clustering Dendrogram')
+    plt.xlabel('sample index')
+    plt.ylabel('distance')
+    dendrogram(Z,
+               truncate_mode='none',
+               p=40,
+               orientation = 'top',
+               leaf_rotation=45,
+               leaf_font_size=10,
+               show_contracted=True,
+               show_leaf_counts=True,color_threshold=50, above_threshold_color='k',no_labels =True) # Evidence to retain 3 or 4 clusters
+    
+    # Apply Hierarchical Clustering:
+    hClustering = AgglomerativeClustering(n_clusters = nHC,
+                                          affinity = 'euclidean',
+                                          linkage = 'ward').fit(somHCCentroidsEngage)
+    
+    labelsSomHC2 = pd.DataFrame(hClustering.labels_)
+    labelsSomHC2.columns =  ['labelsSomHC2']
+    labelsSomHC2.reset_index(level=0, inplace=True)
+    labelsSomHC2=labelsSomHC2.rename(columns={'index':'labelsSomHC'})
+    
+    # Join the new clusters to the data frame dfEngageKmeansHC with merge through the 'LabelsKmeansHCEngage'
+    dfSomHC=dfSomHC.merge(labelsSomHC2, left_on='labelsSomHC', right_on='labelsSomHC')
+ 
+    # Box Plots:
+    lista=list(dfNorm.columns)
+    fig=plt.figure()
+    fig.suptitle('Box Plots by Variable and Cluster (Som + Hierarchical)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.boxplot(x='labelsSomHC2', y=i, data=dfSomHC)
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    # Violin Plots:
+    lista=list(dfNorm.columns)
+    fig=plt.figure()
+    fig.suptitle('Box Plots by Variable and Cluster (K-means + Hierarchical)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.violinplot(x='labelsSomHC2', y=i, data=dfSomHC, scale='width', inner='quartile')
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    # Silhouette Graph:   
+    silhouette_avg = silhouette_score(dfNorm,dfSomHC['labelsSomHC2']) 
+    print("For number of cluster (k) =", nHC,
+              "The average silhouette_score is :", silhouette_avg)
+    
+    # Compute the silhouette scores for each sample
+    sample_silhouette_values = silhouette_samples(dfNorm,dfSomHC['labelsSomHC2'])
+    cluster_labels = dfSomHC['labelsSomHC2']
+    y_lower = 100
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_ylim([0, dfNorm.shape[0] + (nHC + 1) * 10]) 
+    
+    for i in range(nHC):
+        ith_cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
+        ith_cluster_silhouette_values.sort()    
+        size_cluster_i=ith_cluster_silhouette_values. shape[0]
+        y_upper = y_lower + size_cluster_i    
+        color = cm.nipy_spectral(float(i) / nHC)
+        ax.fill_betweenx(np.arange(y_lower, y_upper),
+                              0, ith_cluster_silhouette_values,
+                              facecolor=color,
+                              edgecolor=color, 
+                              alpha=0.7)
+        
+        # Label the silhouette plots with their cluster numbers at the middle
+        ax.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
+        
+        # Compute the new y_lower for next plot
+        y_lower = y_upper + 10  # 10 for the 0 samples
+        ax.set_title("Silhouette Plot")
+        ax.set_xlabel("The Silhouette Coefficient Values")
+        ax.set_ylabel("Cluster Label")
+        
+        # The vertical line for average silhouette score of all the values
+        ax.axvline(x=silhouette_avg, color="red", linestyle="--")
+    plt.show()
+    
+    if (returndf==True):
+        return dfSomHC 
+    
+#####################################    
+# EM
+#####################################  
+dfNorm=engageNorm  
+dfEM=dfEngageEM
+def EM_funct(n, dfNorm, dfEM,returndf=False):
+    gmm = mixture.GaussianMixture(n_components = n, # Evaluate this
+                                  init_params='kmeans', # {‘kmeans’, ‘random’}, defaults to ‘kmeans’.
+                                  max_iter=1000,
+                                  n_init=10,
+                                  verbose = 1).fit(dfNorm)
+    
+    labelsEm = pd.DataFrame(gmm.predict(dfNorm))
+    labelsEm.columns = ['labelsEm']
+    dfEM = pd.DataFrame(pd.concat([dfEM, labelsEm],axis=1))
+    # Box Plots:
+    lista=list(dfNorm.columns)
+    fig=plt.figure()
+    fig.suptitle('Box Plots by Variable and Cluster (EM)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.boxplot(x='labelsEm', y=i, data=dfEM)
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    # Violin Plots:
+    lista=list(dfNorm.columns)
+    fig2=plt.figure()
+    fig2.suptitle('Violin Plots by Variable and Cluster (EM)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.violinplot(x='labelsEm', y=i, data=dfEM, scale='width', inner='quartile')
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    #Silhouette Graph:
+    silhouette_avg = silhouette_score(dfNorm, gmm.predict(dfNorm)) 
+    print("For number of cluster (k) =", n,
+              "The average silhouette_score is :", silhouette_avg)
+    
+    # Compute the silhouette scores for each sample
+    sample_silhouette_values = silhouette_samples(dfNorm, gmm.predict(dfNorm))
+    cluster_labels = gmm.predict(dfNorm)
+    y_lower = 100
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_ylim([0, dfNorm.shape[0] + (n + 1) * 10]) 
+    
+    for i in range(n):
+        ith_cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
+        ith_cluster_silhouette_values.sort()    
+        size_cluster_i=ith_cluster_silhouette_values. shape[0]
+        y_upper = y_lower + size_cluster_i    
+        color = cm.nipy_spectral(float(i) / n)
+        ax.fill_betweenx(np.arange(y_lower, y_upper),
+                              0, ith_cluster_silhouette_values,
+                              facecolor=color,
+                              edgecolor=color, 
+                              alpha=0.7)
+        
+        # Label the silhouette plots with their cluster numbers at the middle
+        ax.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
+        
+        # Compute the new y_lower for next plot
+        y_lower = y_upper + 10  # 10 for the 0 samples
+        ax.set_title("Silhouette Plot")
+        ax.set_xlabel("The Silhouette Coefficient Values")
+        ax.set_ylabel("Cluster Label")
+        
+        # The vertical line for average silhouette score of all the values
+        ax.axvline(x=silhouette_avg, color="red", linestyle="--")
+    plt.show()
+    
+    if (returndf==True):
+        return dfEM 
+    
+#####################################    
+# Mean- Shift
+#####################################     
+def MeanShift_funct(dfNorm,dfMeanShift,returndf=False):
+    my_bandwidth = estimate_bandwidth(dfNorm,
+                                      quantile=0.2,
+                                      n_samples=1000)
+    
+    ms = MeanShift(bandwidth=my_bandwidth,
+                   bin_seeding=True).fit(dfNorm)
+    
+    labelsMs = pd.DataFrame(ms.labels_)
+    labelsMs.columns = ['labelsMs']
+
+    dfMeanShift = pd.DataFrame(pd.concat([dfMeanShift, labelsMs],axis=1))
+        
+    # Box Plots:
+    lista=list(dfNorm.columns)
+    fig=plt.figure()
+    fig.suptitle('Box Plots by Variable and Cluster (Mean Shift)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.boxplot(x='labelsMs', y=i, data=dfMeanShift)
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    # Violin Plots:
+    lista=list(dfNorm.columns)
+    fig2=plt.figure()
+    fig2.suptitle('Violin Plots by Variable and Cluster (Mean Shift)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.violinplot(x='labelsMs', y=i, data=dfMeanShift, scale='width', inner='quartile')
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    if (returndf==True):
+        return dfMeanShift 
+
+#####################################    
+# DB Scan:
+#####################################        
+
+
+def DBScan_funct(dfNorm, dfDB,returndf=False):
+    db = DBSCAN(eps= 1, #radius (euclidean distance)
+                min_samples=10).fit(dfNorm) # minimum number of points inside the radius.
+    labelsDB = pd.DataFrame(db.labels_)
+    labelsDB.columns = ['labelsDB']
+    dfDB = pd.DataFrame(pd.concat([dfDB, labelsDB],axis=1))
+    # Box Plots:
+    lista=list(dfNorm.columns)
+    fig=plt.figure()
+    fig.suptitle('Box Plots by Variable and Cluster (DB-Scan)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.boxplot(x='labelsDB', y=i, data=dfDB)
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    # Violin Plots:
+    lista=list(dfNorm.columns)
+    fig2=plt.figure()
+    fig2.suptitle('Violin Plots by Variable and Cluster (DB-Scan)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.violinplot(x='labelsDB', y=i, data=dfDB, scale='width', inner='quartile')
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+    
+    if (returndf==True):
+        return dfDB 
+
+#####################################    
+# K-Modes:
+#####################################  
+def Kmodes_funct(n,dfKmodesChange,dfKmodes,returndf=False):
+    km = KModes(n_clusters=n, init='random', n_init=50, verbose=1) 
+    clusters = km.fit_predict(dfKmodesChange)
+    labelsKmodes=pd.DataFrame(km.labels_)
+    labelsKmodes.columns = ['labelsKmodes']
+    
+    dfKmodes = pd.DataFrame(pd.concat([dfKmodes, labelsKmodes],axis=1))
+    #Visualization:
+    lista=['education','binEducation','children','catClaims']
+    for i in lista:
+        g = sb.catplot(i, col="labelsKmodes", col_wrap=4,
+                        data=dfKmodes,
+                        kind="count", height=3.5, aspect=0.8, 
+                        palette='tab20')
+    plt.plot()   
+    if (returndf==True):
+        return dfKmodes 
+###########################################################################################################
 
 # 2 groups of variables: Value/ Engage (costumers) and Consumption/ Affinity (products)
 dfEngage = dfWork[[  'firstPolicy',
@@ -1453,8 +1968,7 @@ dfAffinity= dfWork[['lobMotor',
                   'lobHousehold',
                   'lobHealth',
                   'lobLife',
-                  'lobWork',
-                  'lobTotal']]
+                  'lobWork']]
 
 dfAffinityRatio=dfWork[['motorRatio',
                       'householdRatio',
@@ -1464,6 +1978,8 @@ dfAffinityRatio=dfWork[['motorRatio',
 
 ########################################### K-means ##########################################
 # Normalization: min-max
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 dfEngageKmeans=dfEngage
 engageNorm = scaler.fit_transform(dfEngageKmeans)
 engageNorm = pd.DataFrame(engageNorm, columns = dfEngageKmeans.columns)
@@ -1492,363 +2008,45 @@ plt.ylabel("Within- Cluster Sum of Squares")
 plt.title('Elbow Graph')
 plt.plot(dfClusters.Num_clusters,dfClusters.Cluster_errors,marker='o') # There is evidence that we should keep 2 clusters.
 
-# Define seed
-# Apply k-means
-my_seed=100
-kmeans = KMeans(n_clusters=2,
-                random_state=0,
-                n_init = 20,
-                max_iter = 300,
-                init='k-means++').fit(engageNorm)
-
-# Check the Clusters (Centroids).
-kmeansClustersEngage=kmeans.cluster_centers_
-kmeansClustersEngage
-
-labelsKmeansEngage = pd.DataFrame(kmeans.labels_)
-labelsKmeansEngage.columns =  ['labelsKmeansEngage']
-labelsKmeansEngage
-
-dfEngageKmeans = pd.DataFrame(pd.concat([dfEngageKmeans, labelsKmeansEngage],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsKmeansEngage'])
-
-####### Visualization of results:
-
-# Box Plots:
-lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
-fig=plt.figure()
-fig.suptitle('Box Plots by Variable and Cluster')
-for i in lista:
-    plt.subplot2grid((1,4),(0,lista.index(i)))
-    sb.boxplot(x='labelsKmeansEngage', y=i, data=dfEngageKmeans)
-plt.tight_layout()
-plt.plot()
-# Through this visualization we could conclude that the 2 clusters differentiate a lot on the variables firstPolicy and yearCustomer. 
-# However, these 2 clusters do not differentiate in the variables salary and cmv.
-
-# Violin Plots:
-lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
-fig=plt.figure()
-fig.suptitle('Box Plots by Variable and Cluster')
-for i in lista:
-    plt.subplot2grid((1,4),(0,lista.index(i)))
-    sb.violinplot(x='labelsKmeansEngage', y=i, data=dfEngageKmeans, scale='width', inner='quartile')
-plt.tight_layout()
-plt.plot()
-
-# Joy Plots:
-import joypy
-plt.figure(figsize=(16,10), dpi= 80)
-fig, axes = joypy.joyplot(dfEngageKmeans, column=['labelsKmeansEngage'], by=lista, figsize=(14,10))
-
-# Resulta:
-plt.figure(figsize=(16,10), dpi= 80)
-for i in lista:
-    fig, axes = joypy.joyplot(dfEngageKmeans, column=i, by='labelsKmeansEngage', figsize=(14,10))
-plt.plot()
-
-# Resulta:
-plt.figure(figsize=(16,10), dpi= 80)
-fig, axes = joypy.joyplot(dfEngageKmeans, column=lista, by='labelsKmeansEngage', figsize=(14,10))
-plt.plot()
-
-import pyjoyplot as pjp
-lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
-fig=plt.figure()
-fig.suptitle('Joy Graph')
-
-plt.subplot2grid((1,4),(0,lista.index(i)))
-pjp.plot(data=dfEngageKmeans,x='labelsKmeansEngage', y=lista,hue=lista)
-plt.tight_layout()
-plt.plot()
-
-
-plt.figure(figsize=(16,10), dpi= 80)
-fig, axes = joypy.joyplot(dfEngageKmeans, by=lista, figsize=(14,10))
-plt.plot()
-
-
-fig, axes = joypy.joyplot(mpg, column=['hwy', 'cty'], by="class", ylim='own', figsize=(14,10))
-
-
-# Lets try to make 3 clusters instead to check if with 3 clusters we can differentiate according to salary and cmv.
-kmeans = KMeans(n_clusters=3,
-                random_state=0,
-                n_init = 20,
-                max_iter = 300,
-                init='k-means++').fit(engageNorm)
-
-# Check the Clusters (Centroids).
-kmeansClustersEngageK3=kmeans.cluster_centers_
-kmeansClustersEngageK3
-
-labelsKmeansEngageK3 = pd.DataFrame(kmeans.labels_)
-labelsKmeansEngageK3.columns =  ['labelsKmeansEngageK3']
-labelsKmeansEngageK3
-
-dfEngageKmeansK3=dfEngage
-dfEngageKmeansK3=pd.DataFrame(pd.concat([dfEngageKmeansK3, engageNorm],axis=1), 
-                        columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
-dfEngageKmeansK3=pd.DataFrame(pd.concat([dfWork['id'], dfEngageKmeansK3],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
-dfEngageKmeansK3 = pd.DataFrame(pd.concat([dfEngageKmeansK3, labelsKmeansEngageK3],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsKmeansEngageK3'])
-
-# Visualization of results:
-lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
-fig=plt.figure()
-fig.suptitle('Box Plots by Variable and Cluster')
-for i in lista:
-    plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
-    sb.boxplot(x='labelsKmeansEngageK3', y=i, data=dfEngageKmeansK3)
-plt.tight_layout()
-plt.plot()
-
-# Violin Figure:
-lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
-fig=plt.figure()
-fig.suptitle('Box Plots by Variable and Cluster')
-for i in lista:
-    plt.subplot2grid((1,4),(0,lista.index(i)))
-    sb.violinplot(x='labelsKmeansEngageK3', y=i, data=dfEngageKmeansK3, scale='width', inner='quartile')
-plt.tight_layout()
-plt.plot()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##################################################################
-variaveis=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
-fig, ax = plt.subplots(figsize=(10,5), ncols=2, nrows=len(variaveis))
-
-left   =  0.125  # the left side of the subplots of the figure
-right  =  0.9    # the right side of the subplots of the figure
-bottom =  0.1    # the bottom of the subplots of the figure
-top    =  0.9    # the top of the subplots of the figure
-wspace =  .5     # the amount of width reserved for blank space between subplots
-hspace =  1.1    # the amount of height reserved for white space between subplots
-
-# This function actually adjusts the sub plots using the above paramters
-plt.subplots_adjust(
-    left    =  left,
-    bottom  =  bottom,
-    right   =  right,
-    top     =  top,
-    wspace  =  wspace,
-    hspace  =  hspace
-)
-
-# The amount of space above titles
-y_title_margin = 1.2
-
-plt.suptitle("Comparing Clusters", y = 1.09, fontsize=20)
-i=0
-for var in variaveis:
-
-    sb.catplot(dfEngageKmeans[var],col="labelsKmeansEngage", kind="count", ax=ax[i][0])
-    sb.distplot(dfEngageKmeans[var], col="labelsKmeansEngage",kde = False, ax = ax[i][1])
-    i+=1
-
-#sns.distplot(df['stand_bathrooms'],  kde = False, ax=ax[0][2])
-
-# Set all labels on the row axis of subplots for bathroom data to "bathrooms"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-fig, ax=plt.subplots(num_clusters,num_var,sharex='col',sharey='row')
-for i in ["firstPolictStd", "salaryStd"]:
-    g = sb.catplot(i, col="labelsKmeansEngage", col_wrap=4,
-                    data=dfEngageKmeans,
-                    kind="count", height=3.5, aspect=0.8, 
-                    palette='tab20')
-g.set_xticklabels(rotation=90)
-plt.show() 
-    
-    
-    
-    
-g = sb.catplot("firstPolicy", col="labelsKmeansEngage", col_wrap=4,
-                data=dfEngageKmeans,
-                kind="count", height=3.5, aspect=0.8, 
-                palette='tab20')
-g.set_xticklabels(rotation=90)
-plt.show()
-
+# We also tried to make 3 clusters instead to check if with 3 clusters we could differentiate according to salary and cmv.
+dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=2,returndf=True)
+# The 3 clusters continue not differentiating salary and cmv.
+# Final Decision: keep 2 clusters when applying k-means cluster technique.
 
 ########################################### K-means + Hierarchical ##########################################
+from scipy.cluster.hierarchy import dendrogram, linkage
+from sklearn.cluster import AgglomerativeClustering
+import sklearn.metrics as sm
+
 dfEngageKmeansHC=dfEngage
 dfEngageKmeansHC=pd.DataFrame(pd.concat([dfEngageKmeansHC, engageNorm],axis=1), 
                         columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
 dfEngageKmeansHC=pd.DataFrame(pd.concat([dfWork['id'], dfEngageKmeansHC],axis=1), 
                         columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
-
-# Apply k-means with the k as the square root of the obs number (k=101).
-K=int(round(math.sqrt(10261),0))
-my_seed=100
-kmeans = KMeans(n_clusters=K, 
-                random_state=0,
-                n_init = 20, 
-                max_iter = 300,
-                init='k-means++').fit(engageNorm)
-
-# Check the Clusters (Centroids).
-kmeansHCCentroidsEngage=kmeans.cluster_centers_
-kmeansHCCentroidsEngage
-
-labelsKmeansHCEngage = pd.DataFrame(kmeans.labels_)
-labelsKmeansHCEngage.columns =  ['labelsKmeansHCEngage']
-labelsKmeansHCEngage
-
-dfEngageKmeansHC = pd.DataFrame(pd.concat([dfEngageKmeansHC, labelsKmeansHCEngage],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsKmeansHCEngage'])
-
-# Create a dendogram to check how many of the 101 clusters should be retained:
-Z = linkage(kmeansHCCentroidsEngage,
-            method = 'ward')
-plt.figure(figsize=(25, 10))
-plt.title('Hierarchical Clustering Dendrogram')
-plt.xlabel('sample index')
-plt.ylabel('distance')
-dendrogram(Z,
-           truncate_mode='none',
-           p=40,
-           orientation = 'top',
-           leaf_rotation=45,
-           leaf_font_size=10,
-           show_contracted=True,
-           show_leaf_counts=True,color_threshold=50, above_threshold_color='k',no_labels =True) # Evidence to retain 2 clusters
-
-# Apply Hierarchical Clustering to the formed centroids: 
-hClustering = AgglomerativeClustering(n_clusters = 2,
-                                      affinity = 'euclidean',
-                                      linkage = 'ward').fit(kmeansHCCentroidsEngage)
-
-labelsKmeansHCEngage2 = pd.DataFrame(hClustering.labels_)
-labelsKmeansHCEngage2.columns =  ['labelsKmeansHCEngage2']
-labelsKmeansHCEngage2.reset_index(level=0, inplace=True)
-labelsKmeansHCEngage2=labelsKmeansHCEngage2.rename(columns={'index':'labelsKmeansHCEngage'})
-labelsKmeansHCEngage2
-
-# Join the new clusters to the data frame dfEngageKmeansHC with merge through the 'LabelsKmeansHCEngage'
-dfEngageKmeansHC=dfEngageKmeansHC.merge(labelsKmeansHCEngage2, left_on='labelsKmeansHCEngage', right_on='labelsKmeansHCEngage')
+dfEngageKmeansHC=kmeansHC_funct(dfNorm=engageNorm,dfKmeansHC=dfEngageKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=3,returndf=True)
 
 ########################################### SOM + Hierarchical ##########################################
+from sompy.sompy import SOMFactory
+
 dfEngageSomHC=dfEngage
 dfEngageSomHC=pd.DataFrame(pd.concat([dfEngageSomHC, engageNorm],axis=1), 
                         columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
 dfEngageSomHC=pd.DataFrame(pd.concat([dfWork['id'], dfEngageSomHC],axis=1), 
                         columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
-
-# Apply SOM : 101 clusters 
-from sompy.sompy import SOMFactory
 names = ["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
-sm = SOMFactory().build(data = engageNorm,
-               mapsize=(10,10),
-               normalization = 'var',
-               initialization='random',#'random', 'pca'
-               component_names=names,
-               lattice='hexa',#'rect','hexa'
-               training ='seq' )
 
-sm.train(n_job=4, #to be faster
-         verbose='info', # to show lines when running
-         train_rough_len=30, # first 30 steps are big (big approaches) - move 50%
-         train_finetune_len=100) # small steps - move 1%
-
-labelsSomHCEngage = pd.DataFrame(sm._bmu[0]) #101 clusters formed
-labelsSomHCEngage.columns = ['labelsSomHCEngage']
-labelsSomHCEngage
-
-dfEngageSomHC = pd.DataFrame(pd.concat([dfEngageSomHC, labelsSomHCEngage],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsSomHCEngage'])
-
-# Get centroids:
-somHCCentroidsEngage=sm.codebook.matrix
-
-# Create a dendogram to check how many of the 101 clusters should be retained:
-Z = linkage(somHCCentroidsEngage,
-            method = 'ward')
-plt.figure(figsize=(25, 10))
-plt.title('Hierarchical Clustering Dendrogram')
-plt.xlabel('sample index')
-plt.ylabel('distance')
-dendrogram(Z,
-           truncate_mode='none',
-           p=40,
-           orientation = 'top',
-           leaf_rotation=45,
-           leaf_font_size=10,
-           show_contracted=True,
-           show_leaf_counts=True,color_threshold=50, above_threshold_color='k',no_labels =True) # Evidence to retain 3 or 4 clusters
-
-# Apply Hierarchical Clustering:
-hClustering = AgglomerativeClustering(n_clusters = 3, # Try also with 4
-                                      affinity = 'euclidean',
-                                      linkage = 'ward').fit(somHCCentroidsEngage)
-
-labelsSomHCEngage2 = pd.DataFrame(hClustering.labels_)
-labelsSomHCEngage2.columns =  ['labelsSomHCEngage2']
-labelsSomHCEngage2.reset_index(level=0, inplace=True)
-labelsSomHCEngage2=labelsSomHCEngage2.rename(columns={'index':'labelsSomHCEngage'})
-labelsSomHCEngage2
-
-# Join the new clusters to the data frame dfEngageKmeansHC with merge through the 'LabelsKmeansHCEngage'
-dfEngageSomHC=dfEngageSomHC.merge(labelsSomHCEngage2, left_on='labelsSomHCEngage', right_on='labelsSomHCEngage')
+dfEngageSomHC=SomHC_funct(dfNorm=engageNorm,dfSomHC=dfEngageSomHC,names=names,nHC=3,returndf=True)
 
 ########################################### EM ##########################################
+from sklearn import mixture
 dfEngageEM=dfEngage
 dfEngageEM=pd.DataFrame(pd.concat([dfEngageEM, engageNorm],axis=1), 
                         columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
 dfEngageEM=pd.DataFrame(pd.concat([dfWork['id'], dfEngageEM],axis=1), 
                         columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
 
-from sklearn import mixture
-# n_components= <the number of elements you found before- centroids>
-gmm = mixture.GaussianMixture(n_components = 3, # Evaluate this
-                              init_params='kmeans', # {‘kmeans’, ‘random’}, defaults to ‘kmeans’.
-                              max_iter=1000,
-                              n_init=10,
-                              verbose = 1).fit(engageNorm)
+dfEngageEM=EM_funct(dfNorm=engageNorm, dfEM=dfEngageEM, n=3,returndf=True)
 
-labelsEmEngage = pd.DataFrame(gmm.predict(engageNorm))
-labelsEmEngage.columns = ['labelsEmEngage']
-
-dfEngageEM = pd.DataFrame(pd.concat([dfEngageEM, labelsEmEngage],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsEmEngage'])
 #Not used yet:
 # Likelihood value
 #EM_score_samp = pd.DataFrame(gmm.score_samples(engageNorm))
@@ -1856,62 +2054,35 @@ dfEngageEM = pd.DataFrame(pd.concat([dfEngageEM, labelsEmEngage],axis=1),
 #EM_pred_prob = pd.DataFrame(gmm.predict_proba(engageNorm))
 
 ########################################### Mean Shift ##########################################
+from sklearn.cluster import MeanShift, estimate_bandwidth
 dfEngageMs=dfEngage
 dfEngageMs=pd.DataFrame(pd.concat([dfEngageMs, engageNorm],axis=1), 
                         columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
 dfEngageMs=pd.DataFrame(pd.concat([dfWork['id'], dfEngageMs],axis=1), 
                         columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
 
-from sklearn.cluster import MeanShift, estimate_bandwidth
-my_bandwidth = estimate_bandwidth(engageNorm,
-                                  quantile=0.2,
-                                  n_samples=1000)
-
-ms = MeanShift(bandwidth=my_bandwidth,
-               bin_seeding=True).fit(engageNorm)
-
-labelsMsEngage = pd.DataFrame(ms.labels_) # 7 clusters created...
-labelsMsEngage.columns = ['labelsMsEngage']
-
-
-
-dfEngageMs = pd.DataFrame(pd.concat([dfEngageMs, labelsMsEngage],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsMsEngage'])
+dfEngageMs=MeanShift_funct(dfNorm=engageNorm,dfMeanShift=dfEngageMs,returndf=True)
 
 ########################################### DB- Scan ##########################################
 # Esquecer isto porque não faz sentido. As densidades são muito similares.
+from sklearn.cluster import DBSCAN
 dfEngageDb=dfEngage
 dfEngageDb=pd.DataFrame(pd.concat([dfEngageDb, engageNorm],axis=1), 
                         columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
 dfEngageDb=pd.DataFrame(pd.concat([dfWork['id'], dfEngageDb],axis=1), 
                         columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
 
-from sklearn.cluster import DBSCAN
-db = DBSCAN(eps= 1, #radius (euclidean distance)
-            min_samples=10).fit(engageNorm) # minimum number of points inside the radius.
-labelsDbEngage = pd.DataFrame(db.labels_)
-labelsDbEngage.columns = ['labelsDbEngage']
-dfEngageDb = pd.DataFrame(pd.concat([dfEngageDb, labelsDbEngage],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsDbEngage'])
-
-dfEngageDb = pd.DataFrame(pd.concat([dfEngageDb, labelsDbEngage],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsDbEngage'])
+dfEngageDb=DBScan_funct(dfNorm=engageNorm,dfDB=dfEngageDb,returndf=True)
 
 ########################################### K-modes ##########################################
+from kmodes.kmodes import KModes
 dfEngageCatKmodes=dfEngageCat
 dfEngageCatKmodes=pd.DataFrame(pd.concat([dfWork['id'], dfEngageCatKmodes],axis=1), 
                         columns=['id','education','binEducation','children','catClaims'])
-from kmodes.kmodes import KModes
-
 kmodesChange = dfEngageCatKmodes[['education','binEducation','children','catClaims']].astype('str')
 
-km = KModes(n_clusters=4, init='random', n_init=50, verbose=1) # Define the number of clusters wanted
-clusters = km.fit_predict(kmodesChange)
-labelsKmodesEngage=pd.DataFrame(km.labels_)
-labelsKmodesEngage.columns = ['labelsKmodesEngage']
+dfEngageCatKmodes=Kmodes_funct(n=3,dfKmodesChange=kmodesChange,dfKmodes=dfEngageCatKmodes,returndf=True)
 
-dfEngageCatKmodes = pd.DataFrame(pd.concat([dfEngageCatKmodes, labelsKmodesEngage],axis=1), 
-                        columns=['id','education','binEducation','children','catClaims','labelsKmodesEngage'])
 
 
 
@@ -1967,23 +2138,10 @@ dfEngageCatKmodes = pd.DataFrame(pd.concat([dfEngageCatKmodes, labelsKmodesEngag
 
 
 
-# dfEngageKmeans['firstPolicy'].hist(by=dfEngageKmeans['LabelsKmeansEngage'])
-from plotly.subplots import make_subplots
-dfEngageKmeans['firstPolicy'] = pd.factorize(dfEngageKmeans['firstPolicy'])[0]
-dfEngageKmeans['salary'] = pd.factorize(dfEngageKmeans['salary'])[0]
 
 
-fig = plt.figure(figsize=(15, 12))
 
-# loop over all vars (total: 34)
-for i in range(1, dfEngageKmeans.shape[1]):
-    plt.subplot(6, 6, i)
-    f = plt.gca()
-    f.axes.get_yaxis().set_visible(False)
-    plt.hist(dfEngageKmeans.iloc[:, i], bins=30, color='#3F5D7D')
 
-plt.tight_layout()
-plt.savefig("histogram-distribution.png")
 
 
 
@@ -2000,36 +2158,18 @@ plt.savefig("histogram-distribution.png")
 
 
 
-fig = make_subplots(
-    rows=1, cols=2, subplot_titles=("Plot 1", "Plot 2"))
-df=dfEngageKmeans[dfEngageKmeans['LabelsKmeansEngage']==0]
-df=pd.DataFrame(df['firstPolicy'].value_counts())
-df.reset_index(level=0, inplace=True)
-df=df.rename(columns={'index':'firstPolicy','firstPolicy':'Number of Individuals'})
-df=df.sort_values(by='firstPolicy')
-fig.add_trace(go.Scatter(x=df['firstPolicy'], y=df['Number of Individuals'], mode='markers'), row=1, col=1)
-fig.update_xaxes(title_text='firstPolicy', row=1, col=1)
-fig.update_yaxes(title_text='Number of Individuals', row=1, col=1)
-
-
-df=dfEngageKmeans[dfEngageKmeans['LabelsKmeansEngage']==0]
-df=pd.DataFrame(df['salary'].value_counts())
-df.reset_index(level=0, inplace=True)
-df=df.rename(columns={'index':'salary','salary':'Number of Individuals'})
-df=df.sort_values(by='salary')
-fig.add_trace(go.Scatter(x=df['salary'], y=df['Number of Individuals'], mode='markers'), row=1, col=2)
-fig.update_xaxes(title_text='salary', row=1, col=2)
-fig.update_yaxes(title_text='Number of Individuals', row=1, col=2)
-
-#df=pd.DataFrame(dfEngageKmeans['firstPolicy'].value_counts()[dfEngageKmeans['LabelsKmeansEngage']==1])
-#df.reset_index(level=0, inplace=True)
-#df=df.rename(columns={'index':'firstPolicy','firstPolicy':'Number of Individuals'})
-#df=df.sort_values(by='firstPolicy')
-#fig.add_trace(go.Bar(x=df['firstPolicy'], y=df['Number of Individuals']), row=1, col=2)
-#fig.update_xaxes(title_text='firstPolicy', row=1, col=2)
-#fig.update_yaxes(title_text='Number of Individuals', row=1, col=2)
-
-pyo.plot(fig)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2594,6 +2734,316 @@ ax.scatter(dfOriginal["salary"])
 ax.set_xlabel('Proportion of non-retail business acres per town')
 ax.set_ylabel('Full-value property-tax rate per $10,000')
 plt.show()
+
+
+
+
+
+
+# Define seed
+# Apply k-means
+my_seed=100
+kmeans = KMeans(n_clusters=2, # tried here with 3 clusters
+                random_state=0,
+                n_init = 20,
+                max_iter = 300,
+                init='k-means++').fit(engageNorm)
+
+# Check the Clusters (Centroids).
+kmeansClustersEngage=kmeans.cluster_centers_
+kmeansClustersEngage
+
+labelsKmeansEngage = pd.DataFrame(kmeans.labels_)
+labelsKmeansEngage.columns =  ['labelsKmeansEngage']
+labelsKmeansEngage
+
+dfEngageKmeans = pd.DataFrame(pd.concat([dfEngageKmeans, labelsKmeansEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsKmeansEngage'])
+
+####### Visualization of results:
+
+# Box Plots:
+lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+fig=plt.figure()
+fig.suptitle('Box Plots by Variable and Cluster (K-means)')
+for i in lista:
+    plt.subplot2grid((1,4),(0,lista.index(i)))
+    sb.boxplot(x='labelsKmeansEngage', y=i, data=dfEngageKmeans)
+    plt.xlabel('Cluster Number')
+    plt.title(str(i))
+    plt.ylabel('')
+plt.tight_layout()
+plt.plot()
+# Through this visualization we could conclude that the 2 clusters differentiate a lot on the variables firstPolicy and yearCustomer. 
+# However, these 2 clusters do not differentiate in the variables salary and cmv.
+
+# Violin Plots:
+lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+fig=plt.figure()
+fig.suptitle('Violin Plots by Variable and Cluster (K-means')
+for i in lista:
+    plt.subplot2grid((1,4),(0,lista.index(i)))
+    sb.violinplot(x='labelsKmeansEngage', y=i, data=dfEngageKmeans, scale='width', inner='quartile')
+    plt.xlabel('Cluster Number')
+    plt.title(str(i))
+    plt.ylabel('')
+plt.tight_layout()
+plt.plot()
+
+# Joy Plots:
+# Resulta mais ou menos:
+plt.figure(figsize=(16,10), dpi= 80)
+fig, axes = joypy.joyplot(dfEngageKmeans, column=lista, by='labelsKmeansEngage', figsize=(14,10))
+plt.plot()
+
+
+# Apply k-means with the k as the square root of the obs number (k=101).
+K=int(round(math.sqrt(10261),0))
+my_seed=100
+kmeans = KMeans(n_clusters=K, 
+                random_state=0,
+                n_init = 20, 
+                max_iter = 300,
+                init='k-means++').fit(engageNorm)
+
+# Check the Clusters (Centroids).
+kmeansHCCentroidsEngage=kmeans.cluster_centers_
+kmeansHCCentroidsEngage
+
+labelsKmeansHCEngage = pd.DataFrame(kmeans.labels_)
+labelsKmeansHCEngage.columns =  ['labelsKmeansHCEngage']
+labelsKmeansHCEngage
+
+dfEngageKmeansHC = pd.DataFrame(pd.concat([dfEngageKmeansHC, labelsKmeansHCEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsKmeansHCEngage'])
+
+# Create a dendogram to check how many of the 101 clusters should be retained:
+Z = linkage(kmeansHCCentroidsEngage,
+            method = 'ward')
+plt.figure(figsize=(25, 10))
+plt.title('Hierarchical Clustering Dendrogram (over k-means)')
+plt.xlabel('sample index')
+plt.ylabel('distance')
+dendrogram(Z,
+           truncate_mode='none',
+           p=40,
+           orientation = 'top',
+           leaf_rotation=45,
+           leaf_font_size=10,
+           show_contracted=True,
+           show_leaf_counts=True,color_threshold=50, above_threshold_color='k',no_labels =True) # Evidence to retain 2, 3 or 4 clusters
+
+# Apply Hierarchical Clustering to the formed centroids: 
+hClustering = AgglomerativeClustering(n_clusters = 3, #try also with 3 and 4
+                                      affinity = 'euclidean',
+                                      linkage = 'ward').fit(kmeansHCCentroidsEngage)
+
+labelsKmeansHCEngage2 = pd.DataFrame(hClustering.labels_)
+labelsKmeansHCEngage2.columns =  ['labelsKmeansHCEngage2']
+labelsKmeansHCEngage2.reset_index(level=0, inplace=True)
+labelsKmeansHCEngage2=labelsKmeansHCEngage2.rename(columns={'index':'labelsKmeansHCEngage'})
+labelsKmeansHCEngage2
+
+# Join the new clusters to the data frame dfEngageKmeansHC with merge through the 'LabelsKmeansHCEngage'
+dfEngageKmeansHC=dfEngageKmeansHC.merge(labelsKmeansHCEngage2, left_on='labelsKmeansHCEngage', right_on='labelsKmeansHCEngage')
+
+####### Visualization of results:
+
+# Box Plots:
+lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+fig=plt.figure()
+fig.suptitle('Box Plots by Variable and Cluster (K-means + Hierarchical)')
+for i in lista:
+    plt.subplot2grid((1,4),(0,lista.index(i)))
+    sb.boxplot(x='labelsKmeansHCEngage2', y=i, data=dfEngageKmeansHC)
+    plt.xlabel('Cluster Number')
+    plt.title(str(i))
+    plt.ylabel('')
+plt.tight_layout()
+plt.plot()
+# Through this visualization we could conclude that the 2 clusters differentiate a lot on the variables firstPolicy and yearCustomer. 
+# However, these 2 clusters do not differentiate in the variables salary and cmv.
+
+# Violin Plots:
+lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+fig=plt.figure()
+fig.suptitle('Box Plots by Variable and Cluster (K-means + Hierarchical)')
+for i in lista:
+    plt.subplot2grid((1,4),(0,lista.index(i)))
+    sb.violinplot(x='labelsKmeansHCEngage2', y=i, data=dfEngageKmeansHC, scale='width', inner='quartile')
+    plt.xlabel('Cluster Number')
+    plt.title(str(i))
+    plt.ylabel('')
+plt.tight_layout()
+plt.plot()
+
+
+
+# Apply SOM : 101 clusters 
+names = ["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+sm = SOMFactory().build(data = engageNorm,
+               mapsize=(10,10),
+               normalization = 'var',
+               initialization='random',#'random', 'pca'
+               component_names=names,
+               lattice='hexa',#'rect','hexa'
+               training ='seq' )
+
+sm.train(n_job=4, #to be faster
+         verbose='info', # to show lines when running
+         train_rough_len=30, # first 30 steps are big (big approaches) - move 50%
+         train_finetune_len=100) # small steps - move 1%
+
+labelsSomHCEngage = pd.DataFrame(sm._bmu[0]) #101 clusters formed
+labelsSomHCEngage.columns = ['labelsSomHCEngage']
+labelsSomHCEngage
+
+dfEngageSomHC = pd.DataFrame(pd.concat([dfEngageSomHC, labelsSomHCEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsSomHCEngage'])
+
+# Get centroids:
+somHCCentroidsEngage=sm.codebook.matrix
+
+# Create a dendogram to check how many of the 101 clusters should be retained:
+Z = linkage(somHCCentroidsEngage,
+            method = 'ward')
+plt.figure(figsize=(25, 10))
+plt.title('Hierarchical Clustering Dendrogram')
+plt.xlabel('sample index')
+plt.ylabel('distance')
+dendrogram(Z,
+           truncate_mode='none',
+           p=40,
+           orientation = 'top',
+           leaf_rotation=45,
+           leaf_font_size=10,
+           show_contracted=True,
+           show_leaf_counts=True,color_threshold=50, above_threshold_color='k',no_labels =True) # Evidence to retain 3 or 4 clusters
+
+# Apply Hierarchical Clustering:
+hClustering = AgglomerativeClustering(n_clusters = 3, # Try also with 4
+                                      affinity = 'euclidean',
+                                      linkage = 'ward').fit(somHCCentroidsEngage)
+
+labelsSomHCEngage2 = pd.DataFrame(hClustering.labels_)
+labelsSomHCEngage2.columns =  ['labelsSomHCEngage2']
+labelsSomHCEngage2.reset_index(level=0, inplace=True)
+labelsSomHCEngage2=labelsSomHCEngage2.rename(columns={'index':'labelsSomHCEngage'})
+labelsSomHCEngage2
+
+# Join the new clusters to the data frame dfEngageKmeansHC with merge through the 'LabelsKmeansHCEngage'
+dfEngageSomHC=dfEngageSomHC.merge(labelsSomHCEngage2, left_on='labelsSomHCEngage', right_on='labelsSomHCEngage')
+
+
+
+
+# n_components= <the number of elements you found before- centroids>
+gmm = mixture.GaussianMixture(n_components = 3, # Evaluate this
+                              init_params='kmeans', # {‘kmeans’, ‘random’}, defaults to ‘kmeans’.
+                              max_iter=1000,
+                              n_init=10,
+                              verbose = 1).fit(engageNorm)
+
+labelsEmEngage = pd.DataFrame(gmm.predict(engageNorm))
+labelsEmEngage.columns = ['labelsEmEngage']
+
+dfEngageEM = pd.DataFrame(pd.concat([dfEngageEM, labelsEmEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsEmEngage'])
+
+
+
+
+
+
+
+my_bandwidth = estimate_bandwidth(engageNorm,
+                                  quantile=0.2,
+                                  n_samples=1000)
+
+ms = MeanShift(bandwidth=my_bandwidth,
+               bin_seeding=True).fit(engageNorm)
+
+labelsMsEngage = pd.DataFrame(ms.labels_) # 7 clusters created...
+labelsMsEngage.columns = ['labelsMsEngage']
+
+
+
+dfEngageMs = pd.DataFrame(pd.concat([dfEngageMs, labelsMsEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsMsEngage'])
+
+
+db = DBSCAN(eps= 1, #radius (euclidean distance)
+            min_samples=10).fit(engageNorm) # minimum number of points inside the radius.
+labelsDbEngage = pd.DataFrame(db.labels_)
+labelsDbEngage.columns = ['labelsDbEngage']
+dfEngageDb = pd.DataFrame(pd.concat([dfEngageDb, labelsDbEngage],axis=1), 
+                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd",'labelsDbEngage'])
+
+
+
+km = KModes(n_clusters=4, init='random', n_init=50, verbose=1) # Define the number of clusters wanted
+clusters = km.fit_predict(kmodesChange)
+labelsKmodesEngage=pd.DataFrame(km.labels_)
+labelsKmodesEngage.columns = ['labelsKmodesEngage']
+
+dfEngageCatKmodes = pd.DataFrame(pd.concat([dfEngageCatKmodes, labelsKmodesEngage],axis=1), 
+                        columns=['id','education','binEducation','children','catClaims','labelsKmodesEngage'])
+
+#Visualization:
+lista=['education','binEducation','children','catClaims']
+for i in lista:
+    g = sb.catplot(i, col="labelsKmodesEngage", col_wrap=4,
+                    data=dfEngageCatKmodes,
+                    kind="count", height=3.5, aspect=0.8, 
+                    palette='tab20')
+plt.plot()
+
+#Silhouette Graph:
+# Applied to K-means
+
+from sklearn.metrics import silhouette_samples 
+from sklearn.metrics import silhouette_score 
+import matplotlib.cm as cm
+
+n_clusters=2
+silhouette_avg = silhouette_score(engageNorm, kmeans.labels_) # kmeans.labels_ substitute
+print("For n_clusters =", n_clusters,
+          "The average silhouette_score is :", silhouette_avg)
+
+# Compute the silhouette scores for each sample
+sample_silhouette_values = silhouette_samples(engageNorm, kmeans.labels_)
+cluster_labels = kmeans.labels_
+y_lower = 100
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_ylim([0, engageNorm.shape[0] + (n_clusters + 1) * 10]) # substitute n_clusters!!
+
+for i in range(n_clusters):
+    ith_cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
+    ith_cluster_silhouette_values.sort()    
+    size_cluster_i=ith_cluster_silhouette_values. shape[0]
+    y_upper = y_lower + size_cluster_i    
+    color = cm.nipy_spectral(float(i) / n_clusters)
+    ax.fill_betweenx(np.arange(y_lower, y_upper),
+                          0, ith_cluster_silhouette_values,
+                          facecolor=color,
+                          edgecolor=color, 
+                          alpha=0.7)
+    
+    # Label the silhouette plots with their cluster numbers at the middle
+    ax.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
+    
+    # Compute the new y_lower for next plot
+    y_lower = y_upper + 10  # 10 for the 0 samples
+    ax.set_title("Silhouette Plot")
+    ax.set_xlabel("The Silhouette Coefficient Values")
+    ax.set_ylabel("Cluster Label")
+    
+    # The vertical line for average silhouette score of all the values
+    ax.axvline(x=silhouette_avg, color="red", linestyle="--")
+plt.show()
+
 
 
 
