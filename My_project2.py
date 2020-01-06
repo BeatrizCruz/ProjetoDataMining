@@ -2162,7 +2162,6 @@ dfAffinityRatio=dfWork[['lobTotal',
 # Check correlations between variables in dfEngage:
 dfCorr=pd.DataFrame(dfWork,columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB'])
 dfCorrP=dfCorr.corr(method ='pearson')
-fig, ax = plt.subplots(figsize=(10,10))
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
 fig.suptitle('Heatmap - Linear Correlations (Pearson)')
 # Non highly correlated variables
@@ -2170,7 +2169,6 @@ fig.suptitle('Heatmap - Linear Correlations (Pearson)')
 # Check correlations between variables in dfAffinity:
 dfCorr=pd.DataFrame(dfWork,columns=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
 dfCorrP=dfCorr.corr(method ='pearson')
-fig, ax = plt.subplots(figsize=(10,10))
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
 fig.suptitle('Heatmap - Linear Correlations (Pearson)')
 # Non highly correlated variables
@@ -2178,7 +2176,6 @@ fig.suptitle('Heatmap - Linear Correlations (Pearson)')
 # Check correlations between variables in dfAffinityRatio:
 dfCorr=pd.DataFrame(dfWork,columns=['lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
 dfCorrP=dfCorr.corr(method ='pearson')
-fig, ax = plt.subplots(figsize=(10,10))
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
 fig.suptitle('Heatmap - Linear Correlations (Pearson)')
 # There is a correlation between householdRatioLOB and lobTotal 
