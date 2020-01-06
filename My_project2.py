@@ -2248,7 +2248,7 @@ dfEngageKmeansHC=pd.DataFrame(pd.concat([dfEngageKmeansHC, engageNorm],axis=1),
                         columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
 dfEngageKmeansHC=pd.DataFrame(pd.concat([dfWork['id'], dfEngageKmeansHC],axis=1), 
                         columns=['id','YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
-dfEngageKmeansHC=kmeansHC_funct(dfNorm=engageNorm,dfKmeansHC=dfEngageKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=4,returndf=True)
+dfEngageKmeansHC=kmeansHC_funct(dfNorm=engageNorm,dfKmeansHC=dfEngageKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=3,returndf=True)
 
 ########################################### SOM + Hierarchical ##########################################
 from sompy.sompy import SOMFactory
