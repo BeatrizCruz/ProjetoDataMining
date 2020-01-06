@@ -1775,8 +1775,9 @@ def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
     plt.tight_layout()
     plt.plot()
     
+    
     # Violin Plots:
-    lista=["firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"]
+    lista=list(dfNorm.columns)
     fig=plt.figure()
     fig.suptitle('Box Plots by Variable and Cluster (K-means + Hierarchical)')
     for i in lista:
@@ -2174,21 +2175,24 @@ dfAffinityRatio=dfWork[['lobTotal',
 dfCorr=pd.DataFrame(dfWork,columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB'])
 dfCorrP=dfCorr.corr(method ='pearson')
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
-plt.title('Heatmap - Linear Correlations (Pearson)')
+plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+plt.title('Heatmap Pearson Correlations (Group 1: Engage)')
 # Non highly correlated variables
 
 # Check correlations between variables in dfAffinity:
 dfCorr=pd.DataFrame(dfWork,columns=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
 dfCorrP=dfCorr.corr(method ='pearson')
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
-fig.suptitle('Heatmap - Linear Correlations (Pearson)')
+plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+plt.title('Heatmap Pearson Correlations (Group 3: Affinity)')
 # Non highly correlated variables
 
 # Check correlations between variables in dfAffinityRatio:
 dfCorr=pd.DataFrame(dfWork,columns=['lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
 dfCorrP=dfCorr.corr(method ='pearson')
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
-fig.suptitle('Heatmap - Linear Correlations (Pearson)')
+plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+plt.title('Heatmap Pearson Correlations (Group 1: Affinity Ratio)')
 # There is a correlation between householdRatioLOB and lobTotal 
 # Multicolinearity if we keep all ratio LOB variables in the same group of variables.
 # Decision: drop householdRatioLOB from dfAffinityRatio.
@@ -2227,10 +2231,12 @@ plt.ylabel("Within- Cluster Sum of Squares")
 plt.title('Elbow Graph')
 plt.plot(dfClusters.Num_clusters,dfClusters.Cluster_errors,marker='o') # There is evidence that we should keep 2 clusters.
 
+# k-means with 2 clusters:
+dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=2,returndf=False)
+# clusters only differentiate on 'YearsWus1998'
+
 # We also tried to make 3 clusters instead to check if with 3 clusters we could differentiate according to salary and cmv.
-dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=2,returndf=True)
-# The 3 clusters continue not differentiating salary and cmv.
-# Final Decision: keep 2 clusters when applying k-means cluster technique.
+#dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=3,returndf=False)
 
 ########################################### K-means + Hierarchical ##########################################
 from scipy.cluster.hierarchy import dendrogram, linkage
@@ -2239,10 +2245,10 @@ import sklearn.metrics as sm
 
 dfEngageKmeansHC=dfEngage
 dfEngageKmeansHC=pd.DataFrame(pd.concat([dfEngageKmeansHC, engageNorm],axis=1), 
-                        columns=["firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
+                        columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
 dfEngageKmeansHC=pd.DataFrame(pd.concat([dfWork['id'], dfEngageKmeansHC],axis=1), 
-                        columns=['id',"firstPolicy", "salary", "cmv", "yearCustomer","firstPolictStd", "salaryStd","cmvStd","yearCustomerStd"])
-dfEngageKmeansHC=kmeansHC_funct(dfNorm=engageNorm,dfKmeansHC=dfEngageKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=3,returndf=True)
+                        columns=['id','YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
+dfEngageKmeansHC=kmeansHC_funct(dfNorm=engageNorm,dfKmeansHC=dfEngageKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=4,returndf=True)
 
 ########################################### SOM + Hierarchical ##########################################
 from sompy.sompy import SOMFactory
