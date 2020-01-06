@@ -59,8 +59,8 @@ def set_seed(my_seed):
     np.random.seed(my_seed)
 my_seed=100
 #Diretorias:
-#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -1312,14 +1312,15 @@ dfSalary.isna().sum()
 
 from sklearn.impute import KNNImputer
 imputer = KNNImputer(n_neighbors=5, weights="distance")
-
-
-dfSalary=pd.DataFrame(imputer.fit_transform(dfSalary), columns=dfSalary.columns)
+dfSalary2=dfSalary[['salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','firstPolicy']]
+dfSalary2=pd.DataFrame(imputer.fit_transform(dfSalary2), columns=dfSalary2.columns)
 # Check again nan values: 
-dfSalary.isna().sum()
+dfSalary2.isna().sum()
 # Replace column in the original data frame:
-dfSalary=dfSalary[['id','salary']]
-dfSalary=dfSalary.rename(columns={'salary':'salary_x'})
+dfSalary2=dfSalary2[['salary']]
+dfSalary2=dfSalary2.rename(columns={'salary':'salary_x'})
+dfSalary=pd.DataFrame(pd.concat([dfSalary, dfSalary2],axis=1))
+dfSalary=dfSalary[['id','salary_x']]
 dfWork= reduce(lambda left,right: pd.merge(left, right, on='id', how='left'), [dfWork,dfSalary])
 dfWork['salary']=np.where(dfWork['salary'].isna(),dfWork['salary_x'],dfWork['salary'])
 dfWork=dfWork.drop(columns=['salary_x'])
@@ -1330,12 +1331,17 @@ dfWork.isna().sum()
 
 # Lets treat these two observations. For this we cannot use firstPolicy as an explainable variable. Lets just use the Lob variables:
 dfSalary=dfWork[['id','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
-dfSalary=pd.DataFrame(imputer.fit_transform(dfSalary), columns=dfSalary.columns.remove('id'))
+dfSalary2=dfSalary[['salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
+dfSalary2=pd.DataFrame(imputer.fit_transform(dfSalary2), columns=dfSalary2.columns)
 # Check again nan values: 
-dfSalary.isna().sum()
+dfSalary2.isna().sum()
 # Replace column in the original data frame:
-dfSalary=dfSalary[['id','salary']]
-dfSalary=dfSalary.rename(columns={'salary':'salary_x'})
+dfSalary2=dfSalary2[['salary']]
+dfSalary2=dfSalary2.rename(columns={'salary':'salary_x'})
+dfSalary=pd.DataFrame(pd.concat([dfSalary, dfSalary2],axis=1))
+dfSalary=dfSalary[['id','salary_x']]
+
+# Replace column in the original data frame:
 dfWork= reduce(lambda left,right: pd.merge(left, right, on='id', how='left'), [dfWork,dfSalary])
 dfWork['salary']=np.where(dfWork['salary'].isna(),dfWork['salary_x'],dfWork['salary'])
 dfWork=dfWork.drop(columns=['salary_x'])
@@ -1343,7 +1349,6 @@ dfWork=dfWork.drop(columns=['salary_x'])
 #Recalculate column yearSalary.
 #Check again Null values.
 dfWork.isna().sum() # zero null values on salary as expected
-dfWork.isna().sum() # no null values on salary
 dfWork['yearSalary']=dfWork['salary']*12
 dfWork.isna().sum() # no null values on yearSalary
 
@@ -1411,19 +1416,20 @@ Regression(myDf=dfFirstPolicy,indepVariables=['salary','lobMotor','lobHousehold'
 # Lets apply the KNRegressor technique: 
 # Conceptually we have said that the variables that might explain firstPolicy are: lobHousehold, lobLife, lobWork, lobHousehold, lobHealth and salary (children and binEducation excluded as they are binary)
 dfFirstPolicy=dfWork[['id','firstPolicy','salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
-
-dfFirstPolicy=pd.DataFrame(imputer.fit_transform(dfFirstPolicy), columns=dfFirstPolicy.columns)
-
+dfFirstPolicy2=dfFirstPolicy[['salary','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','firstPolicy']]
+dfFirstPolicy2=pd.DataFrame(imputer.fit_transform(dfFirstPolicy2), columns=dfFirstPolicy2.columns)
 # Check again nan values: 
-dfFirstPolicy.isna().sum()
+dfFirstPolicy2.isna().sum()
+# Replace column in the original data frame:
+dfFirstPolicy2=dfFirstPolicy2[['firstPolicy']]
+dfFirstPolicy2=dfFirstPolicy2.rename(columns={'firstPolicy':'firstPolicy_x'})
+dfFirstPolicy=pd.DataFrame(pd.concat([dfFirstPolicy, dfFirstPolicy2],axis=1))
+dfFirstPolicy=dfFirstPolicy[['id','firstPolicy_x']]
 
 # Replace column in the original data frame:
-dfFirstPolicy=dfFirstPolicy[['id','firstPolicy']]
-dfFirstPolicy=dfFirstPolicy.rename(columns={'firstPolicy':'firstPolicy_x'})
 dfWork = reduce(lambda left,right: pd.merge(left, right, on='id', how='left'), [dfWork,dfFirstPolicy])
 dfWork['firstPolicy']=np.where(dfWork['firstPolicy'].isna(),dfWork['firstPolicy_x'],dfWork['firstPolicy'])
 dfWork = dfWork.drop(columns=['firstPolicy_x'])
-dfWork.isna().sum()
 
 #Verify null values
 dfWork.isna().sum()
