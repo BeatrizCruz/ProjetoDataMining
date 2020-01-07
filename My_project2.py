@@ -2239,11 +2239,28 @@ plt.title('Elbow Graph')
 plt.plot(dfClusters.Num_clusters,dfClusters.Cluster_errors,marker='o') # There is evidence that we should keep 2 clusters.
 
 # k-means with 2 clusters:
-dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=2,returndf=False)
+dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=2,returndf=True)
+
 # clusters only differentiate on 'YearsWus1998'
 
 # We also tried to make 3 clusters instead to check if with 3 clusters we could differentiate according to salary and cmv.
 #dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=3,returndf=False)
+
+# Ver K-means e K-modes ao mesmo tempo:
+
+# Violin Plots:
+    lista=list(engageNorm.columns)
+    fig2=plt.figure()
+    fig2.suptitle('Violin Plots by Variable and Cluster (labels K-means and variables k-modes)')
+    for i in lista:
+        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+        sb.violinplot(x='labelsKmeans', y=i, data=dfEngageKmeans, scale='width')
+        plt.xlabel('Cluster Number')
+        plt.title(str(i))
+        plt.ylabel('')
+    plt.tight_layout()
+    plt.plot()
+
 
 ########################################### K-means + Hierarchical ##########################################
 from scipy.cluster.hierarchy import dendrogram, linkage
