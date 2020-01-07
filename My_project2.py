@@ -2087,8 +2087,8 @@ def MeanShift_funct(dfNorm,dfMeanShift,returndf=False):
 
 
 def DBScan_funct(dfNorm, dfDB,returndf=False):
-    db = DBSCAN(eps= 1, #radius (euclidean distance)
-                min_samples=10).fit(dfNorm) # minimum number of points inside the radius.
+    db = DBSCAN(eps= 0.75, #radius (euclidean distance)
+                min_samples=15).fit(dfNorm) # minimum number of points inside the radius.
     labelsDB = pd.DataFrame(db.labels_)
     labelsDB.columns = ['labelsDB']
     dfDB = pd.DataFrame(pd.concat([dfDB, labelsDB],axis=1))
@@ -2405,9 +2405,168 @@ dfAffinityDb=DBScan_funct(dfNorm=dfAffinityDbNStd,dfDB=dfAffinityDb,returndf=Tru
 
 ##############################################################################################
 # Apply Clusters: dfAffinityRatio
+########################################### K-means ##########################################
+
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+dfAffinityRatioKmeans=dfAffinityRatio
+dfAffinityRatioKmeansNStd=dfAffinityRatio
+dfAffinityRatioKmeans=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioKmeans],axis=1), 
+                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
+
+# Elbow Graph: to check how many clusters we should have:
+cluster_range= range(1,7)
+cluster_errors = []
+for num_clusters in cluster_range:
+    clusters = KMeans(n_clusters=num_clusters, 
+                        random_state=0,
+                        n_init = 20, 
+                        max_iter = 300,
+                        init='k-means++')
+    clusters.fit(dfAffinityRatioKmeansNStd)
+    cluster_errors.append(clusters.inertia_)
+
+dfClusters = pd.DataFrame({ "Num_clusters": cluster_range, "Cluster_errors": cluster_errors})
+plt.figure(figsize=(1,8))
+plt.xlabel("Cluster Number")
+plt.ylabel("Within- Cluster Sum of Squares")
+plt.title('Elbow Graph')
+plt.plot(dfClusters.Num_clusters,dfClusters.Cluster_errors,marker='o') # There is evidence that we should keep 2 clusters.
+
+# k-means with 2 clusters:
+dfAffinityRatioKmeans=kmeans_funct(dfKmeans=dfAffinityRatioKmeans,dfNorm=dfAffinityRatioKmeansNStd, n=3,returndf=False)
+# clusters only differentiate on 'YearsWus1998'
+# We also tried to make 3 clusters instead to check if with 3 clusters we could differentiate according to salary and cmv.
+#dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=3,returndf=False)
+
+########################################### K-means + Hierarchical ##########################################
+from scipy.cluster.hierarchy import dendrogram, linkage
+from sklearn.cluster import AgglomerativeClustering
+import sklearn.metrics as sm
+
+dfAffinityRatioKmeansHC=dfAffinityRatio
+dfAffinityRatioKmeansHCNStd=dfAffinityRatio
+
+dfAffinityRatioKmeansHC=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioKmeansHC],axis=1), 
+                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
+#dfEngageKmeansHC=kmeansHC_funct(dfNorm=engageNorm,dfKmeansHC=dfEngageKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=3,returndf=True)
+dfAffinityRatioKmeansHC=kmeansHC_funct(dfNorm=dfAffinityRatioKmeansHCNStd,dfKmeansHC=dfAffinityRatioKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=3,returndf=True)
+########################################### SOM + Hierarchical ##########################################
+from sompy.sompy import SOMFactory
+
+dfAffinityRatioSomHC=dfAffinityRatio
+dfAffinityRatioSomHCNStd=dfAffinityRatio
+dfAffinityRatioSomHC=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioSomHC],axis=1), 
+                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
+names = ['lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB']
+
+dfAffinityRatioSomHC=SomHC_funct(dfNorm=dfAffinityRatioSomHCNStd,dfSomHC=dfAffinityRatioSomHC,names=names,nHC=2,returndf=True)
+
+########################################### EM ##########################################
+from sklearn import mixture
+dfAffinityRatioEM=dfAffinityRatio
+dfAffinityRatioEMNStd=dfAffinityRatio
+dfAffinityRatioEM=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioEM],axis=1), 
+                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
+dfAffinityRatioEM=EM_funct(dfNorm=dfAffinityRatioEMNStd, dfEM=dfAffinityRatioEM, n=5,returndf=True)
+
+#Not used yet:
+# Likelihood value
+#EM_score_samp = pd.DataFrame(gmm.score_samples(engageNorm))
+# Probabilities of belonging to each cluster.
+#EM_pred_prob = pd.DataFrame(gmm.predict_proba(engageNorm))
+
+########################################### Mean Shift ##########################################
+from sklearn.cluster import MeanShift, estimate_bandwidth
+dfAffinityRatioMs=dfAffinityRatio
+dfAffinityRatioMsNStd=dfAffinityRatio
+dfAffinityRatioMs=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioMs],axis=1), 
+                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
+
+dfAffinityRatioMs=MeanShift_funct(dfNorm=dfAffinityRatioMsNStd,dfMeanShift=dfAffinityRatioMs,returndf=True)
+
+########################################### DB- Scan ##########################################
+# Esquecer isto porque não faz sentido. As densidades são muito similares.
+from sklearn.cluster import DBSCAN
+dfAffinityRatioDb=dfAffinityRatio
+dfAffinityRatioDbNStd=dfAffinityRatio
+dfAffinityRatioDb=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioDb],axis=1), 
+                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
+dfAffinityRatioDb=DBScan_funct(dfNorm=dfAffinityRatioDbNStd,dfDB=dfAffinityRatioDb,returndf=True)
 
 
 
+###########################################
+# APPLY DT TO OUR DATA: STILL HAVE TO DO...
+###########################################
+import numpy as np
+import pandas as pd
+from sklearn import preprocessing
+from sklearn.model_selection import cross_val_score
+from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.model_selection import train_test_split # Import train_test_split function
+from sklearn import metrics #Import scikit-learn metrics module for accuracy calculation
+#from dtreeplt import dtreeplt
+import graphviz 
+
+values, counts= np.unique(kmeans.labels_, return_counts=True)
+pd.DataFrame(np.asarray((values, counts)).T, columns=['Label','Number'])
+print(values,counts)
+
+le = preprocessing.LabelEncoder()
+clf = DecisionTreeClassifier(random_state=0,
+                             max_depth=3) # define the depth of the decision tree!
+
+
+X = Affinity[['clothes', 'kitchen', 'small_appliances', 'toys', 'house_keeping']]
+y =  Affinity[['Labels']] # Target variable
+
+# How many elements per Cluster
+
+
+# Split dataset into training set and test set
+X_train, X_test, y_train, y_test = train_test_split(X, y, 
+                                                    test_size=4, 
+                                                    random_state=1) # 70% training and 30% tes
+
+# Create Decision Tree classifer object
+#clf = DecisionTreeClassifier()
+
+# Train Decision Tree Classifer
+clf = clf.fit(X_train,
+              y_train)
+
+clf.feature_importances_
+
+#plot_tree(clf, filled=True)
+
+#Entropy or gini: to see which variables are more relevant - avoid overfitting (the most imp. variable will be on the top of the DT)
+
+
+dot_data = tree.export_graphviz(clf, out_file=None) 
+graph = graphviz.Source(dot_data) 
+
+#Label tree: instead of X[0] put the names of the variables
+dot_data = tree.export_graphviz(clf, out_file=None,
+                                feature_names=X_train.columns,
+                                class_names = X_train.columns,
+                                filled=True,
+                                rounded=True,
+                                special_characters=True)  
+graph = graphviz.Source(dot_data)
+graph
+
+to_class = {'clothes':[99,10,5, 0],
+        'kitchen':[1, 60, 5, 90],
+        'small_appliances':[0, 5, 75, 2],
+        'toys':[0,5, 5, 7],
+        'house_keeping':[0, 20, 10, 1]}
+
+# Creates pandas DataFrame. 
+to_class = pd.DataFrame(to_class, index =['cust1', 'cust2', 'cust3', 'cust4']) 
+to_class['label']=clf.predict(to_class)
+# Classify these new elements
 
 
 
