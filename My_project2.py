@@ -35,7 +35,7 @@ my_seed=100
 set_seed(my_seed)
 #Diretorias:
 file =f"./A2Z Insurance.csv"
-
+file='C:\\Users\\aSUS\\Documents\\IMS\\Master Data Science and Advanced Analytics with major in BA\\Data mining\\Projeto\\A2Z Insurance.csv'
 #import csv file:
 dfOriginal=pd.read_csv(file)
 dfOriginal.head()
@@ -868,7 +868,7 @@ dfOutliers=dfOriginal[["id","firstPolicy", "birthday", "education", "salary","li
                        "Outliers_lobHousehold","Outliers_lobHealth","Outliers_lobWork","Outliers_lobLife",
                         ]].loc[dfOriginal["Outliers"]>0]
 dfOutliers.to_excel(f"./Outliers.xlsx", index=False, encoding='utf-8')
-
+dfOutliers=dfOriginal.loc[dfOriginal["Outliers"]>0]
 
 dfErrors=dfOriginal.loc[dfOriginal["Errors"]==1]
 
@@ -888,7 +888,9 @@ countList
 # Create age column that calculates current ages of customers (useful to check the next incoherence).
 # Check if there are people with less than 16 years old (including) who have children 
 dfOriginal['age']= 2016-dfOriginal['birthday']
+dfOutliers['age']= 2016-dfOutliers['birthday']
 dfOriginal['age1998']= 1998-dfOriginal['birthday']
+dfOutliers['age1998']= 1998-dfOutliers['birthday']
 dfOriginal['children'][dfOriginal['age1998']<=16].value_counts()
 # There are 31 people who are younger or equal to 16 years old and that have children and 16 younger or equal to 16 years old and that do not have children.
 # At this age, in normal situations, there should be zero people with children. Even if there were some cases in these situations, 31 is a huge number.
@@ -932,7 +934,9 @@ dfOriginal['lobWork'][dfOriginal['age1998']<16].count()
 # Check if the 30% of the year salary is higher than the lobTotal
 # Check if the 50% of the year salary is higher than the lobTotal
 dfOriginal['yearSalary']=dfOriginal['salary']*12
+dfOutliers['yearSalary']=dfOutliers['salary']*12
 dfOriginal['lobTotal']=dfOriginal['lobMotor']+dfOriginal['lobHousehold']+dfOriginal['lobHealth']+dfOriginal['lobLife']+dfOriginal['lobWork']
+dfOutliers['lobTotal']=dfOutliers['lobMotor']+dfOutliers['lobHousehold']+dfOutliers['lobHealth']+dfOutliers['lobLife']+dfOutliers['lobWork']
 dfOriginal[dfOriginal['yearSalary']*0.3<dfOriginal['lobTotal']] # There are 14 people that spend more than 30% of the year salary in the total of premiums.
 dfOriginal['id'][dfOriginal['yearSalary']*0.5<dfOriginal['lobTotal']].count() # There are 2 people that spend more than 50% of the year salary in the total of premiums, which migh be considered strange. It is not normal for a person spending more than 50% of the salary in premiums.
 
@@ -940,7 +944,7 @@ dfOriginal['id'][dfOriginal['yearSalary']*0.5<dfOriginal['lobTotal']].count() # 
 dfOriginal['id'][dfOriginal['yearSalary']<dfOriginal['lobTotal']].count() # There is one person that has a salary lower than the lobTotal, which does not make sense.
 # We decided to add this customer to an incoherence column.
 dfOriginal['incoherences']=np.where(dfOriginal['yearSalary']<dfOriginal['lobTotal'],1,0)
-
+dfOutliers['incoherences']=np.where(dfOutliers['yearSalary']<dfOutliers['lobTotal'],1,0)
 ###############################################################################################3
 #Errors
 ##############################################################################################3
@@ -975,12 +979,16 @@ dfNan.isnull().sum()
 # We considered that these values would be equal to zero, as in an insurance company it is not normal not to register payments, unless they do not exist.
 dfWork[dfWork['lobMotor'].isnull()]
 dfWork['lobMotor'] = np.where(dfWork['lobMotor'].isnull(),0,dfWork['lobMotor'])
+dfOutliers['lobMotor'] = np.where(dfOutliers['lobMotor'].isnull(),0,dfOutliers['lobMotor'])
 dfWork[dfWork['lobHealth'].isnull()]
 dfWork['lobHealth'] = np.where(dfWork['lobHealth'].isnull(),0,dfWork['lobHealth'])
+dfOutliers['lobHealth'] = np.where(dfOutliers['lobHealth'].isnull(),0,dfOutliers['lobHealth'])
 dfWork[dfWork['lobLife'].isnull()]
 dfWork['lobLife'] = np.where(dfWork['lobLife'].isnull(),0,dfWork['lobLife'])
+dfOutliers['lobLife'] = np.where(dfOutliers['lobLife'].isnull(),0,dfOutliers['lobLife'])
 dfWork[dfWork['lobWork'].isnull()]
 dfWork['lobWork'] = np.where(dfWork['lobWork'].isnull(),0,dfWork['lobWork'])
+dfOutliers['lobWork'] = np.where(dfOutliers['lobWork'].isnull(),0,dfOutliers['lobWork'])
 
 # Check again Nan values by row:
 dfNan = dfWork.drop(columns = ['yearSalary', 'lobTotal'])
@@ -989,6 +997,8 @@ dfNan['Nan'].value_counts()
 
 # Recalculate the column lobTotal (as there are no Null values on the lob variables anymore)
 dfWork['lobTotal']=dfWork['lobMotor']+dfWork['lobHousehold']+dfWork['lobHealth']+dfWork['lobLife']+dfWork['lobWork']
+dfOutliers['lobTotal']=dfOutliers['lobMotor']+dfOutliers['lobHousehold']+dfOutliers['lobHealth']+dfOutliers['lobLife']+dfOutliers['lobWork']
+
 # Check if lobTotal does not have Nan values
 dfWork.isnull().sum()
 
@@ -1198,8 +1208,9 @@ dfWork.isna().sum()
 
 # Lets create a binary variable for education (this will be usefull to treat other posterior null values):
 dfWork['binEducation']=dfWork['education']
+dfOutliers['binEducation']=dfOutliers['education']
 dfWork['binEducation']=np.where(((dfWork['binEducation']=='1 - Basic')|(dfWork['binEducation']=='2 - High School')),0,1)
-
+dfOutliers['binEducation']=np.where(((dfOutliers['binEducation']=='1 - Basic')|(dfOutliers['binEducation']=='2 - High School')),0,1)
 ######################################################################################
 # SALARY
 # Which variables better explain salary?
@@ -1324,6 +1335,7 @@ dfWork=dfWork.drop(columns=['salary_x'])
 #Check again Null values.
 dfWork.isna().sum() # zero null values on salary as expected
 dfWork['yearSalary']=dfWork['salary']*12
+dfOutliers['yearSalary']=dfOutliers['salary']*12
 dfWork.isna().sum() # no null values on yearSalary
 
 #dfWork=KNRegressor(dfWork=dfWork,myDf=dfSalary, treatVariable='salary',expVariables=['lobHousehold','lobMotor','lobHealth','lobLife','lobWork'],K=5,weights='uniform',metric="minkowski",p=1)  #1 for manhattan; 2 for euclidean
@@ -1420,23 +1432,34 @@ dfWork['firstPolicy']=round(dfWork['firstPolicy'], 0)
 # catClaims Variable (already created)
 # Ratios lobs 
 dfWork['motorRatioLOB']=np.where(dfWork['lobTotal']==0,0,dfWork["lobMotor"]/dfWork['lobTotal'])
+dfOutliers['motorRatioLOB']=np.where(dfOutliers['lobTotal']==0,0,dfOutliers["lobMotor"]/dfOutliers['lobTotal'])
 dfWork['householdRatioLOB']=np.where(dfWork['lobTotal']==0,0,dfWork["lobHousehold"]/dfWork['lobTotal'])
+dfOutliers['householdRatioLOB']=np.where(dfOutliers['lobTotal']==0,0,dfOutliers["lobHousehold"]/dfOutliers['lobTotal'])
 dfWork['healthRatioLOB']=np.where(dfWork['lobTotal']==0,0,dfWork["lobHealth"]/dfWork['lobTotal'])
+dfOutliers['healthRatioLOB']=np.where(dfOutliers['lobTotal']==0,0,dfOutliers["lobHealth"]/dfOutliers['lobTotal'])
 dfWork['lifeRatioLOB']=np.where(dfWork['lobTotal']==0,0,dfWork["lobLife"]/dfWork['lobTotal'])
+dfOutliers['lifeRatioLOB']=np.where(dfOutliers['lobTotal']==0,0,dfOutliers["lobLife"]/dfOutliers['lobTotal'])
 dfWork['workCRatioLOB']=np.where(dfWork['lobTotal']==0,0,dfWork["lobWork"]/dfWork['lobTotal'])
+dfOutliers['workCRatioLOB']=np.where(dfOutliers['lobTotal']==0,0,dfOutliers["lobWork"]/dfOutliers['lobTotal'])
 
 # lobTotal/salary
 dfWork['ratioSalaryLOB']=dfWork['lobTotal']/dfWork['salary']
-
+dfOutliers['ratioSalaryLOB']=dfOutliers['lobTotal']/dfOutliers['salary']
 # Years has been a customer= 1998-firstPolicy compare with 2016
 dfWork['YearsWus1998']=1998-dfWork['firstPolicy']
+dfOutliers['YearsWus1998']=1998-dfOutliers['firstPolicy']
 dfWork['YearsWus2016']=2016-dfWork['firstPolicy']
+dfOutliers['YearsWus2016']=2016-dfOutliers['firstPolicy']
 
 dfWork['CMV_Mean_corrected']=(dfWork['cmv']+25)
+dfOutliers['CMV_Mean_corrected']=(dfOutliers['cmv']+25)
 ##### create categorical values of cmv corrected
 dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']<-25,'losses',None)
+dfOutliers['catCMV_Mean_corrected']=np.where(dfOutliers['cmv']<-25,'losses',None)
 dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']>-25,'profitable',dfWork['catCMV_Mean_corrected'])
+dfOutliers['catCMV_Mean_corrected']=np.where(dfOutliers['cmv']>-25,'profitable',dfOutliers['catCMV_Mean_corrected'])
 dfWork['catCMV_Mean_corrected']=np.where(dfWork['cmv']==-25,'neutrals',dfWork['catCMV_Mean_corrected'])
+dfOutliers['catCMV_Mean_corrected']=np.where(dfOutliers['cmv']==-25,'neutrals',dfOutliers['catCMV_Mean_corrected'])
 #check cancel o see if categorical cancel is a thing
 df=pd.DataFrame(dfWork[["CancelTotal","lobMotor","lobHousehold","lobHealth","lobLife","lobWork"]][dfWork['CancelTotal'] > 0 ])
 
@@ -1480,9 +1503,6 @@ fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
 ####################################################################################################################
-#Compare Variables: 
-
-
 #---------------------------------------------- MULTIDIMENSIONAL OUTLIERS -------------------------------------------------#
 dfMultiOut=dfWork[['firstPolicy','salary', 'cmv','claims','lobMotor','lobHousehold','lobHealth','lobLife','lobWork','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB','YearsWus1998','CMV_Mean_corrected','ratioSalaryLOB']]
 # Min max: outliers already treated and for variables to be at the same scale.
@@ -1508,7 +1528,7 @@ multiClusters=kmeans.cluster_centers_
 multiClusters
 
 labelsKmeans = pd.DataFrame(kmeans.labels_)
-labelsKmeans.columns =  ['LabelsKmeans']
+labelsKmeans.columns = ['LabelsKmeans']
 labelsKmeans
 
 outClientsCluster = pd.DataFrame(pd.concat([multiNorm, labelsKmeans],axis=1), 
@@ -2273,13 +2293,6 @@ dfEngageEM=pd.DataFrame(pd.concat([dfEngageEM, engageNorm],axis=1),
 dfEngageEM=pd.DataFrame(pd.concat([dfWork['id'], dfEngageEM],axis=1), 
                         columns=['id','YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
 dfEngageEM=EM_funct(dfNorm=engageNorm, dfEM=dfEngageEM, n=3,returndf=True)
-
-#Not used yet:
-# Likelihood value
-#EM_score_samp = pd.DataFrame(gmm.score_samples(engageNorm))
-# Probabilities of belonging to each cluster.
-#EM_pred_prob = pd.DataFrame(gmm.predict_proba(engageNorm))
-
 ########################################### Mean Shift ##########################################
 from sklearn.cluster import MeanShift, estimate_bandwidth
 set_seed(my_seed)
@@ -2514,82 +2527,262 @@ dfWork= pd.DataFrame(pd.concat([dfWork,dfEngageCatKmodes2['labelsKmodes']],axis=
 dfWork= pd.DataFrame(pd.concat([dfWork,dfAffinityRatioKmeansHC['labelsKmeansHC2']],axis=1))
 dfWork['labelsConcat']=dfWork['labelsMs'].astype(str)+dfWork['labelsKmodes'].astype(str)+dfWork['labelsKmeansHC2'].astype(str)
 
-###########################################
-#DECISION TREE
-###########################################
-import numpy as np
-import pandas as pd
-from sklearn import preprocessing
-from sklearn.model_selection import cross_val_score
-from sklearn import tree
-from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.model_selection import train_test_split # Import train_test_split function
-from sklearn import metrics #Import scikit-learn metrics module for accuracy calculation
-#from dtreeplt import dtreeplt
-import graphviz 
+############################################
+##DECISION TREE
+############################################
+#import numpy as np
+#import pandas as pd
+#from sklearn import preprocessing
+#from sklearn.model_selection import cross_val_score
+#from sklearn import tree
+#from sklearn.tree import DecisionTreeClassifier, plot_tree
+#from sklearn.model_selection import train_test_split # Import train_test_split function
+#from sklearn import metrics #Import scikit-learn metrics module for accuracy calculation
+##from dtreeplt import dtreeplt
+#import graphviz 
+#
+#values, counts= np.unique(dfWork['labelsConcat'], return_counts=True)
+#pd.DataFrame(np.asarray((values, counts)).T, columns=['labelsConcat','Number'])
+#print(values,counts)
+#
+#le = preprocessing.LabelEncoder()
+#clf = DecisionTreeClassifier(random_state=0,
+#                             max_depth=3, dtype=category) # define the depth of the decision tree!
+##dfWork2=dfWork.copy()
+##dfWork2['catClaims']=dfWork2['catClaims'].astype(str)
+##dfWork2['education']=dfWork2['education'].astype(str)
+##dfWork2['children']=dfWork2['children'].astype(str)
+##dfWork2['CancelTotal']=dfWork2['CancelTotal'].astype(str)
+##dfWork2['TotalInsurance']=dfWork2['TotalInsurance'].astype(str)
+#
+#X = dfWork2[['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB',
+#              'catClaims','education','children','CancelTotal',
+#              'TotalInsurance','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB']]
+#
+#y =  dfWork2[['labelsConcat']] # Target variable
+#
+## How many elements per Cluster
+## Split dataset into training set and test set
+#X_train, X_test, y_train, y_test = train_test_split(X, y, 
+#                                                    test_size=4, 
+#                                                    random_state=1) # 70% training and 30% tes
+#
+## Create Decision Tree classifer object
+##clf = DecisionTreeClassifier()
+#
+## Train Decision Tree Classifer
+#clf = clf.fit(X_train,y_train)
+#
+#clf.feature_importances_
+#
+##plot_tree(clf, filled=True)
+#
+##Entropy or gini: to see which variables are more relevant - avoid overfitting (the most imp. variable will be on the top of the DT)
+#dot_data = tree.export_graphviz(clf, out_file=None) 
+#graph = graphviz.Source(dot_data) 
+#
+##Label tree: instead of X[0] put the names of the variables
+#dot_data = tree.export_graphviz(clf, out_file=None,
+#                                feature_names=X_train.columns,
+#                                class_names = X_train.columns,
+#                                filled=True,
+#                                rounded=True,
+#                                special_characters=True)  
+#graph = graphviz.Source(dot_data)
+#graph
+#
+#to_class = {'clothes':[99,10,5, 0],
+#        'kitchen':[1, 60, 5, 90],
+#        'small_appliances':[0, 5, 75, 2],
+#        'toys':[0,5, 5, 7],
+#        'house_keeping':[0, 20, 10, 1]}
+#
+## Creates pandas DataFrame. 
+#to_class = pd.DataFrame(to_class, index =['cust1', 'cust2', 'cust3', 'cust4']) 
+#to_class['label']=clf.predict(to_class)
+## Classify these new elements
 
-values, counts= np.unique(dfWork['labelsConcat'], return_counts=True)
-pd.DataFrame(np.asarray((values, counts)).T, columns=['labelsConcat','Number'])
-print(values,counts)
+###########################################################################
+# Check numbers of obs in each cluster (concat)
+dfWork['labelsConcat'].value_counts()
+# There are clusters with few obs like 1, 23, 18 and 11 observation clusters.
+# Do violin plots for the clusters that have 23, 18 and 11 individuals (clusters: 110,111,112)
 
-le = preprocessing.LabelEncoder()
-clf = DecisionTreeClassifier(random_state=0,
-                             max_depth=3, dtype=category) # define the depth of the decision tree!
-#dfWork2=dfWork.copy()
-#dfWork2['catClaims']=dfWork2['catClaims'].astype(str)
-#dfWork2['education']=dfWork2['education'].astype(str)
-#dfWork2['children']=dfWork2['children'].astype(str)
-#dfWork2['CancelTotal']=dfWork2['CancelTotal'].astype(str)
-#dfWork2['TotalInsurance']=dfWork2['TotalInsurance'].astype(str)
+lista=list(dfWork.columns)
+lista1=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','lobMotor',
+ 'lobHousehold',
+ 'lobHealth']
+lista2=[
+ 'lobLife',
+ 'lobWork','lobTotal','motorRatioLOB',
+ 'healthRatioLOB',
+ 'lifeRatioLOB',
+ 'workCRatioLOB']
+df=dfWork[(dfWork['labelsConcatKNN']=='110')|(dfWork['labelsConcatKNN']=='111')|(dfWork['labelsConcatKNN']=='112')]
+
+fig=plt.figure()
+fig.suptitle('Violin Plots by Variable and Cluster (Concat Clusters)')
+for i in lista1:
+    plt.subplot2grid((1,len(lista1)),(0,lista1.index(i)))
+    sb.violinplot(x='labelsConcat', y=i, data=df, scale='width')
+    plt.xlabel('Cluster Number',fontsize=8)
+    plt.title(str(i), fontsize=8)
+    plt.ylabel('')
+plt.tight_layout()
+plt.plot()
+
+fig=plt.figure()
+fig.suptitle('Violin Plots by Variable and Cluster (Concat Clusters)')
+for i in lista2:
+    plt.subplot2grid((1,len(lista2)),(0,lista2.index(i)))
+    sb.violinplot(x='labelsConcat', y=i, data=df, scale='width')
+    plt.xlabel('Cluster Number',fontsize=8)
+    plt.title(str(i), fontsize=8)
+    plt.ylabel('')
+plt.tight_layout()
+plt.plot()
+
+# Lets check the same plots for the clusters that have more observations:
+
+lista=list(dfWork.columns)
+lista1=['YearsWus1998','salary','CMV_Mean_corrected']
+lista2=['ratioSalaryLOB','lobMotor',
+ 'lobHousehold',
+ 'lobHealth']
+lista3=[
+ 'lobLife',
+ 'lobWork','lobTotal']
+lista4=['motorRatioLOB',
+ 'healthRatioLOB',
+ 'lifeRatioLOB',
+ 'workCRatioLOB']
+
+dfbig=dfWork[(dfWork['labelsConcatKNN']!='110')&(dfWork['labelsConcatKNN']!='111')&(dfWork['labelsConcatKNN']!='112')&(dfWork['labelsConcatKNN']!='100')&(dfWork['labelsConcatKNN']!='101')]
+fig=plt.figure()
+fig.suptitle('Violin Plots by Variable and Cluster (Concat Clusters)')
+for i in lista1:
+    plt.subplot2grid((1,len(lista1)),(0,lista1.index(i)))
+    sb.violinplot(x='labelsConcat', y=i, data=dfbig, scale='width')
+    plt.xlabel('Cluster Number',fontsize=8)
+    plt.title(str(i), fontsize=8)
+    plt.ylabel('')
+plt.tight_layout()
+plt.plot()
+
+fig=plt.figure()
+fig.suptitle('Violin Plots by Variable and Cluster (Concat Clusters)')
+for i in lista2:
+    plt.subplot2grid((1,len(lista2)),(0,lista2.index(i)))
+    sb.violinplot(x='labelsConcat', y=i, data=dfbig, scale='width')
+    plt.xlabel('Cluster Number',fontsize=8)
+    plt.title(str(i), fontsize=8)
+    plt.ylabel('')
+plt.tight_layout()
+plt.plot()
+
+fig=plt.figure()
+fig.suptitle('Violin Plots by Variable and Cluster (Concat Clusters)')
+for i in lista3:
+    plt.subplot2grid((1,len(lista3)),(0,lista3.index(i)))
+    sb.violinplot(x='labelsConcat', y=i, data=dfbig, scale='width')
+    plt.xlabel('Cluster Number',fontsize=8)
+    plt.title(str(i), fontsize=8)
+    plt.ylabel('')
+plt.tight_layout()
+plt.plot()
+
+fig=plt.figure()
+fig.suptitle('Violin Plots by Variable and Cluster (Concat Clusters)')
+for i in lista4:
+    plt.subplot2grid((1,len(lista4)),(0,lista4.index(i)))
+    sb.violinplot(x='labelsConcat', y=i, data=dfbig, scale='width')
+    plt.xlabel('Cluster Number',fontsize=8)
+    plt.title(str(i), fontsize=8)
+    plt.ylabel('')
+plt.tight_layout()
+plt.plot()
+
+#Histograms
+# 3 Smaller not counting with clusters with 1 obs:
+df=dfWork[(dfWork['labelsConcat']=='110')|(dfWork['labelsConcat']=='111')|(dfWork['labelsConcat']=='112')]
+Hist=dfWork[['catClaims','education','children','CancelTotal','TotalInsurance']].astype('str')
+lista=list(Hist.columns)
+
+for i in lista:
+    g = sb.catplot(i, col="labelsConcat", col_wrap=4,
+                    data=df,
+                    kind="count", height=3.5, aspect=0.8, 
+                    palette='tab20')
+plt.plot()
+
+# 3 bigger clusters:
+dfbig=dfWork[(dfWork['labelsConcat']!='110')&(dfWork['labelsConcat']!='111')&(dfWork['labelsConcat']!='112')&(dfWork['labelsConcat']!='100')&(dfWork['labelsConcat']!='101')]
+for i in lista:
+    g = sb.catplot(i, col="labelsConcat", col_wrap=4,
+                    data=dfbig,
+                    kind="count", height=3.5, aspect=0.8, 
+                    palette='tab20')
+plt.plot()   
+
+###########################################################################
+# Join the smaller clusters that have the first number 1 in one unique cluster called 1:
+dfWork['Finallabels']=np.where((dfWork['labelsConcat']=='110')|(dfWork['labelsConcat']=='111')|(dfWork['labelsConcat']=='112')|(dfWork['labelsConcat']=='100')|(dfWork['labelsConcat']=='101'),'3','2')
+dfWork['Finallabels']=np.where((dfWork['labelsConcat']=='011')|(dfWork['labelsConcat']=='010')|(dfWork['labelsConcat']=='012'),'1',dfWork['Finallabels'])
+##########################################################################
+#Delete columns from dfOutliers that were also deleted from dfWork
+dfOutliers=dfOutliers.drop(columns=['birthday','Others','Strange_birthday','strange_firstPolicy','Outliers_salary','df_OutliersLow_cmv','df_OutliersHigh_cmv','Outliers_lobMot','Outliers_lobHousehold','Outliers_lobHealth','Outliers_lobWork','age','age1998','incoherences'])
+
+#Impute Outliers:
+dfWorkTreat=dfWork.copy()
+dfWorkTreat=dfWorkTreat.drop(columns=['labelsMs','labelsKmodes','labelsKmeansHC2','labelsConcat'])
+dfOutliers['Finallabels']=np.NaN
+
+dfWorkTreat=pd.DataFrame(pd.concat([dfWorkTreat, dfOutliers],axis=0))
+
+#Impute Outliers:
+
+dfImputeOut=dfWorkTreat[['id','YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','lobMotor',
+        'lobHousehold','lobHealth','lobLife','lobWork','lobTotal','motorRatioLOB',
+        'healthRatioLOB','lifeRatioLOB','workCRatioLOB','Finallabels']]
+
+from sklearn.impute import KNNImputer
+imputer = KNNImputer(n_neighbors=5, weights="distance")
+dfImputeOut=pd.DataFrame(imputer.fit_transform(dfImputeOut), columns=dfImputeOut.columns)
+dfImputeOut.isna().sum()
+dfImputeOut['Finallabels']=round(dfImputeOut['Finallabels'],0)
+dfImputeOut['Finallabels']=dfImputeOut['Finallabels'].apply(str)
+dfWork=dfImputeOut
+
+Outliers=dfWork[dfWork['id'].isin(dfOutliers['id'])]
+
+Outliers=Outliers[['id','Finallabels']]
+All=dfWork[['id','Finallabels']]
+
+Outliers.to_excel(f"./Outliers.xlsx", index=False, encoding='utf-8')
+All.to_excel(f"./FinalSolution.xlsx", index=False, encoding='utf-8')
 
 
-X = dfWork2[['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB',
-              'catClaims','education','children','CancelTotal',
-              'TotalInsurance','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB']]
 
-y =  dfWork2[['labelsConcat']] # Target variable
 
-# How many elements per Cluster
-# Split dataset into training set and test set
-X_train, X_test, y_train, y_test = train_test_split(X, y, 
-                                                    test_size=4, 
-                                                    random_state=1) # 70% training and 30% tes
 
-# Create Decision Tree classifer object
-#clf = DecisionTreeClassifier()
 
-# Train Decision Tree Classifer
-clf = clf.fit(X_train,
-              y_train)
 
-clf.feature_importances_
 
-#plot_tree(clf, filled=True)
 
-#Entropy or gini: to see which variables are more relevant - avoid overfitting (the most imp. variable will be on the top of the DT)
-dot_data = tree.export_graphviz(clf, out_file=None) 
-graph = graphviz.Source(dot_data) 
 
-#Label tree: instead of X[0] put the names of the variables
-dot_data = tree.export_graphviz(clf, out_file=None,
-                                feature_names=X_train.columns,
-                                class_names = X_train.columns,
-                                filled=True,
-                                rounded=True,
-                                special_characters=True)  
-graph = graphviz.Source(dot_data)
-graph
 
-to_class = {'clothes':[99,10,5, 0],
-        'kitchen':[1, 60, 5, 90],
-        'small_appliances':[0, 5, 75, 2],
-        'toys':[0,5, 5, 7],
-        'house_keeping':[0, 20, 10, 1]}
 
-# Creates pandas DataFrame. 
-to_class = pd.DataFrame(to_class, index =['cust1', 'cust2', 'cust3', 'cust4']) 
-to_class['label']=clf.predict(to_class)
-# Classify these new elements
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2728,7 +2921,47 @@ labelsHC['LabelsKmeans']=labelsHC['LabelsKmeans']+1
 OutClientsCluster=OutClientsCluster.merge(labelsHC, left_on='LabelsKmeans', right_on='LabelsKmeans')
 OutClientsCluster=OutClientsCluster['LabelsHC'].value_counts().sort_values()
 
+def KNClassifier(dfWork,myDf,treatVariable,expVariables,K, weights,metric,p=2):
+    """
+    This function predicts a categorical variable through the KNN method (using KNeighborsClassifier). The arguments are the following:
+    - dfWork: original data frame in which we want to introduce the final estimated values
+    - myDf: data frame with an individuals' id column and all the variables that are going to be used (explained and explainable variables)
+    - treatVariable: variable to predict (string type).
+    - expVariables: list of variables that will be used to explain the treatVariable
+    - K: number of neighbors to use.
+    - weights: to choose the weight function to use (distance, uniform, callable)- for a more detailed explanation check the KNeighborsRegressor parameters.
+    """
+    varList=list(myDf)
+    # df_inc: has Nan values on the treatVariable.
+    # df_comp: no Nan values on the treatVariable.
+    df_inc=myDf.loc[myDf[treatVariable].isna(),]
+    df_comp=myDf[~myDf.index.isin(df_inc.index)]
+    # change categorical variable to string to guarantee it can be a classifier.
+    df_comp[treatVariable]=df_comp[treatVariable].astype('category')
+    clf = KNeighborsClassifier(K,weights,metric=metric,p=p)
+    # Use the df_comp data frame to train the model:
+    trained_model = clf.fit(df_comp.loc[:,expVariables],
+                        df_comp.loc[:,treatVariable])
+    # Apply the trained model to the unknown data.
+    # Drop treatVariable column from df_inc data frame.
+    # Concat the df_inc data frame with the temp_df.
+    # Introduce the data into the dfWork data frame.
+    imputed_values = trained_model.predict(df_inc.drop(columns=[treatVariable,'id']))
+    temp_df = pd.DataFrame(imputed_values.reshape(-1,1), columns = [treatVariable])
+    df_inc = df_inc.drop(columns=[treatVariable])
+    df_inc = df_inc.reset_index(drop=True)
+    df_inc = pd.concat([df_inc, temp_df],
+                              axis = 1,
+                              ignore_index = True,
+                              verify_integrity = False)
+    df_inc.columns = varList
+    df_inc = df_inc.drop(columns=expVariables)
 
+    dfWork = reduce(lambda left,right: pd.merge(left, right, on='id', how='left'), [dfWork,df_inc])
+    dfWork[treatVariable+'_x']=np.where(dfWork[treatVariable+'_x'].isna(),dfWork[treatVariable+'_y'],dfWork[treatVariable+'_x'])
+    dfWork=dfWork.rename(columns={treatVariable+'_x':treatVariable})
+    dfWork=dfWork.drop(columns=treatVariable+'_y')
+    return dfWork
 
 
 
