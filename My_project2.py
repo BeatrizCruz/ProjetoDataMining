@@ -9,7 +9,7 @@ import pandas as pd
 #!pip install modin[dask]
 #import modin.pandas as pd # replaces pandas for parallel running, defaults to pandas when better method not available
 
-import sqlite3
+#import sqlite3 # We ended up importing from csv and not from the sdatabase
 import numpy as np
 from matplotlib import pyplot as plt # For plots.
 import math
@@ -26,33 +26,7 @@ from sklearn.metrics import silhouette_samples
 from sklearn.metrics import silhouette_score
 import matplotlib.cm as cm
 
-#my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
-#my_path = r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
-##dbname = "datamining.db"
-#
-## connect to the database
-#conn = sqlite3.connect(my_path)
-##cursor = conn.cursor()
-#conn.row_factory=sqlite3.Row
-#
-##tables in the data base:
-#query = "select name from sqlite_master where type='table'"
-#df2 = pd.read_sql_query(query,conn)
-#
-##Columns in each table of the data base:
-#query2="select sql from sqlite_master where tbl_name='LOB' and type='table'"
-#print(pd.read_sql_query(query2,conn))
-#
-#cur.execute('select * from LOB')
-#col_name_list=[tuple[0] for tuple in cur.description]
-#
-#query="select * from lob limit(10);"
-#
-#query="select * from engage limit(10);"
-#
-#my_table= cursor.execute(query).fetchall()
-#cursor.execute("select name from sqlite_master where type='table'")
-#print(cursor.fetchall()) """
+
 #FUNCTIONS
 def set_seed(my_seed):
     random.seed(my_seed)
@@ -60,9 +34,7 @@ def set_seed(my_seed):
 my_seed=100
 set_seed(my_seed)
 #Diretorias:
-file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
-#file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
+file =f"./A2Z Insurance.csv"
 
 #import csv file:
 dfOriginal=pd.read_csv(file)
