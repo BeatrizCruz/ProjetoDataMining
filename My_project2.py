@@ -9,7 +9,7 @@ import pandas as pd
 #!pip install modin[dask]
 #import modin.pandas as pd # replaces pandas for parallel running, defaults to pandas when better method not available
 
-import sqlite3
+#import sqlite3 # We ended up importing from csv and not from the sdatabase
 import numpy as np
 from matplotlib import pyplot as plt # For plots.
 import math
@@ -26,42 +26,15 @@ from sklearn.metrics import silhouette_samples
 from sklearn.metrics import silhouette_score
 import matplotlib.cm as cm
 
-#my_path = 'C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/insurance.db'
-#my_path = r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\insurance.db'
-##dbname = "datamining.db"
-#
-## connect to the database
-#conn = sqlite3.connect(my_path)
-##cursor = conn.cursor()
-#conn.row_factory=sqlite3.Row
-#
-##tables in the data base:
-#query = "select name from sqlite_master where type='table'"
-#df2 = pd.read_sql_query(query,conn)
-#
-##Columns in each table of the data base:
-#query2="select sql from sqlite_master where tbl_name='LOB' and type='table'"
-#print(pd.read_sql_query(query2,conn))
-#
-#cur.execute('select * from LOB')
-#col_name_list=[tuple[0] for tuple in cur.description]
-#
-#query="select * from lob limit(10);"
-#
-#query="select * from engage limit(10);"
-#
-#my_table= cursor.execute(query).fetchall()
-#cursor.execute("select name from sqlite_master where type='table'")
-#print(cursor.fetchall()) """
+
 #FUNCTIONS
 def set_seed(my_seed):
     random.seed(my_seed)
     np.random.seed(my_seed)
 my_seed=100
+set_seed(my_seed)
 #Diretorias:
-file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
-#file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
+file =f"./A2Z Insurance.csv"
 
 #import csv file:
 dfOriginal=pd.read_csv(file)
@@ -889,22 +862,18 @@ dfOriginal['CancelTotal'].value_counts()
 
 dfOriginal['Outliers'].value_counts()
 
-dfOutliers=dfOriginal[["Outliers_salary","df_OutliersLow_cmv","df_OutliersHigh_cmv","Outliers_claims",
-                "Outliers_lobMot","Outliers_lobHousehold","Outliers_lobHealth","Outliers_lobWork","Outliers_lobLife",
-                ]].loc[dfOriginal["Outliers"]>0]
-#TODO: Export to excel dfOutliers
-
-
-file_name = f"./df_Outliers.xlsx"
-df.to_excel(file_name, index=False, encoding='utf-8')
+dfOutliers=dfOriginal[["id","firstPolicy", "birthday", "education", "salary","livingArea","children", "cmv", "claims",
+                       "lobMotor","lobHousehold", "lobHealth","lobLife","lobWork",
+                       "Outliers_salary","df_OutliersLow_cmv","df_OutliersHigh_cmv","Outliers_claims","Outliers_lobMot",
+                       "Outliers_lobHousehold","Outliers_lobHealth","Outliers_lobWork","Outliers_lobLife",
+                        ]].loc[dfOriginal["Outliers"]>0]
+dfOutliers.to_excel(f"./Outliers.xlsx", index=False, encoding='utf-8')
 
 
 dfErrors=dfOriginal.loc[dfOriginal["Errors"]==1]
 
-
-
 #-----------------CHECK INCOHERENCES------------------#
-# TODO: create a column for incoherences to verify if errors and outliers coincide with incoherences
+
 #Check if birthday is higher than First policy's year: 
 agesList=[0,16,18]
 countList=[]
@@ -1484,7 +1453,7 @@ layout = go.Layout(title='Years Since First Policy',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-#TODO: levar para a frente e multiplicar pelos anos... parece não fazer muito sentido...
+
 ##### Plot CMV with years with us
 df=dfWork[['YearsWus1998','cmv']][(dfOriginal['strange_firstPolicy']==0) &
                                    (dfOriginal['df_OutliersLow_cmv'] == 0 )&
@@ -1646,11 +1615,6 @@ plt.show()
 #####################################    
 # K-MEANS
 #####################################
-dfKmeans=dfAffinityKmeans
-dfNorm=dfAffinityKmeansNStd
-n=2
-returndf=True
-
 def kmeans_funct(dfKmeans, dfNorm, n, returndf=False):
     """df is a data frame with all the variables we want to use to apply the k-means"""
     # Apply k-means
@@ -1799,12 +1763,12 @@ def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
     plt.plot()
     
     # Silhouette Graph:   
-    silhouette_avg = silhouette_score(dfNorm,dfKmeansHC['labelsKmeansHC2']) 
+    silhouette_avg = silhouette_score(kmeansHCCentroidsEngage,hClustering.labels_)
     print("For number of cluster (k) =", nHC,
               "The average silhouette_score is :", silhouette_avg)
     # Compute the silhouette scores for each sample
-    sample_silhouette_values = silhouette_samples(dfNorm,dfKmeansHC['labelsKmeansHC2'])
-    cluster_labels = dfKmeansHC['labelsKmeansHC2']
+    sample_silhouette_values = silhouette_samples(kmeansHCCentroidsEngage,hClustering.labels_)
+    cluster_labels = hClustering.labels_
     y_lower = 100
     
     fig = plt.figure()
@@ -1814,7 +1778,7 @@ def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
     for i in range(nHC):
         ith_cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
         ith_cluster_silhouette_values.sort()    
-        size_cluster_i=ith_cluster_silhouette_values. shape[0]
+        size_cluster_i=ith_cluster_silhouette_values.shape[0]
         y_upper = y_lower + size_cluster_i    
         color = cm.nipy_spectral(float(i) / nHC)
         ax.fill_betweenx(np.arange(y_lower, y_upper),
@@ -2093,7 +2057,7 @@ def MeanShift_funct(dfNorm,dfMeanShift,returndf=False):
 
 def DBScan_funct(dfNorm, dfDB,returndf=False):
     db = DBSCAN(eps= 0.75, #radius (euclidean distance)
-                min_samples=15).fit(dfNorm) # minimum number of points inside the radius.
+                min_samples=10).fit(dfNorm) # minimum number of points inside the radius.
     labelsDB = pd.DataFrame(db.labels_)
     labelsDB.columns = ['labelsDB']
     dfDB = pd.DataFrame(pd.concat([dfDB, labelsDB],axis=1))
@@ -2137,7 +2101,7 @@ def Kmodes_funct(n,dfKmodesChange,dfKmodes,returndf=False):
     
     dfKmodes = pd.DataFrame(pd.concat([dfKmodes, labelsKmodes],axis=1))
     #Visualization:
-    lista=list(kmodesChange.columns)
+    lista=list(dfKmodesChange.columns)
     for i in lista:
         g = sb.catplot(i, col="labelsKmodes", col_wrap=4,
                         data=dfKmodes,
@@ -2155,9 +2119,15 @@ dfEngage = dfWork[[  'YearsWus1998',
                       'ratioSalaryLOB'
                       #'claims' # use claims only when ploting for comparing clusters
                       ]] 
-
 dfEngageCat = dfWork[['catClaims',
                       'binEducation',
+                      'children',
+                      'CancelTotal',
+                      'TotalInsurance'
+                         #'catCMV' #TODO: Implement
+                         ]]
+dfEngageCat2 = dfWork[['catClaims',
+                      'education',
                       'children',
                       'CancelTotal',
                       'TotalInsurance'
@@ -2181,38 +2151,43 @@ dfAffinityRatio=dfWork[['lobTotal',
 #################################################################################################################
 
 # Check correlations between variables in dfEngage:
+plt.figure()
 dfCorr=pd.DataFrame(dfWork,columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB'])
 dfCorrP=dfCorr.corr(method ='pearson')
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
 plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 plt.title('Heatmap Pearson Correlations (Group 1: Engage)')
+plt.plot()
 # Non highly correlated variables
 
 # Check correlations between variables in dfAffinity:
+plt.figure()
 dfCorr=pd.DataFrame(dfWork,columns=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
 dfCorrP=dfCorr.corr(method ='pearson')
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
 plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 plt.title('Heatmap Pearson Correlations (Group 3: Affinity)')
+plt.plot()
 # Non highly correlated variables
 
 # Check correlations between variables in dfAffinityRatio:
+plt.figure()
 dfCorr=pd.DataFrame(dfWork,columns=['lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
 dfCorrP=dfCorr.corr(method ='pearson')
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
 plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 plt.title('Heatmap Pearson Correlations (Group 1: Affinity Ratio)')
+plt.plot()
 # There is a correlation between householdRatioLOB and lobTotal 
 # Multicolinearity if we keep all ratio LOB variables in the same group of variables.
 # Decision: drop householdRatioLOB from dfAffinityRatio.
-
 ##############################################################################################
 # Apply Clusters: dfEngage
 ########################################### K-means ##########################################
 # Normalization: min-max
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-dfEngageKmeans=dfEngage
+dfEngageKmeans=dfEngage.copy()
 engageNorm = scaler.fit_transform(dfEngageKmeans)
 engageNorm = pd.DataFrame(engageNorm, columns = dfEngageKmeans.columns)
 engageNorm = engageNorm.rename(columns={'YearsWus1998':'YearsWus1998Std','salary':'salaryStd','CMV_Mean_corrected':'CMV_Mean_correctedStd','ratioSalaryLOB':'ratioSalaryLOBStd'}, errors="raise")
@@ -2241,11 +2216,28 @@ plt.title('Elbow Graph')
 plt.plot(dfClusters.Num_clusters,dfClusters.Cluster_errors,marker='o') # There is evidence that we should keep 2 clusters.
 
 # k-means with 2 clusters:
-dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=2,returndf=False)
+dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=2,returndf=True)
+
 # clusters only differentiate on 'YearsWus1998'
 
 # We also tried to make 3 clusters instead to check if with 3 clusters we could differentiate according to salary and cmv.
 #dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=3,returndf=False)
+
+#TODO: Ver K-means e K-modes ao mesmo tempo:
+
+# Violin Plots:
+#    lista=list(engageNorm.columns)
+#    fig2=plt.figure()
+#    fig2.suptitle('Violin Plots by Variable and Cluster (labels K-means and variables k-modes)')
+#    for i in lista:
+#        plt.subplot2grid((1,len(lista)),(0,lista.index(i)))
+#        sb.violinplot(x='labelsKmeans', y=i, data=dfEngageKmeans, scale='width')
+#        plt.xlabel('Cluster Number')
+#        plt.title(str(i))
+#        plt.ylabel('')
+#    plt.tight_layout()
+#    plt.plot()
+
 
 ########################################### K-means + Hierarchical ##########################################
 from scipy.cluster.hierarchy import dendrogram, linkage
@@ -2258,10 +2250,11 @@ dfEngageKmeansHC=pd.DataFrame(pd.concat([dfEngageKmeansHC, engageNorm],axis=1),
 dfEngageKmeansHC=pd.DataFrame(pd.concat([dfWork['id'], dfEngageKmeansHC],axis=1), 
                         columns=['id','YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
 #dfEngageKmeansHC=kmeansHC_funct(dfNorm=engageNorm,dfKmeansHC=dfEngageKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=3,returndf=True)
-dfEngageKmeansHC=kmeansHC_funct(dfNorm=engageNorm,dfKmeansHC=dfEngageKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=4,returndf=True)
+dfEngageKmeansHC=kmeansHC_funct(dfNorm=engageNorm,dfKmeansHC=dfEngageKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=2,returndf=True)
+
 ########################################### SOM + Hierarchical ##########################################
 from sompy.sompy import SOMFactory
-
+set_seed(my_seed)
 dfEngageSomHC=dfEngage
 dfEngageSomHC=pd.DataFrame(pd.concat([dfEngageSomHC, engageNorm],axis=1), 
                         columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
@@ -2269,16 +2262,17 @@ dfEngageSomHC=pd.DataFrame(pd.concat([dfWork['id'], dfEngageSomHC],axis=1),
                         columns=['id','YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
 names = ['YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd']
 
-dfEngageSomHC=SomHC_funct(dfNorm=engageNorm,dfSomHC=dfEngageSomHC,names=names,nHC=2,returndf=True)
+dfEngageSomHC=SomHC_funct(dfNorm=engageNorm,dfSomHC=dfEngageSomHC,names=names,nHC=4,returndf=True)
 
 ########################################### EM ##########################################
 from sklearn import mixture
+set_seed(my_seed)
 dfEngageEM=dfEngage
 dfEngageEM=pd.DataFrame(pd.concat([dfEngageEM, engageNorm],axis=1), 
                         columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
 dfEngageEM=pd.DataFrame(pd.concat([dfWork['id'], dfEngageEM],axis=1), 
                         columns=['id','YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
-dfEngageEM=EM_funct(dfNorm=engageNorm, dfEM=dfEngageEM, n=4,returndf=True)
+dfEngageEM=EM_funct(dfNorm=engageNorm, dfEM=dfEngageEM, n=3,returndf=True)
 
 #Not used yet:
 # Likelihood value
@@ -2288,6 +2282,7 @@ dfEngageEM=EM_funct(dfNorm=engageNorm, dfEM=dfEngageEM, n=4,returndf=True)
 
 ########################################### Mean Shift ##########################################
 from sklearn.cluster import MeanShift, estimate_bandwidth
+set_seed(my_seed)
 dfEngageMs=dfEngage
 dfEngageMs=pd.DataFrame(pd.concat([dfEngageMs, engageNorm],axis=1), 
                         columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB','YearsWus1998Std','salaryStd','CMV_Mean_correctedStd','ratioSalaryLOBStd'])
@@ -2308,20 +2303,31 @@ dfEngageDb=DBScan_funct(dfNorm=engageNorm,dfDB=dfEngageDb,returndf=True)
 
 ##############################################################################################
 # Apply Clusters: dfEngageCat
-########################################### K-modes ##########################################
+########################################### K-modes binEduc: ##########################################
 from kmodes.kmodes import KModes
+set_seed(my_seed)
 dfEngageCatKmodes=dfEngageCat
 dfEngageCatKmodes=pd.DataFrame(pd.concat([dfWork['id'], dfEngageCatKmodes],axis=1), 
                         columns=['id','catClaims','binEducation','children','CancelTotal','TotalInsurance'])
 kmodesChange = dfEngageCatKmodes[['catClaims','binEducation','children','CancelTotal','TotalInsurance']].astype('str')
 
-dfEngageCatKmodes=Kmodes_funct(n=3,dfKmodesChange=kmodesChange,dfKmodes=dfEngageCatKmodes,returndf=True)
+dfEngageCatKmodes=Kmodes_funct(n=2,dfKmodesChange=kmodesChange,dfKmodes=dfEngageCatKmodes,returndf=True)
 
+########################################### K-modes education: ##########################################
+from kmodes.kmodes import KModes
+set_seed(my_seed)
+dfEngageCatKmodes2=dfEngageCat2.copy()
+dfEngageCatKmodes2=pd.DataFrame(pd.concat([dfWork['id'], dfEngageCatKmodes2],axis=1), 
+                        columns=['id','catClaims','education','children','CancelTotal','TotalInsurance'])
+kmodesChange2 = dfEngageCatKmodes2[['catClaims','education','children','CancelTotal','TotalInsurance']].astype('str')
+
+dfEngageCatKmodes2=Kmodes_funct(n=2,dfKmodesChange=kmodesChange2,dfKmodes=dfEngageCatKmodes2,returndf=True)
 ##############################################################################################
 # Apply Clusters: dfAffinity
 ########################################### K-means ##########################################
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
+set_seed(my_seed)
 dfAffinityKmeans=dfAffinity
 dfAffinityKmeansNStd=dfAffinity
 dfAffinityKmeans=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityKmeans],axis=1), 
@@ -2356,7 +2362,7 @@ dfAffinityKmeans=kmeans_funct(dfKmeans=dfAffinityKmeans,dfNorm=dfAffinityKmeansN
 from scipy.cluster.hierarchy import dendrogram, linkage
 from sklearn.cluster import AgglomerativeClustering
 import sklearn.metrics as sm
-
+set_seed(my_seed)
 dfAffinityKmeansHC=dfAffinity
 dfAffinityKmeansHCNStd=dfAffinity
 dfAffinityKmeansHC=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityKmeansHC],axis=1), 
@@ -2365,7 +2371,7 @@ dfAffinityKmeansHC=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityKmeansHC],axi
 dfAffinityKmeansHC=kmeansHC_funct(dfNorm=dfAffinityKmeansHCNStd,dfKmeansHC=dfAffinityKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=3,returndf=True)
 ########################################### SOM + Hierarchical ##########################################
 from sompy.sompy import SOMFactory
-
+set_seed(my_seed)
 dfAffinitySomHC=dfAffinity
 dfAffinitySomHCNStd=dfAffinity
 dfAffinitySomHC=pd.DataFrame(pd.concat([dfWork['id'], dfAffinitySomHC],axis=1), 
@@ -2376,11 +2382,12 @@ dfAffinitySomHC=SomHC_funct(dfNorm=dfAffinitySomHCNStd,dfSomHC=dfAffinitySomHC,n
 
 ########################################### EM ##########################################
 from sklearn import mixture
+set_seed(my_seed)
 dfAffinityEM=dfAffinity
 dfAffinityEMNStd=dfAffinity
 dfAffinityEM=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityEM],axis=1), 
                         columns=['id','lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
-dfAffinityEM=EM_funct(dfNorm=dfAffinityEMNStd, dfEM=dfAffinityEM, n=4,returndf=True)
+dfAffinityEM=EM_funct(dfNorm=dfAffinityEMNStd, dfEM=dfAffinityEM, n=3,returndf=True)
 
 #Not used yet:
 # Likelihood value
@@ -2390,6 +2397,7 @@ dfAffinityEM=EM_funct(dfNorm=dfAffinityEMNStd, dfEM=dfAffinityEM, n=4,returndf=T
 
 ########################################### Mean Shift ##########################################
 from sklearn.cluster import MeanShift, estimate_bandwidth
+set_seed(my_seed)
 dfAffinityMs=dfAffinity
 dfAffinityMsNStd=dfAffinity
 dfAffinityMs=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityMs],axis=1), 
@@ -2400,6 +2408,7 @@ dfAffinityMs=MeanShift_funct(dfNorm=dfAffinityMsNStd,dfMeanShift=dfAffinityMs,re
 ########################################### DB- Scan ##########################################
 # Esquecer isto porque não faz sentido. As densidades são muito similares.
 from sklearn.cluster import DBSCAN
+set_seed(my_seed)
 dfAffinityDb=dfAffinity
 dfAffinityDbNStd=dfAffinity
 dfAffinityDb=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityDb],axis=1), 
@@ -2411,13 +2420,15 @@ dfAffinityDb=DBScan_funct(dfNorm=dfAffinityDbNStd,dfDB=dfAffinityDb,returndf=Tru
 ##############################################################################################
 # Apply Clusters: dfAffinityRatio
 ########################################### K-means ##########################################
-
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-dfAffinityRatioKmeans=dfAffinityRatio
-dfAffinityRatioKmeansNStd=dfAffinityRatio
-dfAffinityRatioKmeans=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioKmeans],axis=1), 
-                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
+from sklearn.preprocessing import minmax_scale
+set_seed(my_seed)
+dfAffinityRatioKmeans=dfAffinityRatio.copy()
+AffinityRatioNorm=dfAffinityRatio.copy()
+AffinityRatioNorm['lobTotalStd']=minmax_scale(AffinityRatioNorm[['lobTotal']])
+AffinityRatioNorm=AffinityRatioNorm.drop(columns=['lobTotal'])
+dfAffinityRatioKmeans=pd.DataFrame(pd.concat([dfAffinityRatioKmeans, AffinityRatioNorm['lobTotalStd']],axis=1))
+dfAffinityRatioKmeans=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioKmeans],axis=1))
 
 # Elbow Graph: to check how many clusters we should have:
 cluster_range= range(1,7)
@@ -2428,7 +2439,7 @@ for num_clusters in cluster_range:
                         n_init = 20, 
                         max_iter = 300,
                         init='k-means++')
-    clusters.fit(dfAffinityRatioKmeansNStd)
+    clusters.fit(AffinityRatioNorm)
     cluster_errors.append(clusters.inertia_)
 
 dfClusters = pd.DataFrame({ "Num_clusters": cluster_range, "Cluster_errors": cluster_errors})
@@ -2439,7 +2450,7 @@ plt.title('Elbow Graph')
 plt.plot(dfClusters.Num_clusters,dfClusters.Cluster_errors,marker='o') # There is evidence that we should keep 2 clusters.
 
 # k-means with 2 clusters:
-dfAffinityRatioKmeans=kmeans_funct(dfKmeans=dfAffinityRatioKmeans,dfNorm=dfAffinityRatioKmeansNStd, n=3,returndf=False)
+dfAffinityRatioKmeans=kmeans_funct(dfKmeans=dfAffinityRatioKmeans,dfNorm=AffinityRatioNorm, n=3,returndf=True)
 # clusters only differentiate on 'YearsWus1998'
 # We also tried to make 3 clusters instead to check if with 3 clusters we could differentiate according to salary and cmv.
 #dfEngageKmeans=kmeans_funct(dfKmeans=dfEngageKmeans,dfNorm=engageNorm, n=3,returndf=False)
@@ -2448,61 +2459,63 @@ dfAffinityRatioKmeans=kmeans_funct(dfKmeans=dfAffinityRatioKmeans,dfNorm=dfAffin
 from scipy.cluster.hierarchy import dendrogram, linkage
 from sklearn.cluster import AgglomerativeClustering
 import sklearn.metrics as sm
-
-dfAffinityRatioKmeansHC=dfAffinityRatio
-dfAffinityRatioKmeansHCNStd=dfAffinityRatio
-
-dfAffinityRatioKmeansHC=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioKmeansHC],axis=1), 
-                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
+set_seed(my_seed)
+dfAffinityRatioKmeansHC=dfAffinityRatio.copy()
+dfAffinityRatioKmeansHC=pd.DataFrame(pd.concat([dfAffinityRatioKmeansHC, AffinityRatioNorm['lobTotalStd']],axis=1))
+dfAffinityRatioKmeansHC=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioKmeansHC],axis=1))
 #dfEngageKmeansHC=kmeansHC_funct(dfNorm=engageNorm,dfKmeansHC=dfEngageKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=3,returndf=True)
-dfAffinityRatioKmeansHC=kmeansHC_funct(dfNorm=dfAffinityRatioKmeansHCNStd,dfKmeansHC=dfAffinityRatioKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=3,returndf=True)
+dfAffinityRatioKmeansHC=kmeansHC_funct(dfNorm=AffinityRatioNorm,dfKmeansHC=dfAffinityRatioKmeansHC,nkmeans=int(round(math.sqrt(10261),0)),nHC=3,returndf=True)
 ########################################### SOM + Hierarchical ##########################################
 from sompy.sompy import SOMFactory
-
-dfAffinityRatioSomHC=dfAffinityRatio
-dfAffinityRatioSomHCNStd=dfAffinityRatio
-dfAffinityRatioSomHC=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioSomHC],axis=1), 
-                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
+set_seed(my_seed)
+dfAffinityRatioSomHC=dfAffinityRatio.copy()
+dfAffinityRatioSomHC=pd.DataFrame(pd.concat([dfAffinityRatioSomHC, AffinityRatioNorm['lobTotalStd']],axis=1))
+dfAffinityRatioSomHC=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioSomHC],axis=1))
 names = ['lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB']
 
-dfAffinityRatioSomHC=SomHC_funct(dfNorm=dfAffinityRatioSomHCNStd,dfSomHC=dfAffinityRatioSomHC,names=names,nHC=2,returndf=True)
+dfAffinityRatioSomHC=SomHC_funct(dfNorm=AffinityRatioNorm,dfSomHC=dfAffinityRatioSomHC,names=names,nHC=4,returndf=True)
 
 ########################################### EM ##########################################
 from sklearn import mixture
-dfAffinityRatioEM=dfAffinityRatio
-dfAffinityRatioEMNStd=dfAffinityRatio
-dfAffinityRatioEM=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioEM],axis=1), 
-                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
-dfAffinityRatioEM=EM_funct(dfNorm=dfAffinityRatioEMNStd, dfEM=dfAffinityRatioEM, n=5,returndf=True)
+set_seed(my_seed)
+dfAffinityRatioEM=dfAffinityRatio.copy()
+dfAffinityRatioEM=pd.DataFrame(pd.concat([dfAffinityRatioEM, AffinityRatioNorm['lobTotalStd']],axis=1))
+dfAffinityRatioEM=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioEM],axis=1))
+dfAffinityRatioEM=EM_funct(dfNorm=AffinityRatioNorm, dfEM=dfAffinityRatioEM, n=3,returndf=True)
 
-#Not used yet:
+# Not used yet:
 # Likelihood value
-#EM_score_samp = pd.DataFrame(gmm.score_samples(engageNorm))
+# EM_score_samp = pd.DataFrame(gmm.score_samples(engageNorm))
 # Probabilities of belonging to each cluster.
-#EM_pred_prob = pd.DataFrame(gmm.predict_proba(engageNorm))
-
+# EM_pred_prob = pd.DataFrame(gmm.predict_proba(engageNorm))
 ########################################### Mean Shift ##########################################
 from sklearn.cluster import MeanShift, estimate_bandwidth
-dfAffinityRatioMs=dfAffinityRatio
-dfAffinityRatioMsNStd=dfAffinityRatio
-dfAffinityRatioMs=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioMs],axis=1), 
-                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
-
-dfAffinityRatioMs=MeanShift_funct(dfNorm=dfAffinityRatioMsNStd,dfMeanShift=dfAffinityRatioMs,returndf=True)
+set_seed(my_seed)
+dfAffinityRatioMs=dfAffinityRatio.copy()
+dfAffinityRatioMs=pd.DataFrame(pd.concat([dfAffinityRatioMs, AffinityRatioNorm['lobTotalStd']],axis=1))
+dfAffinityRatioMs=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioMs],axis=1))
+dfAffinityRatioMs=MeanShift_funct(dfNorm=AffinityRatioNorm,dfMeanShift=dfAffinityRatioMs,returndf=True)
 
 ########################################### DB- Scan ##########################################
 # Esquecer isto porque não faz sentido. As densidades são muito similares.
 from sklearn.cluster import DBSCAN
-dfAffinityRatioDb=dfAffinityRatio
-dfAffinityRatioDbNStd=dfAffinityRatio
-dfAffinityRatioDb=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioDb],axis=1), 
-                        columns=['id','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
-dfAffinityRatioDb=DBScan_funct(dfNorm=dfAffinityRatioDbNStd,dfDB=dfAffinityRatioDb,returndf=True)
+set_seed(my_seed)
+dfAffinityRatioDb=dfAffinityRatio.copy()
+dfAffinityRatioDb=pd.DataFrame(pd.concat([dfAffinityRatioDb, AffinityRatioNorm['lobTotalStd']],axis=1))
+dfAffinityRatioDb=pd.DataFrame(pd.concat([dfWork['id'], dfAffinityRatioDb],axis=1))
+dfAffinityRatioDb=DBScan_funct(dfNorm=AffinityRatioNorm,dfDB=dfAffinityRatioDb,returndf=True)
 
 
+##############################################################################################
+#INSERT LABELS IN dfWork:
+##############################################################################################
+dfWork= pd.DataFrame(pd.concat([dfWork,dfEngageMs['labelsMs']],axis=1))
+dfWork= pd.DataFrame(pd.concat([dfWork,dfEngageCatKmodes2['labelsKmodes']],axis=1))
+dfWork= pd.DataFrame(pd.concat([dfWork,dfAffinityRatioKmeansHC['labelsKmeansHC2']],axis=1))
+dfWork['labelsConcat']=dfWork['labelsMs'].astype(str)+dfWork['labelsKmodes'].astype(str)+dfWork['labelsKmeansHC2'].astype(str)
 
 ###########################################
-# APPLY DT TO OUR DATA: STILL HAVE TO DO...
+#DECISION TREE
 ###########################################
 import numpy as np
 import pandas as pd
@@ -2515,21 +2528,28 @@ from sklearn import metrics #Import scikit-learn metrics module for accuracy cal
 #from dtreeplt import dtreeplt
 import graphviz 
 
-values, counts= np.unique(kmeans.labels_, return_counts=True)
-pd.DataFrame(np.asarray((values, counts)).T, columns=['Label','Number'])
+values, counts= np.unique(dfWork['labelsConcat'], return_counts=True)
+pd.DataFrame(np.asarray((values, counts)).T, columns=['labelsConcat','Number'])
 print(values,counts)
 
 le = preprocessing.LabelEncoder()
 clf = DecisionTreeClassifier(random_state=0,
-                             max_depth=3) # define the depth of the decision tree!
+                             max_depth=3, dtype=category) # define the depth of the decision tree!
+#dfWork2=dfWork.copy()
+#dfWork2['catClaims']=dfWork2['catClaims'].astype(str)
+#dfWork2['education']=dfWork2['education'].astype(str)
+#dfWork2['children']=dfWork2['children'].astype(str)
+#dfWork2['CancelTotal']=dfWork2['CancelTotal'].astype(str)
+#dfWork2['TotalInsurance']=dfWork2['TotalInsurance'].astype(str)
 
 
-X = Affinity[['clothes', 'kitchen', 'small_appliances', 'toys', 'house_keeping']]
-y =  Affinity[['Labels']] # Target variable
+X = dfWork2[['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB',
+              'catClaims','education','children','CancelTotal',
+              'TotalInsurance','lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB']]
+
+y =  dfWork2[['labelsConcat']] # Target variable
 
 # How many elements per Cluster
-
-
 # Split dataset into training set and test set
 X_train, X_test, y_train, y_test = train_test_split(X, y, 
                                                     test_size=4, 
@@ -2547,8 +2567,6 @@ clf.feature_importances_
 #plot_tree(clf, filled=True)
 
 #Entropy or gini: to see which variables are more relevant - avoid overfitting (the most imp. variable will be on the top of the DT)
-
-
 dot_data = tree.export_graphviz(clf, out_file=None) 
 graph = graphviz.Source(dot_data) 
 
