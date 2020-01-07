@@ -890,7 +890,7 @@ dfOriginal['CancelTotal'].value_counts()
 
 dfOriginal['Outliers'].value_counts()
 
-dfOutliers=dfOriginal[["firstPolicy", "birthday", "education", "salary","livingArea","children", "cmv", "claims",
+dfOutliers=dfOriginal[["id","firstPolicy", "birthday", "education", "salary","livingArea","children", "cmv", "claims",
                        "lobMotor","lobHousehold", "lobHealth","lobLife","lobWork",
                        "Outliers_salary","df_OutliersLow_cmv","df_OutliersHigh_cmv","Outliers_claims","Outliers_lobMot",
                        "Outliers_lobHousehold","Outliers_lobHealth","Outliers_lobWork","Outliers_lobLife",
@@ -898,14 +898,10 @@ dfOutliers=dfOriginal[["firstPolicy", "birthday", "education", "salary","livingA
 dfOutliers.to_excel(f"./Outliers.xlsx", index=False, encoding='utf-8')
 
 
-
-
 dfErrors=dfOriginal.loc[dfOriginal["Errors"]==1]
 
-
-
 #-----------------CHECK INCOHERENCES------------------#
-# TODO: create a column for incoherences to verify if errors and outliers coincide with incoherences
+
 #Check if birthday is higher than First policy's year: 
 agesList=[0,16,18]
 countList=[]
@@ -1485,7 +1481,7 @@ layout = go.Layout(title='Years Since First Policy',template='simple_white',
 fig = go.Figure(data=data, layout=layout)
 pyo.plot(fig)
 
-#TODO: levar para a frente e multiplicar pelos anos... parece não fazer muito sentido...
+
 ##### Plot CMV with years with us
 df=dfWork[['YearsWus1998','cmv']][(dfOriginal['strange_firstPolicy']==0) &
                                    (dfOriginal['df_OutliersLow_cmv'] == 0 )&
