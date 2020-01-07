@@ -1615,11 +1615,6 @@ plt.show()
 #####################################    
 # K-MEANS
 #####################################
-dfKmeans=dfAffinityKmeans
-dfNorm=dfAffinityKmeansNStd
-n=2
-returndf=True
-
 def kmeans_funct(dfKmeans, dfNorm, n, returndf=False):
     """df is a data frame with all the variables we want to use to apply the k-means"""
     # Apply k-means
@@ -1698,7 +1693,6 @@ def kmeans_funct(dfKmeans, dfNorm, n, returndf=False):
 #####################################    
 # K-means+ Hierarchical:
 #####################################
-
 def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
     kmeans = KMeans(n_clusters=nkmeans, 
                     random_state=0,
