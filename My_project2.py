@@ -2157,27 +2157,33 @@ dfAffinityRatio=dfWork[['lobTotal',
 #################################################################################################################
 
 # Check correlations between variables in dfEngage:
+plt.figure()
 dfCorr=pd.DataFrame(dfWork,columns=['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB'])
 dfCorrP=dfCorr.corr(method ='pearson')
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
 plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 plt.title('Heatmap Pearson Correlations (Group 1: Engage)')
+plt.plot()
 # Non highly correlated variables
 
 # Check correlations between variables in dfAffinity:
+plt.figure()
 dfCorr=pd.DataFrame(dfWork,columns=['lobMotor','lobHousehold','lobHealth','lobLife','lobWork'])
 dfCorrP=dfCorr.corr(method ='pearson')
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
 plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 plt.title('Heatmap Pearson Correlations (Group 3: Affinity)')
+plt.plot()
 # Non highly correlated variables
 
 # Check correlations between variables in dfAffinityRatio:
+plt.figure()
 dfCorr=pd.DataFrame(dfWork,columns=['lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'])
 dfCorrP=dfCorr.corr(method ='pearson')
 ax = sb.heatmap(dfCorrP, annot=True, fmt="0.3", square=True,  cbar_kws={'label': 'Colorbar'})
 plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 plt.title('Heatmap Pearson Correlations (Group 1: Affinity Ratio)')
+plt.plot()
 # There is a correlation between householdRatioLOB and lobTotal 
 # Multicolinearity if we keep all ratio LOB variables in the same group of variables.
 # Decision: drop householdRatioLOB from dfAffinityRatio.
