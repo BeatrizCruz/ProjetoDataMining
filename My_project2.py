@@ -60,8 +60,8 @@ def set_seed(my_seed):
 my_seed=100
 set_seed(my_seed)
 #Diretorias:
-#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -1730,6 +1730,7 @@ def kmeans_funct(dfKmeans, dfNorm, n, returndf=False):
 #####################################    
 # K-means+ Hierarchical:
 #####################################
+
 def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
     kmeans = KMeans(n_clusters=nkmeans, 
                     random_state=0,
@@ -1800,12 +1801,12 @@ def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
     plt.plot()
     
     # Silhouette Graph:   
-    silhouette_avg = silhouette_score(dfNorm,dfKmeansHC['labelsKmeansHC2']) 
+    silhouette_avg = silhouette_score(kmeansHCCentroidsEngage,hClustering.labels_)
     print("For number of cluster (k) =", nHC,
               "The average silhouette_score is :", silhouette_avg)
     # Compute the silhouette scores for each sample
-    sample_silhouette_values = silhouette_samples(dfNorm,dfKmeansHC['labelsKmeansHC2'])
-    cluster_labels = dfKmeansHC['labelsKmeansHC2']
+    sample_silhouette_values = silhouette_samples(kmeansHCCentroidsEngage,hClustering.labels_)
+    cluster_labels = hClustering.labels_
     y_lower = 100
     
     fig = plt.figure()
@@ -1815,7 +1816,7 @@ def kmeansHC_funct(dfNorm,dfKmeansHC,nkmeans,nHC,returndf=False):
     for i in range(nHC):
         ith_cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
         ith_cluster_silhouette_values.sort()    
-        size_cluster_i=ith_cluster_silhouette_values. shape[0]
+        size_cluster_i=ith_cluster_silhouette_values.shape[0]
         y_upper = y_lower + size_cluster_i    
         color = cm.nipy_spectral(float(i) / nHC)
         ax.fill_betweenx(np.arange(y_lower, y_upper),
@@ -2516,21 +2517,23 @@ from sklearn import metrics #Import scikit-learn metrics module for accuracy cal
 #from dtreeplt import dtreeplt
 import graphviz 
 
-values, counts= np.unique(kmeans.labels_, return_counts=True)
-pd.DataFrame(np.asarray((values, counts)).T, columns=['Label','Number'])
+values, counts= np.unique(Join_labels, return_counts=True)
+pd.DataFrame(np.asarray((values, counts)).T, columns=['Joined Labels','Number'])
 print(values,counts)
 
 le = preprocessing.LabelEncoder()
 clf = DecisionTreeClassifier(random_state=0,
                              max_depth=3) # define the depth of the decision tree!
 
+X = Affinity[['YearsWus1998','salary','CMV_Mean_corrected','ratioSalaryLOB',
+              'catClaims','binEducation','children','CancelTotal',
+              'TotalInsurance','lobMotor','lobHousehold','lobHealth','lobLife','lobWork']]
 
-X = Affinity[['clothes', 'kitchen', 'small_appliances', 'toys', 'house_keeping']]
-y =  Affinity[['Labels']] # Target variable
+# DONT FORGET: Check if we chose the cluster with absolute or with ratio when considering affinity
+# If ratio: change to 'lobTotal','motorRatioLOB','householdRatioLOB','healthRatioLOB','lifeRatioLOB','workCRatioLOB'
+y =  Affinity[['Joined Labels']] # Target variable
 
 # How many elements per Cluster
-
-
 # Split dataset into training set and test set
 X_train, X_test, y_train, y_test = train_test_split(X, y, 
                                                     test_size=4, 
@@ -2548,8 +2551,6 @@ clf.feature_importances_
 #plot_tree(clf, filled=True)
 
 #Entropy or gini: to see which variables are more relevant - avoid overfitting (the most imp. variable will be on the top of the DT)
-
-
 dot_data = tree.export_graphviz(clf, out_file=None) 
 graph = graphviz.Source(dot_data) 
 
