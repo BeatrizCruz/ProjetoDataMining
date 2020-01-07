@@ -894,6 +894,11 @@ dfOutliers=dfOriginal[["Outliers_salary","df_OutliersLow_cmv","df_OutliersHigh_c
                 ]].loc[dfOriginal["Outliers"]>0]
 #TODO: Export to excel dfOutliers
 
+
+file_name = f"./df_Outliers.xlsx"
+df.to_excel(file_name, index=False, encoding='utf-8')
+
+
 dfErrors=dfOriginal.loc[dfOriginal["Errors"]==1]
 
 
