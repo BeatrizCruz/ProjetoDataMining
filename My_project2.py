@@ -58,9 +58,10 @@ def set_seed(my_seed):
     random.seed(my_seed)
     np.random.seed(my_seed)
 my_seed=100
+set_seed(my_seed)
 #Diretorias:
-file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
-#file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
+#file='C:/Users/aSUS/Documents/IMS/Master Data Science and Advanced Analytics with major in BA/Data mining/Projeto/A2Z Insurance.csv'
+file= r'C:\Users\Pedro\Google Drive\IMS\1S-Master\Data Mining\Projecto\A2Z Insurance.csv'
 #file='C:/Users/anaso/Desktop/Faculdade/Mestrado/Data Mining/Projeto/A2Z Insurance.csv'
 
 #import csv file:
@@ -889,10 +890,15 @@ dfOriginal['CancelTotal'].value_counts()
 
 dfOriginal['Outliers'].value_counts()
 
-dfOutliers=dfOriginal[["Outliers_salary","df_OutliersLow_cmv","df_OutliersHigh_cmv","Outliers_claims",
-                "Outliers_lobMot","Outliers_lobHousehold","Outliers_lobHealth","Outliers_lobWork","Outliers_lobLife",
-                ]].loc[dfOriginal["Outliers"]>0]
-#TODO: Export to excel dfOutliers
+dfOutliers=dfOriginal[["firstPolicy", "birthday", "education", "salary","livingArea","children", "cmv", "claims",
+                       "lobMotor","lobHousehold", "lobHealth","lobLife","lobWork",
+                       "Outliers_salary","df_OutliersLow_cmv","df_OutliersHigh_cmv","Outliers_claims","Outliers_lobMot",
+                       "Outliers_lobHousehold","Outliers_lobHealth","Outliers_lobWork","Outliers_lobLife",
+                        ]].loc[dfOriginal["Outliers"]>0]
+dfOutliers.to_excel(f"./Outliers.xlsx", index=False, encoding='utf-8')
+
+
+
 
 dfErrors=dfOriginal.loc[dfOriginal["Errors"]==1]
 
